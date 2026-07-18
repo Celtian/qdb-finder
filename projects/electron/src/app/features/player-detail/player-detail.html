@@ -3,6 +3,11 @@
     <p class="eyebrow">FIFA {{ player.version }}</p>
     <h2 mat-dialog-title>{{ player.name }}</h2>
     <p>{{ player.nationality }} · {{ player.teams.join(', ') || 'Free agent' }}</p>
+    <div class="position-list" aria-label="Positions">
+      @for (position of player.positions; track position) {
+        <span [class]="positionBadgeClass(position)">{{ position }}</span>
+      }
+    </div>
   </div>
   <button mat-button mat-dialog-close aria-label="Close player details">Close</button>
 </header>
@@ -15,7 +20,10 @@
       <span>Potential</span><strong>{{ player.potential }}</strong>
     </div>
     <div>
-      <span>Best rating</span><strong>{{ player.bestRating }} {{ player.bestPosition }}</strong>
+      <span>Best rating</span
+      ><strong [class]="positionBadgeClass(player.bestPosition)"
+        >{{ player.bestRating }} {{ player.bestPosition }}</strong
+      >
     </div>
     <div>
       <span>Age</span><strong>{{ player.age ?? '—' }}</strong>
@@ -43,7 +51,7 @@
     <mat-tab label="Position matrix"
       ><div class="ratings">
         @for (rating of player.ratings | keyvalue; track rating.key) {
-          <span
+          <span [class]="positionBadgeClass(rating.key)"
             >{{ rating.key }} <strong>{{ rating.value }}</strong></span
           >
         }

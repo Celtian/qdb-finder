@@ -54,4 +54,12 @@ describe('PlayerDetail', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('uses the attacker color treatment for position data', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const attackerBadges = element.querySelectorAll('.position-attacker');
+
+    expect(attackerBadges).toHaveLength(2);
+    expect([...attackerBadges].every((badge) => badge.textContent?.includes('ST'))).toBe(true);
+  });
 });

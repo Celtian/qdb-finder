@@ -26,6 +26,9 @@ import {
 } from '../../core/qdb-contracts';
 import { PlayerDetail } from '../player-detail/player-detail';
 import { map } from 'rxjs';
+import { positionBadgeClass } from '../../core/position';
+
+type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
 
 @Component({
   selector: 'app-player-finder',
@@ -91,10 +94,16 @@ export class PlayerFinder {
     'CF',
     'ST',
   ];
+  protected readonly positionBadgeClass = positionBadgeClass;
   protected readonly suggestions = signal<Record<FilterKind, FilterSuggestion[]>>({
     nationality: [],
     team: [],
     league: [],
+  });
+  protected readonly filterLabels = signal<Record<ExactFilterField, Record<string, string>>>({
+    nationalities: {},
+    teams: {},
+    leagues: {},
   });
   protected readonly isNarrow = toSignal(
     this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
@@ -146,8 +155,9 @@ export class PlayerFinder {
       [kind]: { ...value[kind], [boundary]: number },
       offset: 0,
     }));
+    void this.search();
   }
-  protected applyFilters(): void {
+  protected retrySearch(): void {
     void this.search();
   }
   protected async suggest(kind: FilterKind, event: Event): Promise<void> {
@@ -161,29 +171,44 @@ export class PlayerFinder {
     this.suggestions.update((value) => ({ ...value, [kind]: options }));
   }
   protected addExactFilter(
-    field: 'nationalities' | 'teams' | 'leagues',
-    key: string,
+    field: ExactFilterField,
+    option: FilterSuggestion,
     input: HTMLInputElement,
   ): void {
+    const { key, label } = option;
     this.request.update((value) => ({
       ...value,
       [field]: [...new Set([...value[field], key])],
       offset: 0,
     }));
+    this.filterLabels.update((value) => ({
+      ...value,
+      [field]: { ...value[field], [key]: label },
+    }));
     input.value = '';
     void this.search();
   }
-  protected removeExactFilter(field: 'nationalities' | 'teams' | 'leagues', key: string): void {
+  protected removeExactFilter(field: ExactFilterField, key: string): void {
     this.request.update((value) => ({
       ...value,
       [field]: value[field].filter((item) => item !== key),
       offset: 0,
     }));
+    this.filterLabels.update((value) => ({
+      ...value,
+      [field]: Object.fromEntries(
+        Object.entries(value[field]).filter(([labelKey]) => labelKey !== key),
+      ),
+    }));
     void this.search();
+  }
+  protected filterLabel(field: ExactFilterField, key: string): string {
+    return this.filterLabels()[field][key] ?? key;
   }
   protected clearFilters(): void {
     this.model.set({ text: '' });
     this.request.set(defaultSearchRequest());
+    this.filterLabels.set({ nationalities: {}, teams: {}, leagues: {} });
     void this.search();
   }
   protected page(event: PageEvent): void {

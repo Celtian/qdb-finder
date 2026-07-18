@@ -63,6 +63,12 @@
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
 }
+.ratings span.position-attacker,
+.ratings span.position-midfielder,
+.ratings span.position-defender,
+.ratings span.position-goalkeeper {
+  font-size: inherit;
+}
 @media (max-width: 650px) {
   .metric-grid {
     grid-template-columns: repeat(2, 1fr);

@@ -4,6 +4,7 @@ module.exports = {
   packagerConfig: {
     asar: true,
     executableName: 'QDB Finder',
+    icon: 'resources/icons/qdb-finder.ico',
     extraResource: ['resources/database'],
     ignore: [
       /^\/examples/,
@@ -21,7 +22,11 @@ module.exports = {
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
-      config: { name: 'qdb_finder', setupExe: 'QDB-Finder-Setup.exe' },
+      config: {
+        name: 'qdb_finder',
+        setupExe: 'QDB-Finder-Setup.exe',
+        setupIcon: 'resources/icons/qdb-finder.ico',
+      },
     },
     { name: '@electron-forge/maker-zip', platforms: ['win32'] },
   ],

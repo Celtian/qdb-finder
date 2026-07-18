@@ -95,6 +95,14 @@ export interface QdbApi {
   getDatabaseInfo(): Promise<DatabaseInfo>;
 }
 
+export interface QdbWindowApi {
+  minimize(): Promise<void>;
+  toggleMaximize(): Promise<void>;
+  close(): Promise<void>;
+  isMaximized(): Promise<boolean>;
+  onMaximizedChange(listener: (maximized: boolean) => void): () => void;
+}
+
 export const defaultSearchRequest = (): SearchRequest => ({
   text: '',
   versions: [],

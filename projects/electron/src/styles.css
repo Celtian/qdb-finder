@@ -25,3 +25,44 @@ body {
 *::after {
   box-sizing: border-box;
 }
+
+mat-sidenav.filters .mat-drawer-inner-container {
+  overflow-x: hidden;
+}
+
+.position-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.position-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.position-attacker {
+  background: #d7e5ff;
+  color: #003b73;
+}
+
+.position-midfielder {
+  background: #ccebdc;
+  color: #064c35;
+}
+
+.position-defender {
+  background: #ffefb0;
+  color: #594600;
+}
+
+.position-goalkeeper {
+  background: #ffdcc2;
+  color: #713600;
+}

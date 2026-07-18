@@ -1,12 +1,23 @@
+:host {
+  display: block;
+  height: 100%;
+  min-width: 0;
+}
+
 .shell {
-  height: 100vh;
+  height: 100%;
   background: #f7f8fc;
 }
 .filters {
   width: 310px;
-  padding: 1.25rem;
   background: #fff;
   border-right: 1px solid #e2e5ef;
+}
+.filter-content {
+  width: 100%;
+  min-width: 0;
+  padding: 1.25rem;
+  overflow-x: hidden;
 }
 .filter-heading,
 .topbar {
@@ -46,6 +57,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.6rem;
 }
+.range > * {
+  min-width: 0;
+}
 .range label {
   font-size: 0.75rem;
   color: #555;
@@ -57,6 +71,7 @@
   border: 1px solid #abb2c2;
   border-radius: 8px;
   font: inherit;
+  min-width: 0;
 }
 .filter-actions {
   display: flex;
@@ -117,12 +132,9 @@ table {
   padding: 0.5rem 0;
 }
 .rating {
-  display: inline-block;
-  background: #dce9ff;
-  color: #0b438d;
-  border-radius: 999px;
-  padding: 0.25rem 0.55rem;
-  font-weight: 700;
+  min-width: 4.4rem;
+  justify-content: center;
+  white-space: nowrap;
 }
 .state {
   min-height: 420px;

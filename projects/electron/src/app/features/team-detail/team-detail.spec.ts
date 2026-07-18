@@ -22,6 +22,22 @@ const team: TeamDetails = {
   midfield: 80,
   defence: 79,
   foundationYear: 1886,
+  stadium: {
+    key: '23:1',
+    version: 23,
+    stadiumId: 1,
+    name: 'Emirates Stadium',
+    countryId: 14,
+    countryName: 'England',
+    countryCode: 'gb-eng',
+    capacity: 60_704,
+    yearBuilt: 2006,
+    pitchLengthMeters: 105,
+    pitchWidthMeters: 68,
+    isLicensed: true,
+    isSmallSided: false,
+    teamCount: 1,
+  },
   players: [
     {
       key: '23:1',
@@ -52,7 +68,10 @@ describe('TeamDetail', () => {
     await TestBed.configureTestingModule({
       imports: [TeamDetail],
       providers: [
-        provideRouter([{ path: 'players', component: TeamDetail }]),
+        provideRouter([
+          { path: 'players', component: TeamDetail },
+          { path: 'stadiums', component: TeamDetail },
+        ]),
         { provide: MAT_DIALOG_DATA, useValue: team },
         { provide: MatDialogRef, useValue: { close } },
       ],
@@ -73,11 +92,16 @@ describe('TeamDetail', () => {
     expect(element.querySelector('.score-lime')).toBeTruthy();
   });
 
-  it('navigates to the exact team edition players', async () => {
-    const testable = component as unknown as { viewPlayers(): Promise<void> };
+  it('navigates to the exact team edition players and stadium', async () => {
+    const testable = component as unknown as {
+      viewPlayers(): Promise<void>;
+      viewStadium(): Promise<void>;
+    };
     await testable.viewPlayers();
 
     expect(TestBed.inject(Router).url).toBe('/players?version=23&teamId=1');
-    expect(close).toHaveBeenCalledOnce();
+    await testable.viewStadium();
+    expect(TestBed.inject(Router).url).toBe('/stadiums?version=23&teamId=1');
+    expect(close).toHaveBeenCalledTimes(2);
   });
 });

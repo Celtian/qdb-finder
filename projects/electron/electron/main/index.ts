@@ -7,7 +7,11 @@ import type {
   LeagueEditionKey,
   LeagueSearchRequest,
   PlayerEditionKey,
+  RefereeEditionKey,
+  RefereeSearchRequest,
   SearchRequest,
+  StadiumEditionKey,
+  StadiumSearchRequest,
   TeamEditionKey,
   TeamSearchRequest,
 } from '../../src/app/core/qdb-contracts';
@@ -92,6 +96,14 @@ app.whenReady().then(async () => {
     database.searchLeagues(request),
   );
   ipcMain.handle('qdb:league', (_event, key: LeagueEditionKey) => database.getLeague(key));
+  ipcMain.handle('qdb:referees:search', (_event, request: RefereeSearchRequest) =>
+    database.searchReferees(request),
+  );
+  ipcMain.handle('qdb:referee', (_event, key: RefereeEditionKey) => database.getReferee(key));
+  ipcMain.handle('qdb:stadiums:search', (_event, request: StadiumSearchRequest) =>
+    database.searchStadiums(request),
+  );
+  ipcMain.handle('qdb:stadium', (_event, key: StadiumEditionKey) => database.getStadium(key));
   ipcMain.handle('qdb:entity-facets', (_event, request: EntityFacetRequest) =>
     database.suggestEntityFacets(request),
   );

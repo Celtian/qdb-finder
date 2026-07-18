@@ -11,8 +11,16 @@ import type {
   LeagueSearchRequest,
   PlayerDetails,
   PlayerEditionKey,
+  RefereeDetails,
+  RefereeEditionKey,
+  RefereeResultPage,
+  RefereeSearchRequest,
   SearchRequest,
   SearchResultPage,
+  StadiumDetails,
+  StadiumEditionKey,
+  StadiumResultPage,
+  StadiumSearchRequest,
   TeamDetails,
   TeamEditionKey,
   TeamResultPage,
@@ -44,6 +52,18 @@ export class Qdb {
   }
   getLeague(key: LeagueEditionKey): Promise<LeagueDetails> {
     return this.api.getLeague(key);
+  }
+  searchReferees(request: RefereeSearchRequest): Promise<RefereeResultPage> {
+    return this.api.searchReferees(request);
+  }
+  getReferee(key: RefereeEditionKey): Promise<RefereeDetails> {
+    return this.api.getReferee(key);
+  }
+  searchStadiums(request: StadiumSearchRequest): Promise<StadiumResultPage> {
+    return this.api.searchStadiums(request);
+  }
+  getStadium(key: StadiumEditionKey): Promise<StadiumDetails> {
+    return this.api.getStadium(key);
   }
   suggestEntityFacets(request: EntityFacetRequest): Promise<EntityFacetOption[]> {
     return this.api.suggestEntityFacets(request);

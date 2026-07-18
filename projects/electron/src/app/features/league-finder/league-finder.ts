@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { Qdb } from '../../core/qdb';
@@ -24,6 +25,7 @@ import {
   type LeagueEditionRow,
   type LeagueResultPage,
   type LeagueSortField,
+  type RefereeEditionRow,
 } from '../../core/qdb-contracts';
 import { LeagueDetail } from '../league-detail/league-detail';
 
@@ -32,6 +34,16 @@ interface CountryDisplay {
   label: string;
   countryCode?: string;
 }
+
+const validVersion = (value: string | null): number | undefined => {
+  const version = Number(value);
+  return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
+};
+
+const validId = (value: string | null): number | undefined => {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
+};
 
 @Component({
   selector: 'app-league-finder',
@@ -58,11 +70,14 @@ export class LeagueFinder {
   private readonly qdb = inject(Qdb);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private requestSequence = 0;
   private debounceId?: ReturnType<typeof setTimeout>;
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(defaultLeagueSearchRequest());
+  protected readonly request = signal(this.initialRequest());
+  protected readonly contextReferee = signal<RefereeEditionRow | undefined>(undefined);
   protected readonly result = signal<LeagueResultPage>({
     rows: [],
     total: 0,
@@ -89,11 +104,16 @@ export class LeagueFinder {
   protected readonly hasFilters = computed(() => {
     const request = this.request();
     return Boolean(
-      request.text || request.versions.length || request.countryIds.length || request.levels.length,
+      request.text ||
+      request.versions.length ||
+      request.countryIds.length ||
+      request.levels.length ||
+      request.refereeEdition,
     );
   });
 
   constructor() {
+    void this.loadContextReferee();
     effect(() => {
       const text = this.model().text;
       clearTimeout(this.debounceId);
@@ -159,6 +179,8 @@ export class LeagueFinder {
     this.model.set({ text: '' });
     this.request.set(defaultLeagueSearchRequest());
     this.countryLabels.set({});
+    this.contextReferee.set(undefined);
+    void this.router.navigate([], { queryParams: {}, replaceUrl: true });
     void this.search();
   }
 
@@ -210,6 +232,30 @@ export class LeagueFinder {
         this.error.set(error instanceof Error ? error.message : 'League search failed.');
     } finally {
       if (sequence === this.requestSequence) this.loading.set(false);
+    }
+  }
+
+  private initialRequest() {
+    const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
+    const refereeId = validId(this.route.snapshot.queryParamMap.get('refereeId'));
+    return version !== undefined && refereeId !== undefined
+      ? {
+          ...defaultLeagueSearchRequest(),
+          versions: [version],
+          refereeEdition: { version, refereeId },
+        }
+      : defaultLeagueSearchRequest();
+  }
+
+  private async loadContextReferee(): Promise<void> {
+    const edition = this.request().refereeEdition;
+    if (!edition) return;
+    try {
+      const referee = await this.qdb.getReferee(edition);
+      if (referee) this.contextReferee.set(referee);
+      else this.request.update((value) => ({ ...value, refereeEdition: undefined }));
+    } catch {
+      this.request.update((value) => ({ ...value, refereeEdition: undefined }));
     }
   }
 }

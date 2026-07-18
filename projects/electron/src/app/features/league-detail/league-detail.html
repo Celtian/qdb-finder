@@ -61,6 +61,33 @@
       <p class="empty-preview">No linked teams are available for this league edition.</p>
     }
   </section>
+  <section aria-labelledby="league-referees-heading">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Assigned officials</p>
+        <h3 id="league-referees-heading">Referee preview</h3>
+      </div>
+      <span>{{ league.referees.length }} of {{ league.refereeCount }}</span>
+    </div>
+    @if (league.referees.length) {
+      <div class="preview-list">
+        @for (referee of league.referees; track referee.key) {
+          <div class="preview-row">
+            <strong>{{ referee.name }}</strong>
+            <span class="country-with-flag">
+              @if (referee.nationalityCode) {
+                <app-country-flag decorative [code]="referee.nationalityCode" />
+              }
+              <span>{{ referee.nationalityName || 'Unknown nationality' }}</span>
+            </span>
+            <span>{{ referee.age ?? '—' }} years</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-preview">No linked referees are available for this league edition.</p>
+    }
+  </section>
   <mat-expansion-panel>
     <mat-expansion-panel-header
       ><mat-panel-title>Raw league fields</mat-panel-title></mat-expansion-panel-header
@@ -77,6 +104,9 @@
   <button type="button" mat-button mat-dialog-close>Close</button>
   <button type="button" mat-button (click)="viewTeams()">
     <mat-icon>shield</mat-icon>View teams
+  </button>
+  <button type="button" mat-button [disabled]="!league.refereeCount" (click)="viewReferees()">
+    <mat-icon>sports</mat-icon>View referees
   </button>
   <button type="button" mat-flat-button (click)="viewPlayers()">
     <mat-icon>groups</mat-icon>View players

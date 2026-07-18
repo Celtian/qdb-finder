@@ -19,7 +19,7 @@ const pages: Record<string, DocPage> = {
     sections: [
       {
         title: 'Designed for discovery',
-        body: 'Use the responsive home and navigation shell to browse player, team and league editions, then combine edition-specific filters and inspect complete details.',
+        body: 'Use the responsive home and navigation menu to browse player, team, league, referee and stadium editions, then combine edition-specific filters and inspect complete details.',
       },
       {
         title: 'Local by default',
@@ -39,7 +39,7 @@ const pages: Record<string, DocPage> = {
   searching: {
     eyebrow: 'User guide',
     title: 'Searching and filtering',
-    lead: 'Start broad, then narrow player, team and league editions inside SQLite.',
+    lead: 'Start broad, then narrow every supported entity edition inside SQLite.',
     sections: [
       {
         title: 'Players',
@@ -49,6 +49,10 @@ const pages: Record<string, DocPage> = {
         title: 'Teams and leagues',
         body: 'Compare edition-specific squads and ratings or browse leagues by country and tier. Detail dialogs preview related records and link to complete filtered results.',
       },
+      {
+        title: 'Referees and stadiums',
+        body: 'Browse referee assignments, nationalities and historical source fields, or compare stadium capacity, pitch dimensions and linked teams. Exact-edition links preserve the selected FIFA context.',
+      },
     ],
   },
   'supported-data': {
@@ -57,7 +61,7 @@ const pages: Record<string, DocPage> = {
     lead: 'Every supplied table covered by fifatables 0.2.10 is preserved.',
     sections: sections(
       'Verified schemas',
-      '306 files across 25 definitions become typed raw tables. The canonical layer expects 227,572 player editions, 8,907 team editions, 560 league editions and 241,640 team-player links.',
+      '306 files across 25 definitions become typed raw tables. The canonical layer expects 227,572 player editions, 8,907 team editions, 560 league editions, 2,516 referee editions, 1,371 stadium editions, 3,001 referee-league links, 8,890 stadium-team links and 241,640 team-player links.',
     ),
   },
   development: {

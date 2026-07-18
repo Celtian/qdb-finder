@@ -17,20 +17,21 @@ import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
-import { scoreValueClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { Qdb } from '../../core/qdb';
 import {
-  defaultTeamSearchRequest,
+  defaultStadiumSearchRequest,
   type EntityFacetOption,
-  type LeagueEditionRow,
   type StadiumEditionRow,
+  type StadiumResultPage,
+  type StadiumSearchRequest,
+  type StadiumSortField,
   type TeamEditionRow,
-  type TeamResultPage,
-  type TeamSearchRequest,
-  type TeamSortField,
 } from '../../core/qdb-contracts';
-import { TeamDetail } from '../team-detail/team-detail';
+import { StadiumDetail } from '../stadium-detail/stadium-detail';
+
+type StadiumFacet = 'country' | 'team';
+type AvailabilityFilter = 'all' | 'licensed' | 'generic';
 
 interface FilterDisplay {
   key: string;
@@ -38,23 +39,18 @@ interface FilterDisplay {
   countryCode?: string;
 }
 
-type TeamFacet = 'league' | 'country';
-
-interface TeamDisplay extends TeamEditionRow {
-  overallClass: string;
-  attackClass: string;
-  midfieldClass: string;
-  defenceClass: string;
+interface StadiumDisplay extends StadiumEditionRow {
+  pitch: string;
+  licensed: string;
 }
 
-const scoreClass = (value: number | null): string =>
-  value === null ? '' : `score-badge ${scoreValueClass(value)}`;
-const teamDisplay = (row: TeamEditionRow): TeamDisplay => ({
+const stadiumDisplay = (row: StadiumEditionRow): StadiumDisplay => ({
   ...row,
-  overallClass: scoreClass(row.overall),
-  attackClass: scoreClass(row.attack),
-  midfieldClass: scoreClass(row.midfield),
-  defenceClass: scoreClass(row.defence),
+  pitch:
+    row.pitchLengthMeters === null || row.pitchWidthMeters === null
+      ? '—'
+      : `${row.pitchLengthMeters} × ${row.pitchWidthMeters} m`,
+  licensed: row.isLicensed === null ? '—' : row.isLicensed ? 'Yes' : 'No',
 });
 const validVersion = (value: string | null): number | undefined => {
   const version = Number(value);
@@ -66,7 +62,7 @@ const validId = (value: string | null): number | undefined => {
 };
 
 @Component({
-  selector: 'app-team-finder',
+  selector: 'app-stadium-finder',
   imports: [
     FormField,
     CountryFlag,
@@ -83,10 +79,10 @@ const validId = (value: string | null): number | undefined => {
     MatSortModule,
     MatTableModule,
   ],
-  templateUrl: './team-finder.html',
-  styleUrl: './team-finder.css',
+  templateUrl: './stadium-finder.html',
+  styleUrl: './stadium-finder.css',
 })
-export class TeamFinder {
+export class StadiumFinder {
   private readonly qdb = inject(Qdb);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
@@ -97,54 +93,47 @@ export class TeamFinder {
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
   protected readonly request = signal(this.initialRequest());
-  protected readonly result = signal<TeamResultPage>({
+  protected readonly result = signal<StadiumResultPage>({
     rows: [],
     total: 0,
     offset: 0,
     pageSize: 50,
   });
+  protected readonly rows = computed(() => this.result().rows.map(stadiumDisplay));
   protected readonly loading = signal(true);
   protected readonly error = signal('');
-  protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
-  protected readonly contextStadium = signal<StadiumEditionRow | undefined>(undefined);
+  protected readonly contextTeam = signal<TeamEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
     'version',
     'country',
-    'league',
-    'squadSize',
-    'overall',
-    'attack',
-    'midfield',
-    'defence',
+    'teams',
+    'capacity',
+    'built',
+    'pitch',
+    'licensed',
   ];
   protected readonly versions = Array.from({ length: 13 }, (_, index) => 23 - index);
-  protected readonly ratingFilters = [
-    { key: 'overall', label: 'Overall' },
-    { key: 'attack', label: 'Attack' },
-    { key: 'midfield', label: 'Midfield' },
-    { key: 'defence', label: 'Defence' },
-  ] as const;
-  protected readonly suggestions = signal<Record<'league' | 'country', EntityFacetOption[]>>({
-    league: [],
+  protected readonly availability = signal<AvailabilityFilter>('all');
+  protected readonly suggestions = signal<Record<StadiumFacet, EntityFacetOption[]>>({
     country: [],
+    team: [],
   });
-  protected readonly labels = signal<Record<'league' | 'country', Record<string, FilterDisplay>>>({
-    league: {},
+  protected readonly labels = signal<Record<StadiumFacet, Record<string, FilterDisplay>>>({
     country: {},
+    team: {},
   });
-  protected readonly selectedLeagues = computed(() =>
-    this.request().leagueKeys.map(
-      (key): FilterDisplay => this.labels().league[key] ?? { key, label: key },
-    ),
-  );
   protected readonly selectedCountries = computed(() =>
     this.request().countryIds.map((id): FilterDisplay => {
       const key = String(id);
       return this.labels().country[key] ?? { key, label: key };
     }),
   );
-  protected readonly rows = computed(() => this.result().rows.map(teamDisplay));
+  protected readonly selectedTeams = computed(() =>
+    this.request().teamKeys.map(
+      (key): FilterDisplay => this.labels().team[key] ?? { key, label: key },
+    ),
+  );
   protected readonly isNarrow = toSignal(
     this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
     { initialValue: false },
@@ -154,14 +143,11 @@ export class TeamFinder {
     return Boolean(
       request.text ||
       request.versions.length ||
-      request.leagueKeys.length ||
       request.countryIds.length ||
-      request.leagueEdition ||
-      request.stadiumEdition ||
-      Object.keys(request.overall).length ||
-      Object.keys(request.attack).length ||
-      Object.keys(request.midfield).length ||
-      Object.keys(request.defence).length,
+      request.teamKeys.length ||
+      request.teamEdition ||
+      request.isLicensed !== undefined ||
+      Object.keys(request.capacity).length,
     );
   });
 
@@ -174,10 +160,8 @@ export class TeamFinder {
         void this.search();
       }, 250);
     });
-    const context = this.request().leagueEdition;
-    if (context) void this.loadContextLeague(context);
-    const stadiumContext = this.request().stadiumEdition;
-    if (stadiumContext) void this.loadContextStadium(stadiumContext);
+    const context = this.request().teamEdition;
+    if (context) void this.loadContextTeam(context);
   }
 
   protected setVersions(versions: number[]): void {
@@ -185,38 +169,46 @@ export class TeamFinder {
     void this.search();
   }
 
-  protected setRange(
-    kind: 'overall' | 'attack' | 'midfield' | 'defence',
-    boundary: 'min' | 'max',
-    event: Event,
-  ): void {
+  protected setCapacity(boundary: 'min' | 'max', event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
-    const number = raw === '' ? undefined : Number(raw);
     this.request.update((value) => ({
       ...value,
-      [kind]: { ...value[kind], [boundary]: number },
+      capacity: { ...value.capacity, [boundary]: raw === '' ? undefined : Number(raw) },
       offset: 0,
     }));
     void this.search();
   }
 
-  protected async suggest(facet: TeamFacet, event: Event): Promise<void> {
-    const text = (event.target as HTMLInputElement).value;
+  protected setAvailability(value: AvailabilityFilter): void {
+    this.availability.set(value);
+    this.request.update((request) => ({
+      ...request,
+      isLicensed: value === 'all' ? undefined : value === 'licensed',
+      offset: 0,
+    }));
+    void this.search();
+  }
+
+  protected async suggest(facet: StadiumFacet, event: Event): Promise<void> {
     const options = await this.qdb.suggestEntityFacets({
-      entity: 'team',
+      entity: 'stadium',
       facet,
-      text,
+      text: (event.target as HTMLInputElement).value,
       versions: this.request().versions,
       limit: 20,
     });
     this.suggestions.update((value) => ({ ...value, [facet]: options }));
   }
 
-  protected addFacet(facet: TeamFacet, option: EntityFacetOption, input: HTMLInputElement): void {
-    if (facet === 'league')
+  protected addFacet(
+    facet: StadiumFacet,
+    option: EntityFacetOption,
+    input: HTMLInputElement,
+  ): void {
+    if (facet === 'team')
       this.request.update((value) => ({
         ...value,
-        leagueKeys: [...new Set([...value.leagueKeys, option.key])],
+        teamKeys: [...new Set([...value.teamKeys, option.key])],
         offset: 0,
       }));
     else if (option.id !== undefined) {
@@ -231,22 +223,18 @@ export class TeamFinder {
       ...value,
       [facet]: {
         ...value[facet],
-        [option.key]: {
-          key: option.key,
-          label: option.label,
-          countryCode: option.countryCode,
-        },
+        [option.key]: { key: option.key, label: option.label, countryCode: option.countryCode },
       },
     }));
     input.value = '';
     void this.search();
   }
 
-  protected removeFacet(facet: TeamFacet, key: string): void {
-    if (facet === 'league')
+  protected removeFacet(facet: StadiumFacet, key: string): void {
+    if (facet === 'team')
       this.request.update((value) => ({
         ...value,
-        leagueKeys: value.leagueKeys.filter((item) => item !== key),
+        teamKeys: value.teamKeys.filter((item) => item !== key),
         offset: 0,
       }));
     else
@@ -260,10 +248,10 @@ export class TeamFinder {
 
   protected clearFilters(): void {
     this.model.set({ text: '' });
-    this.request.set(defaultTeamSearchRequest());
-    this.labels.set({ league: {}, country: {} });
-    this.contextLeague.set(undefined);
-    this.contextStadium.set(undefined);
+    this.request.set(defaultStadiumSearchRequest());
+    this.labels.set({ country: {}, team: {} });
+    this.availability.set('all');
+    this.contextTeam.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
@@ -271,7 +259,6 @@ export class TeamFinder {
   protected retrySearch(): void {
     void this.search();
   }
-
   protected page(event: PageEvent): void {
     this.request.update((value) => ({
       ...value,
@@ -280,23 +267,21 @@ export class TeamFinder {
     }));
     void this.search();
   }
-
   protected sort(event: Sort): void {
+    if (!event.direction) return;
     const direction = event.direction;
-    if (!direction) return;
     this.request.update((value) => ({
       ...value,
-      sort: event.active as TeamSortField,
+      sort: event.active as StadiumSortField,
       direction,
       offset: 0,
     }));
     void this.search();
   }
-
-  protected async openTeam(row: TeamEditionRow): Promise<void> {
-    const team = await this.qdb.getTeam(row);
-    this.dialog.open(TeamDetail, {
-      data: team,
+  protected async openStadium(row: StadiumEditionRow): Promise<void> {
+    const stadium = await this.qdb.getStadium(row);
+    this.dialog.open(StadiumDetail, {
+      data: stadium,
       width: '900px',
       maxWidth: '96vw',
       maxHeight: '92vh',
@@ -304,44 +289,31 @@ export class TeamFinder {
     });
   }
 
-  private initialRequest(): TeamSearchRequest {
-    const request = defaultTeamSearchRequest();
+  private initialRequest(): StadiumSearchRequest {
+    const request = defaultStadiumSearchRequest();
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
-    const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
-    const stadiumId = validId(this.route.snapshot.queryParamMap.get('stadiumId'));
-    if (!version || Boolean(leagueId) === Boolean(stadiumId)) return request;
-    if (leagueId) return { ...request, versions: [version], leagueEdition: { version, leagueId } };
-    if (stadiumId)
-      return { ...request, versions: [version], stadiumEdition: { version, stadiumId } };
-    return request;
+    const teamId = validId(this.route.snapshot.queryParamMap.get('teamId'));
+    return version && teamId
+      ? { ...request, versions: [version], teamEdition: { version, teamId } }
+      : request;
   }
-
-  private async loadContextLeague(key: { version: number; leagueId: number }): Promise<void> {
+  private async loadContextTeam(key: { version: number; teamId: number }): Promise<void> {
     try {
-      this.contextLeague.set(await this.qdb.getLeague(key));
+      this.contextTeam.set(await this.qdb.getTeam(key));
     } catch {
-      this.request.update((value) => ({ ...value, leagueEdition: undefined }));
+      this.request.update((value) => ({ ...value, teamEdition: undefined }));
     }
   }
-
-  private async loadContextStadium(key: { version: number; stadiumId: number }): Promise<void> {
-    try {
-      this.contextStadium.set(await this.qdb.getStadium(key));
-    } catch {
-      this.request.update((value) => ({ ...value, stadiumEdition: undefined }));
-    }
-  }
-
   private async search(): Promise<void> {
     const sequence = ++this.requestSequence;
     this.loading.set(true);
     this.error.set('');
     try {
-      const result = await this.qdb.searchTeams(this.request());
+      const result = await this.qdb.searchStadiums(this.request());
       if (sequence === this.requestSequence) this.result.set(result);
     } catch (error) {
       if (sequence === this.requestSequence)
-        this.error.set(error instanceof Error ? error.message : 'Team search failed.');
+        this.error.set(error instanceof Error ? error.message : 'Stadium search failed.');
     } finally {
       if (sequence === this.requestSequence) this.loading.set(false);
     }

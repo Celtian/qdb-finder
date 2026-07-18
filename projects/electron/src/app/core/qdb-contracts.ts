@@ -16,6 +16,20 @@ export type LeagueSortField =
   | 'level'
   | 'teamCount'
   | 'playerCount';
+export type RefereeSortField =
+  | 'name'
+  | 'version'
+  | 'nationality'
+  | 'age'
+  | 'height'
+  | 'leagueCount';
+export type StadiumSortField =
+  | 'name'
+  | 'version'
+  | 'country'
+  | 'capacity'
+  | 'yearBuilt'
+  | 'teamCount';
 
 export interface NumberRange {
   min?: number;
@@ -55,6 +69,16 @@ export interface LeagueEditionKey {
   leagueId: number;
 }
 
+export interface RefereeEditionKey {
+  version: number;
+  refereeId: number;
+}
+
+export interface StadiumEditionKey {
+  version: number;
+  stadiumId: number;
+}
+
 export interface PlayerSearchRow extends PlayerEditionKey {
   key: string;
   name: string;
@@ -91,6 +115,7 @@ export interface TeamSearchRequest {
   sort: TeamSortField;
   direction: SortDirection;
   leagueEdition?: LeagueEditionKey;
+  stadiumEdition?: StadiumEditionKey;
 }
 
 export interface TeamEditionRow extends TeamEditionKey {
@@ -112,6 +137,7 @@ export interface TeamEditionRow extends TeamEditionKey {
 
 export interface TeamDetails extends TeamEditionRow {
   players: PlayerSearchRow[];
+  stadium: StadiumEditionRow | null;
   raw: Record<string, string | number>;
 }
 
@@ -131,6 +157,7 @@ export interface LeagueSearchRequest {
   offset: number;
   sort: LeagueSortField;
   direction: SortDirection;
+  refereeEdition?: RefereeEditionKey;
 }
 
 export interface LeagueEditionRow extends LeagueEditionKey {
@@ -147,11 +174,99 @@ export interface LeagueEditionRow extends LeagueEditionKey {
 
 export interface LeagueDetails extends LeagueEditionRow {
   teams: TeamEditionRow[];
+  referees: RefereeEditionRow[];
+  refereeCount: number;
   raw: Record<string, string | number>;
 }
 
 export interface LeagueResultPage {
   rows: LeagueEditionRow[];
+  total: number;
+  offset: number;
+  pageSize: number;
+}
+
+export interface RefereeSearchRequest {
+  text: string;
+  versions: number[];
+  nationalityIds: number[];
+  leagueKeys: string[];
+  age: NumberRange;
+  isReal?: boolean;
+  pageSize: number;
+  offset: number;
+  sort: RefereeSortField;
+  direction: SortDirection;
+  leagueEdition?: LeagueEditionKey;
+}
+
+export interface RefereeEditionRow extends RefereeEditionKey {
+  key: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  nationalityId: number;
+  nationalityName: string;
+  nationalityCode: string;
+  birthDate: string | null;
+  age: number | null;
+  height: number | null;
+  weight: number | null;
+  foulStrictness: number | null;
+  cardStrictness: number | null;
+  isReal: boolean | null;
+  leagues: string[];
+  leagueCount: number;
+}
+
+export interface RefereeDetails extends RefereeEditionRow {
+  leaguesPreview: LeagueEditionRow[];
+  raw: Record<string, string | number>;
+}
+
+export interface RefereeResultPage {
+  rows: RefereeEditionRow[];
+  total: number;
+  offset: number;
+  pageSize: number;
+}
+
+export interface StadiumSearchRequest {
+  text: string;
+  versions: number[];
+  countryIds: number[];
+  teamKeys: string[];
+  capacity: NumberRange;
+  isLicensed?: boolean;
+  pageSize: number;
+  offset: number;
+  sort: StadiumSortField;
+  direction: SortDirection;
+  teamEdition?: TeamEditionKey;
+}
+
+export interface StadiumEditionRow extends StadiumEditionKey {
+  key: string;
+  name: string;
+  countryId: number | null;
+  countryName: string;
+  countryCode: string;
+  capacity: number;
+  yearBuilt: number | null;
+  pitchLengthMeters: number | null;
+  pitchWidthMeters: number | null;
+  isLicensed: boolean | null;
+  isSmallSided: boolean | null;
+  teamCount: number;
+}
+
+export interface StadiumDetails extends StadiumEditionRow {
+  teams: TeamEditionRow[];
+  raw: Record<string, string | number>;
+}
+
+export interface StadiumResultPage {
+  rows: StadiumEditionRow[];
   total: number;
   offset: number;
   pageSize: number;
@@ -190,10 +305,10 @@ export interface FilterSuggestion {
   nationalityCode?: string;
 }
 
-export type EntityFacet = 'league' | 'country';
+export type EntityFacet = 'league' | 'country' | 'nationality' | 'team';
 
 export interface EntityFacetRequest {
-  entity: 'team' | 'league';
+  entity: 'team' | 'league' | 'referee' | 'stadium';
   facet: EntityFacet;
   text: string;
   versions: number[];
@@ -212,6 +327,8 @@ export interface DatabaseInfo {
   editions: number;
   teamEditions: number;
   leagueEditions: number;
+  refereeEditions: number;
+  stadiumEditions: number;
   teamLinks: number;
   sourceFiles: number;
   versions: number[];
@@ -226,6 +343,10 @@ export interface QdbApi {
   getTeam(key: TeamEditionKey): Promise<TeamDetails>;
   searchLeagues(request: LeagueSearchRequest): Promise<LeagueResultPage>;
   getLeague(key: LeagueEditionKey): Promise<LeagueDetails>;
+  searchReferees(request: RefereeSearchRequest): Promise<RefereeResultPage>;
+  getReferee(key: RefereeEditionKey): Promise<RefereeDetails>;
+  searchStadiums(request: StadiumSearchRequest): Promise<StadiumResultPage>;
+  getStadium(key: StadiumEditionKey): Promise<StadiumDetails>;
   suggestEntityFacets(request: EntityFacetRequest): Promise<EntityFacetOption[]>;
   suggestFilters(request: FilterSuggestionRequest): Promise<FilterSuggestion[]>;
   getDatabaseInfo(): Promise<DatabaseInfo>;
@@ -276,6 +397,30 @@ export const defaultLeagueSearchRequest = (): LeagueSearchRequest => ({
   versions: [],
   countryIds: [],
   levels: [],
+  pageSize: 50,
+  offset: 0,
+  sort: 'version',
+  direction: 'desc',
+});
+
+export const defaultRefereeSearchRequest = (): RefereeSearchRequest => ({
+  text: '',
+  versions: [],
+  nationalityIds: [],
+  leagueKeys: [],
+  age: {},
+  pageSize: 50,
+  offset: 0,
+  sort: 'version',
+  direction: 'desc',
+});
+
+export const defaultStadiumSearchRequest = (): StadiumSearchRequest => ({
+  text: '',
+  versions: [],
+  countryIds: [],
+  teamKeys: [],
+  capacity: {},
   pageSize: 50,
   offset: 0,
   sort: 'version',

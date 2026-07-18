@@ -11,6 +11,10 @@ describe('Qdb', () => {
     getTeam: vi.fn(),
     searchLeagues: vi.fn(),
     getLeague: vi.fn(),
+    searchReferees: vi.fn(),
+    getReferee: vi.fn(),
+    searchStadiums: vi.fn(),
+    getStadium: vi.fn(),
     suggestEntityFacets: vi.fn(),
     suggestFilters: vi.fn(),
     getDatabaseInfo: vi.fn(),
@@ -56,6 +60,32 @@ describe('Qdb', () => {
     void service.getTeam({ version: 23, teamId: 1 });
     void service.searchLeagues(leagueRequest);
     void service.getLeague({ version: 23, leagueId: 13 });
+    const refereeRequest = {
+      text: '',
+      versions: [],
+      nationalityIds: [],
+      leagueKeys: [],
+      age: {},
+      pageSize: 50,
+      offset: 0,
+      sort: 'version' as const,
+      direction: 'desc' as const,
+    };
+    const stadiumRequest = {
+      text: '',
+      versions: [],
+      countryIds: [],
+      teamKeys: [],
+      capacity: {},
+      pageSize: 50,
+      offset: 0,
+      sort: 'version' as const,
+      direction: 'desc' as const,
+    };
+    void service.searchReferees(refereeRequest);
+    void service.getReferee({ version: 23, refereeId: 188446 });
+    void service.searchStadiums(stadiumRequest);
+    void service.getStadium({ version: 23, stadiumId: 1 });
     void service.suggestEntityFacets({
       entity: 'team',
       facet: 'country',
@@ -67,6 +97,10 @@ describe('Qdb', () => {
     expect(api.getTeam).toHaveBeenCalledWith({ version: 23, teamId: 1 });
     expect(api.searchLeagues).toHaveBeenCalledWith(leagueRequest);
     expect(api.getLeague).toHaveBeenCalledWith({ version: 23, leagueId: 13 });
+    expect(api.searchReferees).toHaveBeenCalledWith(refereeRequest);
+    expect(api.getReferee).toHaveBeenCalledWith({ version: 23, refereeId: 188446 });
+    expect(api.searchStadiums).toHaveBeenCalledWith(stadiumRequest);
+    expect(api.getStadium).toHaveBeenCalledWith({ version: 23, stadiumId: 1 });
     expect(api.suggestEntityFacets).toHaveBeenCalledOnce();
   });
 });

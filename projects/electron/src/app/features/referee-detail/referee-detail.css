@@ -1,0 +1,5 @@
+@import '../entity-detail.css';
+
+.preview-row.league-row {
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.8fr) auto;
+}

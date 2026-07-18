@@ -51,4 +51,11 @@ export class TeamDetail {
     });
     this.dialog.close();
   }
+
+  protected async viewStadium(): Promise<void> {
+    await this.router.navigate(['/stadiums'], {
+      queryParams: { version: this.team.version, teamId: this.team.teamId },
+    });
+    this.dialog.close();
+  }
 }

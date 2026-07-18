@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type { TeamSearchRequest } from '../../core/qdb-contracts';
@@ -50,5 +51,41 @@ describe('TeamFinder', () => {
     await fixture.whenStable();
 
     expect(searchTeams).toHaveBeenCalledWith(expect.objectContaining({ overall: { min: 80 } }));
+  });
+});
+
+describe('TeamFinder stadium contextual routing', () => {
+  it('applies and identifies an exact stadium edition', async () => {
+    const searchTeams = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
+    const getStadium = vi.fn(async () => ({ version: 23, stadiumId: 1, name: 'Old Trafford' }));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'teams', component: TeamFinder }]),
+        {
+          provide: Qdb,
+          useValue: {
+            searchTeams,
+            getTeam: vi.fn(),
+            getLeague: vi.fn(),
+            getStadium,
+            suggestEntityFacets: vi.fn(async () => []),
+          },
+        },
+      ],
+    });
+    const harness = await RouterTestingHarness.create();
+
+    const component = await harness.navigateByUrl('/teams?version=23&stadiumId=1', TeamFinder);
+    (component as unknown as { retrySearch(): void }).retrySearch();
+    await harness.fixture.whenStable();
+
+    expect(getStadium).toHaveBeenCalledWith({ version: 23, stadiumId: 1 });
+    expect(searchTeams).toHaveBeenCalledWith(
+      expect.objectContaining({
+        versions: [23],
+        stadiumEdition: { version: 23, stadiumId: 1 },
+      }),
+    );
+    expect(harness.routeNativeElement?.textContent).toContain('Old Trafford');
   });
 });

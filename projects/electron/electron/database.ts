@@ -13,8 +13,18 @@ import type {
   PlayerDetails,
   PlayerEditionKey,
   PlayerSearchRow,
+  RefereeDetails,
+  RefereeEditionKey,
+  RefereeEditionRow,
+  RefereeResultPage,
+  RefereeSearchRequest,
   SearchRequest,
   SearchResultPage,
+  StadiumDetails,
+  StadiumEditionKey,
+  StadiumEditionRow,
+  StadiumResultPage,
+  StadiumSearchRequest,
   TeamDetails,
   TeamEditionKey,
   TeamEditionRow,
@@ -50,12 +60,30 @@ const leagueSortColumns: Record<LeagueSearchRequest['sort'], string> = {
   teamCount: 'l.team_count',
   playerCount: 'l.player_count',
 };
+const refereeSortColumns: Record<RefereeSearchRequest['sort'], string> = {
+  name: 'r.referee_name COLLATE NOCASE',
+  version: 'r.version',
+  nationality: 'r.nationality_name COLLATE NOCASE',
+  age: 'r.age',
+  height: 'r.height',
+  leagueCount: 'r.league_count',
+};
+const stadiumSortColumns: Record<StadiumSearchRequest['sort'], string> = {
+  name: 's.stadium_name COLLATE NOCASE',
+  version: 's.version',
+  country: 's.country_name COLLATE NOCASE',
+  capacity: 's.capacity',
+  yearBuilt: 's.year_built',
+  teamCount: 's.team_count',
+};
 
 const parseList = (value: string | null): string[] =>
   value ? value.split('|').filter(Boolean) : [];
 const parseObject = <T>(value: string | null): T => JSON.parse(value ?? '{}') as T;
 const nullableNumber = (value: string | number | null): number | null =>
   value === null ? null : Number(value);
+const nullableBoolean = (value: string | number | null): boolean | null =>
+  value === null ? null : Boolean(Number(value));
 const normalizeSearchText = (value: string): string =>
   value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase('en').trim();
 const likeValue = (value: string): string =>
@@ -135,6 +163,12 @@ export class PlayerDatabase {
       where.push('t.version = ? AND t.league_id = ?');
       values.push(request.leagueEdition.version, request.leagueEdition.leagueId);
     }
+    if (request.stadiumEdition) {
+      where.push(
+        'EXISTS (SELECT 1 FROM stadium_team st WHERE st.version = t.version AND st.version = ? AND st.stadium_id = ? AND st.team_id = t.team_id)',
+      );
+      values.push(request.stadiumEdition.version, request.stadiumEdition.stadiumId);
+    }
     const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const total = Number(
       (
@@ -176,9 +210,16 @@ export class PlayerDatabase {
          LIMIT 10`,
       )
       .all(key.version, key.teamId) as Row[];
+    const stadium = this.database
+      .prepare(
+        `SELECT s.* FROM stadium_edition s JOIN stadium_team st ON st.stadium_key = s.key
+         WHERE st.version = ? AND st.team_id = ? ORDER BY s.stadium_name ASC LIMIT 1`,
+      )
+      .get(key.version, key.teamId) as Row | undefined;
     return {
       ...this.toTeamRow(row),
       players: players.map((player) => this.toSearchRow(player)),
+      stadium: stadium ? this.toStadiumRow(stadium) : null,
       raw: parseObject<Record<string, string | number>>(String(row['raw_json'])),
     };
   }
@@ -193,6 +234,12 @@ export class PlayerDatabase {
     this.addListFilter('l.version', request.versions, where, values);
     this.addListFilter('l.country_id', request.countryIds, where, values);
     this.addListFilter('l.level', request.levels, where, values);
+    if (request.refereeEdition) {
+      where.push(
+        'EXISTS (SELECT 1 FROM referee_league rl WHERE rl.version = l.version AND rl.version = ? AND rl.referee_id = ? AND rl.league_id = l.league_id)',
+      );
+      values.push(request.refereeEdition.version, request.refereeEdition.refereeId);
+    }
     const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const total = Number(
       (
@@ -226,21 +273,201 @@ export class PlayerDatabase {
          ORDER BY overall IS NULL, overall DESC, team_name ASC LIMIT 10`,
       )
       .all(key.version, key.leagueId) as Row[];
+    const referees = this.database
+      .prepare(
+        `SELECT r.*, group_concat(DISTINCT all_rl.league_name) AS league_names
+         FROM referee_edition r
+         JOIN referee_league selected ON selected.referee_key = r.key
+         LEFT JOIN referee_league all_rl ON all_rl.referee_key = r.key
+         WHERE selected.version = ? AND selected.league_id = ?
+         GROUP BY r.key ORDER BY r.referee_name ASC LIMIT 10`,
+      )
+      .all(key.version, key.leagueId) as Row[];
+    const refereeCount = Number(
+      (
+        this.database
+          .prepare(
+            'SELECT count(*) AS total FROM referee_league WHERE version = ? AND league_id = ?',
+          )
+          .get(key.version, key.leagueId) as Row
+      )['total'],
+    );
     return {
       ...this.toLeagueRow(row),
+      teams: teams.map((team) => this.toTeamRow(team)),
+      referees: referees.map((referee) => this.toRefereeRow(referee)),
+      refereeCount,
+      raw: parseObject<Record<string, string | number>>(String(row['raw_json'])),
+    };
+  }
+
+  searchReferees(request: RefereeSearchRequest): RefereeResultPage {
+    const where: string[] = [];
+    const values: SQLInputValue[] = [];
+    if (request.text.trim()) {
+      where.push("r.referee_key LIKE ? ESCAPE '\\'");
+      values.push(likeValue(request.text));
+    }
+    this.addListFilter('r.version', request.versions, where, values);
+    this.addListFilter('r.nationality_id', request.nationalityIds, where, values);
+    this.addRange('r.age', request.age, where, values);
+    if (request.isReal !== undefined) {
+      where.push('r.is_real = ?');
+      values.push(Number(request.isReal));
+    }
+    if (request.leagueKeys.length) {
+      where.push(
+        `EXISTS (SELECT 1 FROM referee_league filter WHERE filter.referee_key = r.key AND filter.league_key IN (${request.leagueKeys.map(() => '?').join(',')}))`,
+      );
+      values.push(...request.leagueKeys);
+    }
+    if (request.leagueEdition) {
+      where.push(
+        'EXISTS (SELECT 1 FROM referee_league exact WHERE exact.referee_key = r.key AND exact.version = ? AND exact.league_id = ?)',
+      );
+      values.push(request.leagueEdition.version, request.leagueEdition.leagueId);
+    }
+    const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const total = Number(
+      (
+        this.database
+          .prepare(`SELECT count(*) AS total FROM referee_edition r ${clause}`)
+          .get(...values) as Row
+      )['total'],
+    );
+    const pageSize = Math.min(Math.max(request.pageSize, 1), 200);
+    const offset = Math.max(request.offset, 0);
+    const direction = request.direction === 'asc' ? 'ASC' : 'DESC';
+    const rows = this.database
+      .prepare(
+        `SELECT r.*, group_concat(DISTINCT rl.league_name) AS league_names
+         FROM referee_edition r LEFT JOIN referee_league rl ON rl.referee_key = r.key
+         ${clause} GROUP BY r.key
+         ORDER BY ${refereeSortColumns[request.sort]} ${direction}, r.referee_name ASC, r.key ASC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(...values, pageSize, offset) as Row[];
+    return { rows: rows.map((row) => this.toRefereeRow(row)), total, offset, pageSize };
+  }
+
+  getReferee(key: RefereeEditionKey): RefereeDetails {
+    const row = this.database
+      .prepare(
+        `SELECT r.*, group_concat(DISTINCT rl.league_name) AS league_names
+         FROM referee_edition r LEFT JOIN referee_league rl ON rl.referee_key = r.key
+         WHERE r.version = ? AND r.referee_id = ? GROUP BY r.key`,
+      )
+      .get(key.version, key.refereeId) as Row | undefined;
+    if (!row) throw new Error('Referee edition was not found.');
+    const leagues = this.database
+      .prepare(
+        `SELECT l.* FROM league_edition l JOIN referee_league rl
+         ON rl.version = l.version AND rl.league_id = l.league_id
+         WHERE rl.version = ? AND rl.referee_id = ? ORDER BY l.league_name ASC`,
+      )
+      .all(key.version, key.refereeId) as Row[];
+    return {
+      ...this.toRefereeRow(row),
+      leaguesPreview: leagues.map((league) => this.toLeagueRow(league)),
+      raw: parseObject<Record<string, string | number>>(String(row['raw_json'])),
+    };
+  }
+
+  searchStadiums(request: StadiumSearchRequest): StadiumResultPage {
+    const where: string[] = [];
+    const values: SQLInputValue[] = [];
+    if (request.text.trim()) {
+      where.push("s.stadium_key LIKE ? ESCAPE '\\'");
+      values.push(likeValue(request.text));
+    }
+    this.addListFilter('s.version', request.versions, where, values);
+    this.addListFilter('s.country_id', request.countryIds, where, values);
+    this.addRange('s.capacity', request.capacity, where, values);
+    if (request.isLicensed !== undefined) {
+      where.push('s.is_licensed = ?');
+      values.push(Number(request.isLicensed));
+    }
+    if (request.teamKeys.length) {
+      where.push(
+        `EXISTS (SELECT 1 FROM stadium_team filter WHERE filter.stadium_key = s.key AND filter.team_key IN (${request.teamKeys.map(() => '?').join(',')}))`,
+      );
+      values.push(...request.teamKeys);
+    }
+    if (request.teamEdition) {
+      where.push(
+        'EXISTS (SELECT 1 FROM stadium_team exact WHERE exact.stadium_key = s.key AND exact.version = ? AND exact.team_id = ?)',
+      );
+      values.push(request.teamEdition.version, request.teamEdition.teamId);
+    }
+    const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const total = Number(
+      (
+        this.database
+          .prepare(`SELECT count(*) AS total FROM stadium_edition s ${clause}`)
+          .get(...values) as Row
+      )['total'],
+    );
+    const pageSize = Math.min(Math.max(request.pageSize, 1), 200);
+    const offset = Math.max(request.offset, 0);
+    const direction = request.direction === 'asc' ? 'ASC' : 'DESC';
+    const rows = this.database
+      .prepare(
+        `SELECT * FROM stadium_edition s ${clause}
+         ORDER BY ${stadiumSortColumns[request.sort]} ${direction}, s.stadium_name ASC, s.key ASC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(...values, pageSize, offset) as Row[];
+    return { rows: rows.map((row) => this.toStadiumRow(row)), total, offset, pageSize };
+  }
+
+  getStadium(key: StadiumEditionKey): StadiumDetails {
+    const row = this.database
+      .prepare('SELECT * FROM stadium_edition WHERE version = ? AND stadium_id = ?')
+      .get(key.version, key.stadiumId) as Row | undefined;
+    if (!row) throw new Error('Stadium edition was not found.');
+    const teams = this.database
+      .prepare(
+        `SELECT t.* FROM team_edition t JOIN stadium_team st
+         ON st.version = t.version AND st.team_id = t.team_id
+         WHERE st.version = ? AND st.stadium_id = ?
+         ORDER BY t.overall IS NULL, t.overall DESC, t.team_name ASC LIMIT 10`,
+      )
+      .all(key.version, key.stadiumId) as Row[];
+    return {
+      ...this.toStadiumRow(row),
       teams: teams.map((team) => this.toTeamRow(team)),
       raw: parseObject<Record<string, string | number>>(String(row['raw_json'])),
     };
   }
 
   suggestEntityFacets(request: EntityFacetRequest): EntityFacetOption[] {
-    if (request.entity === 'league' && request.facet === 'league') return [];
-    const table = request.entity === 'team' ? 'team_edition' : 'league_edition';
-    const alias = request.entity === 'team' ? 't' : 'l';
-    const isCountry = request.facet === 'country';
-    const key = isCountry ? 'country_id' : 'league_key';
-    const label = isCountry ? 'country_name' : 'league_name';
-    const code = isCountry ? `max(${alias}.country_code)` : "''";
+    const sources = {
+      'team:country': ['team_edition', 't', 'country_id', 'country_name', 'country_code', true],
+      'team:league': ['team_edition', 't', 'league_key', 'league_name', '', false],
+      'league:country': ['league_edition', 'l', 'country_id', 'country_name', 'country_code', true],
+      'referee:nationality': [
+        'referee_edition',
+        'r',
+        'nationality_id',
+        'nationality_name',
+        'nationality_code',
+        true,
+      ],
+      'referee:league': ['referee_league', 'rl', 'league_key', 'league_name', '', false],
+      'stadium:country': [
+        'stadium_edition',
+        's',
+        'country_id',
+        'country_name',
+        'country_code',
+        true,
+      ],
+      'stadium:team': ['stadium_team', 'st', 'team_key', 'team_name', '', false],
+    } as const;
+    const source = sources[`${request.entity}:${request.facet}` as keyof typeof sources];
+    if (!source) return [];
+    const [table, alias, key, label, codeColumn, hasNumericId] = source;
+    const code = codeColumn ? `max(${alias}.${codeColumn})` : "''";
     const values: SQLInputValue[] = [];
     const where = [
       `${alias}.${key} IS NOT NULL`,
@@ -269,7 +496,7 @@ export class PlayerDatabase {
       key: String(facet['key']),
       label: String(facet['label']),
       count: Number(facet['count']),
-      id: isCountry ? Number(facet['key']) : undefined,
+      id: hasNumericId ? Number(facet['key']) : undefined,
       countryCode: String(facet['country_code'] ?? ''),
     }));
   }
@@ -356,6 +583,8 @@ export class PlayerDatabase {
       editions: Number(metadata['player_editions'] ?? 0),
       teamEditions: Number(metadata['team_editions'] ?? 0),
       leagueEditions: Number(metadata['league_editions'] ?? 0),
+      refereeEditions: Number(metadata['referee_editions'] ?? 0),
+      stadiumEditions: Number(metadata['stadium_editions'] ?? 0),
       teamLinks: Number(metadata['team_player_links'] ?? 0),
       sourceFiles: Number(metadata['source_files'] ?? 0),
       versions: String(metadata['versions'] ?? '')
@@ -426,6 +655,52 @@ export class PlayerDatabase {
       isWomen: row['is_women'] === null ? null : Boolean(row['is_women']),
       teamCount: Number(row['team_count']),
       playerCount: Number(row['player_count']),
+    };
+  }
+
+  private toRefereeRow(row: Row): RefereeEditionRow {
+    return {
+      key: String(row['key']),
+      version: Number(row['version']),
+      refereeId: Number(row['referee_id']),
+      name: String(row['referee_name']),
+      firstName: String(row['first_name']),
+      lastName: String(row['last_name']),
+      nationalityId: Number(row['nationality_id']),
+      nationalityName: String(row['nationality_name'] ?? ''),
+      nationalityCode: String(row['nationality_code'] ?? ''),
+      birthDate: row['birth_date'] === null ? null : String(row['birth_date']),
+      age: nullableNumber(row['age']),
+      height: nullableNumber(row['height']),
+      weight: nullableNumber(row['weight']),
+      foulStrictness: nullableNumber(row['foul_strictness']),
+      cardStrictness: nullableNumber(row['card_strictness']),
+      isReal: nullableBoolean(row['is_real']),
+      leagues: parseList(
+        row['league_names'] === null ? null : String(row['league_names']).replaceAll(',', '|'),
+      ),
+      leagueCount: Number(row['league_count']),
+    };
+  }
+
+  private toStadiumRow(row: Row): StadiumEditionRow {
+    const pitchLength = nullableNumber(row['pitch_length']);
+    const pitchWidth = nullableNumber(row['pitch_width']);
+    return {
+      key: String(row['key']),
+      version: Number(row['version']),
+      stadiumId: Number(row['stadium_id']),
+      name: String(row['stadium_name']),
+      countryId: nullableNumber(row['country_id']),
+      countryName: String(row['country_name'] ?? ''),
+      countryCode: String(row['country_code'] ?? ''),
+      capacity: Number(row['capacity']),
+      yearBuilt: nullableNumber(row['year_built']),
+      pitchLengthMeters: pitchLength === null ? null : pitchLength / 100,
+      pitchWidthMeters: pitchWidth === null ? null : pitchWidth / 100,
+      isLicensed: nullableBoolean(row['is_licensed']),
+      isSmallSided: nullableBoolean(row['is_small_sided']),
+      teamCount: Number(row['team_count']),
     };
   }
 

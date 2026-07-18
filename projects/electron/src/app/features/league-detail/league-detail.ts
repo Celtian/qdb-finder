@@ -46,4 +46,11 @@ export class LeagueDetail {
     });
     this.dialog.close();
   }
+
+  protected async viewReferees(): Promise<void> {
+    await this.router.navigate(['/referees'], {
+      queryParams: { version: this.league.version, leagueId: this.league.leagueId },
+    });
+    this.dialog.close();
+  }
 }

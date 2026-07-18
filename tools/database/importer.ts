@@ -27,6 +27,10 @@ export const EXPECTED_EDITIONS = 227_572;
 export const EXPECTED_TEAM_LINKS = 241_640;
 export const EXPECTED_TEAM_EDITIONS = 8_907;
 export const EXPECTED_LEAGUE_EDITIONS = 560;
+export const EXPECTED_REFEREE_EDITIONS = 2_516;
+export const EXPECTED_STADIUM_EDITIONS = 1_371;
+export const EXPECTED_REFEREE_LEAGUE_LINKS = 3_001;
+export const EXPECTED_STADIUM_TEAM_LINKS = 8_890;
 export const POSITION_IDS = Object.values(Position);
 const positionById = Object.fromEntries(POSITION_IDS.map((position, index) => [index, position]));
 
@@ -52,6 +56,10 @@ export interface ImportSummary {
   teamLinks: number;
   teamEditions: number;
   leagueEditions: number;
+  refereeEditions: number;
+  stadiumEditions: number;
+  refereeLeagueLinks: number;
+  stadiumTeamLinks: number;
 }
 
 export const decodeFifaText = (buffer: Buffer): string => {
@@ -209,6 +217,37 @@ const createSchema = (db: DatabaseSync): void =>
     midfield INTEGER, defence INTEGER, foundation_year INTEGER, raw_json TEXT NOT NULL,
     UNIQUE(version, team_id)
   );
+  CREATE TABLE referee_edition (
+    key TEXT PRIMARY KEY, version INTEGER NOT NULL, referee_id INTEGER NOT NULL,
+    referee_key TEXT NOT NULL, referee_name TEXT NOT NULL, first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL, nationality_id INTEGER NOT NULL,
+    nationality_key TEXT NOT NULL, nationality_name TEXT NOT NULL, nationality_code TEXT NOT NULL,
+    birth_date TEXT, snapshot_date TEXT NOT NULL, age INTEGER, height INTEGER, weight INTEGER,
+    foul_strictness INTEGER, card_strictness INTEGER, is_real INTEGER,
+    league_count INTEGER NOT NULL DEFAULT 0, raw_json TEXT NOT NULL,
+    UNIQUE(version, referee_id)
+  );
+  CREATE TABLE stadium_edition (
+    key TEXT PRIMARY KEY, version INTEGER NOT NULL, stadium_id INTEGER NOT NULL,
+    stadium_key TEXT NOT NULL, stadium_name TEXT NOT NULL, country_id INTEGER,
+    country_name TEXT NOT NULL, country_code TEXT NOT NULL, capacity INTEGER NOT NULL,
+    year_built INTEGER, pitch_length INTEGER, pitch_width INTEGER,
+    is_licensed INTEGER, is_small_sided INTEGER,
+    team_count INTEGER NOT NULL DEFAULT 0, raw_json TEXT NOT NULL,
+    UNIQUE(version, stadium_id)
+  );
+  CREATE TABLE referee_league (
+    referee_key TEXT NOT NULL REFERENCES referee_edition(key) ON DELETE CASCADE,
+    version INTEGER NOT NULL, referee_id INTEGER NOT NULL, league_id INTEGER NOT NULL,
+    league_key TEXT NOT NULL, league_name TEXT NOT NULL,
+    PRIMARY KEY(referee_key, league_id)
+  );
+  CREATE TABLE stadium_team (
+    stadium_key TEXT NOT NULL REFERENCES stadium_edition(key) ON DELETE CASCADE,
+    version INTEGER NOT NULL, stadium_id INTEGER NOT NULL, team_id INTEGER NOT NULL,
+    team_key TEXT NOT NULL, team_name TEXT NOT NULL,
+    PRIMARY KEY(stadium_key, team_id)
+  );
   CREATE VIRTUAL TABLE player_search USING fts5(player_key UNINDEXED, display_name, aliases, teams,
     nationality, leagues, tokenize='unicode61 remove_diacritics 2');
 `);
@@ -314,7 +353,16 @@ const ratingFor = (
 const buildCanonical = (
   db: DatabaseSync,
   examplesPath: string,
-): { players: number; links: number; teams: number; leagues: number } => {
+): {
+  players: number;
+  links: number;
+  teams: number;
+  leagues: number;
+  referees: number;
+  stadiums: number;
+  refereeLeagueLinks: number;
+  stadiumTeamLinks: number;
+} => {
   const playerInsert = db.prepare(
     `INSERT INTO player_edition VALUES (${Array.from({ length: 29 }, () => '?').join(',')})`,
   );
@@ -327,6 +375,18 @@ const buildCanonical = (
   const leagueInsert = db.prepare(
     `INSERT INTO league_edition VALUES (${Array.from({ length: 13 }, () => '?').join(',')})`,
   );
+  const refereeInsert = db.prepare(
+    `INSERT INTO referee_edition VALUES (${Array.from({ length: 21 }, () => '?').join(',')})`,
+  );
+  const stadiumInsert = db.prepare(
+    `INSERT INTO stadium_edition VALUES (${Array.from({ length: 16 }, () => '?').join(',')})`,
+  );
+  const refereeLeagueInsert = db.prepare(
+    'INSERT OR IGNORE INTO referee_league VALUES (?, ?, ?, ?, ?, ?)',
+  );
+  const stadiumTeamInsert = db.prepare(
+    'INSERT OR IGNORE INTO stadium_team VALUES (?, ?, ?, ?, ?, ?)',
+  );
   const nationalityCodeFallback = collectNationalityCodes(
     FIFAS.filter((fifa) => Number(fifa.slice(4)) >= 16).flatMap((fifa) =>
       tableRows(db, fifa, Table.Nations),
@@ -336,6 +396,10 @@ const buildCanonical = (
   let links = 0;
   let teamsCount = 0;
   let leaguesCount = 0;
+  let refereesCount = 0;
+  let stadiumsCount = 0;
+  let refereeLeagueLinks = 0;
+  let stadiumTeamLinks = 0;
   for (const fifa of FIFAS) {
     const version = Number(fifa.slice(4));
     const snapshot = versionSnapshot(examplesPath, fifa);
@@ -355,6 +419,12 @@ const buildCanonical = (
     const leagueRows = tableRows(db, fifa, Table.Leagues);
     const teams = mapBy(teamRows, 'teamid', 'teamname');
     const leagues = mapBy(leagueRows, 'leagueid', 'leaguename');
+    const teamIds = new Set(teamRows.map((row) => asNumber(row['teamid'])));
+    const leagueIds = new Set(leagueRows.map((row) => asNumber(row['leagueid'])));
+    const refereeRows = tableRows(db, fifa, Table.Referee);
+    const stadiumRows = tableRows(db, fifa, Table.Stadiums);
+    const refereeIds = new Set(refereeRows.map((row) => asNumber(row['refereeid'])));
+    const stadiumIds = new Set(stadiumRows.map((row) => asNumber(row['stadiumid'])));
     const leagueRowsById = new Map(leagueRows.map((row) => [asNumber(row['leagueid']), row]));
     const teamLeagues = new Map<number, number>();
     for (const row of tableRows(db, fifa, Table.LeagueTeamLinks))
@@ -417,6 +487,103 @@ const buildCanonical = (
           JSON.stringify(team),
         );
         teamsCount += 1;
+      }
+      for (const referee of refereeRows) {
+        const refereeId = asNumber(referee['refereeid']);
+        const firstName = asText(referee['firstname']);
+        const lastName = asText(referee['surname']);
+        const refereeName =
+          [firstName, lastName].filter(Boolean).join(' ') || `Referee ${refereeId}`;
+        const nationalityId = asNumber(referee['nationalitycode']);
+        const nationalityName = nations.get(nationalityId) ?? '';
+        const birthDate = isoDate(asNumber(referee['birthdate']));
+        refereeInsert.run(
+          `${version}:${refereeId}`,
+          version,
+          refereeId,
+          normalize(refereeName),
+          refereeName,
+          firstName,
+          lastName,
+          nationalityId,
+          normalize(nationalityName),
+          nationalityName,
+          nationCodes.get(nationalityId) ?? '',
+          birthDate,
+          snapshot,
+          ageAt(birthDate, snapshot),
+          optionalPositiveNumber(referee['height']),
+          optionalPositiveNumber(referee['weight']),
+          optionalNumber(referee['foulstrictness']),
+          optionalNumber(referee['cardstrictness']),
+          referee['isreal'] === undefined ? null : Number(Boolean(asNumber(referee['isreal']))),
+          0,
+          JSON.stringify(referee),
+        );
+        refereesCount += 1;
+      }
+      for (const stadium of stadiumRows) {
+        const stadiumId = asNumber(stadium['stadiumid']);
+        const stadiumName = asText(stadium['name']) || `Stadium ${stadiumId}`;
+        const countryId = optionalPositiveNumber(stadium['countrycode']);
+        stadiumInsert.run(
+          `${version}:${stadiumId}`,
+          version,
+          stadiumId,
+          normalize(stadiumName),
+          stadiumName,
+          countryId,
+          countryId === null ? '' : (nations.get(countryId) ?? ''),
+          countryId === null ? '' : (nationCodes.get(countryId) ?? ''),
+          asNumber(stadium['capacity']),
+          optionalPositiveNumber(stadium['yearbuilt']),
+          optionalPositiveNumber(stadium['stadiumpitchlength']),
+          optionalPositiveNumber(stadium['stadiumpitchwidth']),
+          stadium['islicensed'] === undefined
+            ? null
+            : Number(Boolean(asNumber(stadium['islicensed']))),
+          stadium['issmallsided'] === undefined
+            ? null
+            : Number(Boolean(asNumber(stadium['issmallsided']))),
+          0,
+          JSON.stringify(stadium),
+        );
+        stadiumsCount += 1;
+      }
+      const refereeLeagueRows =
+        fifa === Fifa.Fifa11
+          ? refereeRows.map((referee) => ({
+              refereeid: referee['refereeid'],
+              leagueid: referee['leagueid'],
+            }))
+          : tableRows(db, fifa, Table.LeagueRefereeLinks);
+      for (const link of refereeLeagueRows) {
+        const refereeId = asNumber(link['refereeid']);
+        const leagueId = asNumber(link['leagueid']);
+        if (!refereeIds.has(refereeId) || !leagueIds.has(leagueId)) continue;
+        const result = refereeLeagueInsert.run(
+          `${version}:${refereeId}`,
+          version,
+          refereeId,
+          leagueId,
+          normalize(leagues.get(leagueId) ?? ''),
+          leagues.get(leagueId) ?? '',
+        );
+        refereeLeagueLinks += Number(result.changes);
+      }
+      for (const link of tableRows(db, fifa, Table.TeamStadiumLinks)) {
+        const stadiumId = asNumber(link['stadiumid']);
+        const teamId = asNumber(link['teamid']);
+        if (!stadiumIds.has(stadiumId) || !teamIds.has(teamId)) continue;
+        const result = stadiumTeamInsert.run(
+          `${version}:${stadiumId}`,
+          version,
+          stadiumId,
+          teamId,
+          normalize(teams.get(teamId) ?? ''),
+          teams.get(teamId) ?? '',
+        );
+        stadiumTeamLinks += Number(result.changes);
       }
       for (const player of tableRows(db, fifa, Table.Players)) {
         const playerId = asNumber(player['playerid']);
@@ -508,6 +675,8 @@ const buildCanonical = (
     CREATE INDEX idx_player_team_edition ON player_team(version, team_id);
     CREATE INDEX idx_player_league_edition ON player_team(version, league_id);
     CREATE INDEX idx_team_league_edition ON team_edition(version, league_id);
+    CREATE INDEX idx_referee_league_edition ON referee_league(version, league_id);
+    CREATE INDEX idx_stadium_team_edition ON stadium_team(version, team_id);
     UPDATE team_edition SET squad_size = (
       SELECT count(DISTINCT player_key) FROM player_team pt
       WHERE pt.version = team_edition.version AND pt.team_id = team_edition.team_id
@@ -521,6 +690,12 @@ const buildCanonical = (
         SELECT count(DISTINCT player_key) FROM player_team pt
         WHERE pt.version = league_edition.version AND pt.league_id = league_edition.league_id
       );
+    UPDATE referee_edition SET league_count = (
+      SELECT count(*) FROM referee_league rl WHERE rl.referee_key = referee_edition.key
+    );
+    UPDATE stadium_edition SET team_count = (
+      SELECT count(*) FROM stadium_team st WHERE st.stadium_key = stadium_edition.key
+    );
     INSERT INTO player_search
       SELECT p.key, p.display_name, p.aliases, coalesce(group_concat(DISTINCT pt.team_name), ''),
         p.nationality_name, coalesce(group_concat(DISTINCT pt.league_name), '')
@@ -542,8 +717,29 @@ const buildCanonical = (
     CREATE INDEX idx_league_edition_version ON league_edition(version);
     CREATE INDEX idx_league_edition_name ON league_edition(league_key);
     CREATE INDEX idx_league_edition_country ON league_edition(country_id);
+    CREATE INDEX idx_referee_edition_version ON referee_edition(version);
+    CREATE INDEX idx_referee_edition_name ON referee_edition(referee_key);
+    CREATE INDEX idx_referee_edition_nation ON referee_edition(nationality_id);
+    CREATE INDEX idx_referee_edition_age ON referee_edition(age);
+    CREATE INDEX idx_referee_league_key ON referee_league(league_key);
+    CREATE INDEX idx_referee_league_referee ON referee_league(referee_key);
+    CREATE INDEX idx_stadium_edition_version ON stadium_edition(version);
+    CREATE INDEX idx_stadium_edition_name ON stadium_edition(stadium_key);
+    CREATE INDEX idx_stadium_edition_country ON stadium_edition(country_id);
+    CREATE INDEX idx_stadium_edition_capacity ON stadium_edition(capacity);
+    CREATE INDEX idx_stadium_team_key ON stadium_team(team_key);
+    CREATE INDEX idx_stadium_team_stadium ON stadium_team(stadium_key);
   `);
-  return { players, links, teams: teamsCount, leagues: leaguesCount };
+  return {
+    players,
+    links,
+    teams: teamsCount,
+    leagues: leaguesCount,
+    referees: refereesCount,
+    stadiums: stadiumsCount,
+    refereeLeagueLinks,
+    stadiumTeamLinks,
+  };
 };
 
 export const buildDatabase = (options: ImportOptions): ImportSummary => {
@@ -567,6 +763,10 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       player_editions: canonical.players,
       team_editions: canonical.teams,
       league_editions: canonical.leagues,
+      referee_editions: canonical.referees,
+      stadium_editions: canonical.stadiums,
+      referee_league_links: canonical.refereeLeagueLinks,
+      stadium_team_links: canonical.stadiumTeamLinks,
       team_player_links: canonical.links,
     };
     for (const [key, value] of Object.entries(values)) metadata.run(key, String(value));
@@ -581,10 +781,14 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       (canonical.players !== EXPECTED_EDITIONS ||
         canonical.links !== EXPECTED_TEAM_LINKS ||
         canonical.teams !== EXPECTED_TEAM_EDITIONS ||
-        canonical.leagues !== EXPECTED_LEAGUE_EDITIONS)
+        canonical.leagues !== EXPECTED_LEAGUE_EDITIONS ||
+        canonical.referees !== EXPECTED_REFEREE_EDITIONS ||
+        canonical.stadiums !== EXPECTED_STADIUM_EDITIONS ||
+        canonical.refereeLeagueLinks !== EXPECTED_REFEREE_LEAGUE_LINKS ||
+        canonical.stadiumTeamLinks !== EXPECTED_STADIUM_TEAM_LINKS)
     )
       throw new Error(
-        `Unexpected canonical counts: ${canonical.players} players, ${canonical.teams} teams, ${canonical.leagues} leagues, ${canonical.links} links.`,
+        `Unexpected canonical counts: ${canonical.players} players, ${canonical.teams} teams, ${canonical.leagues} leagues, ${canonical.referees} referees, ${canonical.stadiums} stadiums, ${canonical.links} player-team links, ${canonical.refereeLeagueLinks} referee-league links, ${canonical.stadiumTeamLinks} stadium-team links.`,
       );
     db.exec(
       "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
@@ -596,6 +800,10 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       teamLinks: canonical.links,
       teamEditions: canonical.teams,
       leagueEditions: canonical.leagues,
+      refereeEditions: canonical.referees,
+      stadiumEditions: canonical.stadiums,
+      refereeLeagueLinks: canonical.refereeLeagueLinks,
+      stadiumTeamLinks: canonical.stadiumTeamLinks,
     };
   } finally {
     db.close();

@@ -1,0 +1,87 @@
+<header class="detail-header">
+  <div>
+    <p class="eyebrow">FIFA {{ stadium.version }} stadium</p>
+    <h2 mat-dialog-title>{{ stadium.name }}</h2>
+    <p class="country-line">
+      @if (stadium.countryCode) {
+        <app-country-flag
+          size="lg"
+          decorative
+          [code]="stadium.countryCode"
+          [countryName]="stadium.countryName"
+        />
+      }
+      <span>{{ stadium.countryName || 'Unknown country' }}</span>
+    </p>
+  </div>
+  <button
+    type="button"
+    class="close-button"
+    mat-icon-button
+    mat-dialog-close
+    aria-label="Close stadium details"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+<mat-dialog-content>
+  <div class="metric-grid">
+    <div>
+      <span>Capacity</span><strong>{{ stadium.capacity.toLocaleString() }}</strong>
+    </div>
+    <div>
+      <span>Built</span><strong>{{ stadium.yearBuilt ?? '—' }}</strong>
+    </div>
+    <div>
+      <span>Pitch</span><strong>{{ pitch }}</strong>
+    </div>
+    <div>
+      <span>Linked teams</span><strong>{{ stadium.teamCount }}</strong>
+    </div>
+    <div>
+      <span>Licensed</span><strong>{{ licensed }}</strong>
+    </div>
+    <div>
+      <span>Small sided</span><strong>{{ smallSided }}</strong>
+    </div>
+  </div>
+  <section aria-labelledby="stadium-teams-heading">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Top rated</p>
+        <h3 id="stadium-teams-heading">Team preview</h3>
+      </div>
+      <span>{{ teams.length }} of {{ stadium.teamCount }}</span>
+    </div>
+    @if (teams.length) {
+      <div class="preview-list">
+        @for (team of teams; track team.key) {
+          <div class="preview-row team-row">
+            <strong>{{ team.name }}</strong
+            ><span>{{ team.leagueName || '—' }}</span
+            ><span [class]="team.overallClass">{{ team.overall ?? '—' }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-preview">No linked team is available for this stadium edition.</p>
+    }
+  </section>
+  <mat-expansion-panel
+    ><mat-expansion-panel-header
+      ><mat-panel-title>Raw stadium fields</mat-panel-title></mat-expansion-panel-header
+    >
+    <dl class="raw-fields">
+      @for (field of stadium.raw | keyvalue; track field.key) {
+        <dt>{{ field.key }}</dt>
+        <dd>{{ field.value }}</dd>
+      }
+    </dl></mat-expansion-panel
+  >
+</mat-dialog-content>
+<mat-dialog-actions align="end"
+  ><button type="button" mat-button mat-dialog-close>Close</button
+  ><button type="button" mat-flat-button [disabled]="!stadium.teamCount" (click)="viewTeams()">
+    <mat-icon>shield</mat-icon>View teams
+  </button></mat-dialog-actions
+>

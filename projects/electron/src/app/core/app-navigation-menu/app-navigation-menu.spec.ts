@@ -20,6 +20,8 @@ describe('AppNavigationMenu', () => {
           { path: 'players', children: [] },
           { path: 'teams', children: [] },
           { path: 'leagues', children: [] },
+          { path: 'referees', children: [] },
+          { path: 'stadiums', children: [] },
         ]),
       ],
     }).compileComponents();
@@ -30,7 +32,7 @@ describe('AppNavigationMenu', () => {
     await fixture.whenStable();
   });
 
-  it('renders an accessible trigger and four icon-labelled destinations', async () => {
+  it('renders an accessible trigger and six icon-labelled destinations', async () => {
     const element = fixture.nativeElement as HTMLElement;
     const menu = await loader.getHarness(MatMenuHarness.with({ triggerIconName: 'menu' }));
 
@@ -42,12 +44,14 @@ describe('AppNavigationMenu', () => {
       icon.textContent?.trim(),
     );
 
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(6);
     expect(await menu.getItems({ text: /Home/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Players/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Teams/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Leagues/ })).toHaveLength(1);
-    expect(icons).toEqual(['home', 'groups', 'shield', 'emoji_events']);
+    expect(await menu.getItems({ text: /Referees/ })).toHaveLength(1);
+    expect(await menu.getItems({ text: /Stadiums/ })).toHaveLength(1);
+    expect(icons).toEqual(['home', 'groups', 'shield', 'emoji_events', 'sports', 'stadium']);
   });
 
   it('navigates to a destination and closes the menu', async () => {

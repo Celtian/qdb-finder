@@ -20,6 +20,8 @@ describe('Home', () => {
               editions: 227_572,
               teamEditions: 8_907,
               leagueEditions: 560,
+              refereeEditions: 2_516,
+              stadiumEditions: 1_371,
               teamLinks: 241_640,
               sourceFiles: 306,
               versions: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
@@ -40,7 +42,7 @@ describe('Home', () => {
     expect(component).toBeTruthy();
   });
 
-  it('renders database-backed links for players, teams and leagues', () => {
+  it('renders all database-backed entity links', () => {
     const element = fixture.nativeElement as HTMLElement;
     const tiles = [...element.querySelectorAll<HTMLAnchorElement>('.browse-tile')];
 
@@ -48,11 +50,15 @@ describe('Home', () => {
       expect.stringContaining('227,572 editions'),
       expect.stringContaining('8,907 editions'),
       expect.stringContaining('560 editions'),
+      expect.stringContaining('2,516 editions'),
+      expect.stringContaining('1,371 editions'),
     ]);
     expect(tiles.map((tile) => tile.getAttribute('href'))).toEqual([
       '/players',
       '/teams',
       '/leagues',
+      '/referees',
+      '/stadiums',
     ]);
   });
 });

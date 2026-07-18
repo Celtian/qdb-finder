@@ -24,5 +24,17 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/league-finder/league-finder').then((module) => module.LeagueFinder),
   },
+  {
+    path: 'referees',
+    title: 'Referees · QDB Finder',
+    loadComponent: () =>
+      import('./features/referee-finder/referee-finder').then((module) => module.RefereeFinder),
+  },
+  {
+    path: 'stadiums',
+    title: 'Stadiums · QDB Finder',
+    loadComponent: () =>
+      import('./features/stadium-finder/stadium-finder').then((module) => module.StadiumFinder),
+  },
   { path: '**', redirectTo: '' },
 ];

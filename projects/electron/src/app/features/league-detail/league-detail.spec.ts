@@ -37,6 +37,29 @@ const league: LeagueDetails = {
       foundationYear: 1886,
     },
   ],
+  referees: [
+    {
+      key: '23:188446',
+      version: 23,
+      refereeId: 188446,
+      name: 'Test Referee',
+      firstName: 'Test',
+      lastName: 'Referee',
+      nationalityId: 14,
+      nationalityName: 'England',
+      nationalityCode: 'gb-eng',
+      birthDate: '1980-01-01',
+      age: 43,
+      height: 183,
+      weight: 78,
+      foulStrictness: 1,
+      cardStrictness: 2,
+      isReal: true,
+      leagues: ['England Premier League (1)'],
+      leagueCount: 1,
+    },
+  ],
+  refereeCount: 1,
   raw: { leagueid: 13 },
 };
 
@@ -52,6 +75,7 @@ describe('LeagueDetail', () => {
         provideRouter([
           { path: 'teams', component: LeagueDetail },
           { path: 'players', component: LeagueDetail },
+          { path: 'referees', component: LeagueDetail },
         ]),
         { provide: MAT_DIALOG_DATA, useValue: league },
         { provide: MatDialogRef, useValue: { close } },
@@ -72,10 +96,11 @@ describe('LeagueDetail', () => {
     expect(element.querySelector('app-country-flag')).toBeTruthy();
   });
 
-  it('navigates to exact league teams and players', async () => {
+  it('navigates to exact league teams, players and referees', async () => {
     const testable = component as unknown as {
       viewTeams(): Promise<void>;
       viewPlayers(): Promise<void>;
+      viewReferees(): Promise<void>;
     };
     const router = TestBed.inject(Router);
 
@@ -83,6 +108,8 @@ describe('LeagueDetail', () => {
     expect(router.url).toBe('/teams?version=23&leagueId=13');
     await testable.viewPlayers();
     expect(router.url).toBe('/players?version=23&leagueId=13');
-    expect(close).toHaveBeenCalledTimes(2);
+    await testable.viewReferees();
+    expect(router.url).toBe('/referees?version=23&leagueId=13');
+    expect(close).toHaveBeenCalledTimes(3);
   });
 });

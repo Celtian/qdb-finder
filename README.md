@@ -16,11 +16,11 @@ QDB Finder is an offline desktop search application for FIFA 11–23 player data
 
 ## ✨ Features
 
-- 🧭 Browse responsive home, player, team, and league views with edition-specific details.
+- 🧭 Browse responsive home, player, team, league, referee, and stadium views with edition-specific details.
 - 🔎 Search player names, aliases, teams, leagues, and nationalities with SQLite FTS5.
 - 🎛️ Combine FIFA edition, position, age, overall, potential, team, league, and nationality filters.
 - ⚡ Page and sort results inside SQLite without loading the complete dataset into Angular.
-- 📊 Inspect player attributes, team squads and ratings, league membership, raw fields, and historical editions.
+- 📊 Inspect player attributes, team squads and stadiums, league teams and referees, raw fields, and historical editions.
 - 🗃️ Rebuild the complete database deterministically from the supplied FIFA text files.
 - 🔒 Keep Node.js, SQL, and filesystem access behind a sandboxed, typed Electron preload API.
 
@@ -47,7 +47,7 @@ yarn db:build
 yarn start
 ```
 
-Database generation processes 306 available supported-name files, preserves verified tables using `fifatables@0.2.10`, and builds 227,572 player editions, 8,907 team editions, 560 league editions, and 241,640 team-player links. The FIFA 23 `dcplayernames` file is header-only and has no definition, so it is recorded as a skipped source without inventing a schema.
+Database generation processes 306 available supported-name files, preserves verified tables using `fifatables@0.2.10`, and builds 227,572 player editions, 8,907 team editions, 560 league editions, 2,516 referee editions, 1,371 stadium editions, 3,001 referee-league links, 8,890 stadium-team links, and 241,640 team-player links. The FIFA 23 `dcplayernames` file is header-only and has no definition, so it is recorded as a skipped source without inventing a schema.
 
 ## 🧪 Checks and builds
 
@@ -96,7 +96,7 @@ Review the generated [changelog](CHANGELOG.md) before publishing a release. Rele
 
 ## 🔒 Security
 
-The renderer has no Node or filesystem access. Electron uses context isolation and sandboxing; preload exposes only typed player, team, league, filter, and database-information calls. SQLite is opened read-only in the main process, all values are parameterized, and sort/table choices are constrained in code.
+The renderer has no Node or filesystem access. Electron uses context isolation and sandboxing; preload exposes only typed player, team, league, referee, stadium, filter, and database-information calls. SQLite is opened read-only in the main process, all values are parameterized, and sort/table choices are constrained in code.
 
 Security vulnerabilities should be reported privately according to the [security policy](SECURITY.md).
 

@@ -4,7 +4,9 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { PlayerDatabase } from '../../projects/electron/electron/database';
 import {
   defaultLeagueSearchRequest,
+  defaultRefereeSearchRequest,
   defaultSearchRequest,
+  defaultStadiumSearchRequest,
   defaultTeamSearchRequest,
 } from '../../projects/electron/src/app/core/qdb-contracts';
 
@@ -181,11 +183,155 @@ integration('player queries', () => {
     );
   });
 
+  it('returns canonical referee editions and FIFA 11 fallback league links', () => {
+    const current = database.searchReferees({
+      ...defaultRefereeSearchRequest(),
+      text: 'Dong-Kyoo Choi',
+      versions: [23],
+    });
+    const legacy = database.getReferee({ version: 11, refereeId: 29 });
+
+    expect(current.rows[0]).toMatchObject({
+      refereeId: 176_705,
+      nationalityName: 'Korea Republic',
+      nationalityCode: 'kr',
+      age: 45,
+    });
+    expect(legacy).toMatchObject({
+      name: 'Manuel Rui Barbosa',
+      nationalityCode: 'br',
+      foulStrictness: null,
+      cardStrictness: null,
+      isReal: null,
+      leagueCount: 1,
+    });
+    expect(legacy.leaguesPreview[0]).toMatchObject({
+      version: 11,
+      leagueId: 7,
+      name: 'Brazil Campeonato Brasileiro (1)',
+    });
+  });
+
+  it('keeps stadium countries source-faithful and historical status nullable', () => {
+    const current = database.getStadium({ version: 23, stadiumId: 1 });
+    const missingCountry = database.getStadium({ version: 17, stadiumId: 1 });
+    const legacy = database.getStadium({ version: 11, stadiumId: 1 });
+
+    expect(current).toMatchObject({
+      name: 'Old Trafford',
+      countryId: 14,
+      countryCode: 'gb-eng',
+      capacity: 74_879,
+      isLicensed: true,
+      teamCount: 2,
+    });
+    expect(missingCountry).toMatchObject({
+      countryId: null,
+      countryName: '',
+      countryCode: '',
+    });
+    expect(legacy).toMatchObject({ yearBuilt: 1909, isLicensed: null });
+  });
+
+  it('filters both relationship directions by exact FIFA edition', () => {
+    const referees = database.searchReferees({
+      ...defaultRefereeSearchRequest(),
+      leagueEdition: { version: 23, leagueId: 13 },
+      pageSize: 100,
+    });
+    const leagues = database.searchLeagues({
+      ...defaultLeagueSearchRequest(),
+      refereeEdition: { version: 23, refereeId: 221_871 },
+    });
+    const stadiums = database.searchStadiums({
+      ...defaultStadiumSearchRequest(),
+      teamEdition: { version: 23, teamId: 11 },
+    });
+    const teams = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      stadiumEdition: { version: 23, stadiumId: 1 },
+    });
+
+    expect(referees.rows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ refereeId: 221_871, version: 23 })]),
+    );
+    expect(leagues.rows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ leagueId: 13, version: 23 })]),
+    );
+    expect(stadiums.rows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ stadiumId: 1, version: 23 })]),
+    );
+    expect(teams.rows).toEqual(
+      expect.arrayContaining([expect.objectContaining({ teamId: 11, version: 23 })]),
+    );
+    expect(
+      referees.rows.every(
+        (row) =>
+          row.version === 23 && row.leagues.some((league) => league.includes('Premier League')),
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps referee and stadium pagination stable and escapes search input', () => {
+    const refereeRequest = {
+      ...defaultRefereeSearchRequest(),
+      versions: [23],
+      pageSize: 5,
+      sort: 'name' as const,
+      direction: 'asc' as const,
+    };
+    const stadiumRequest = {
+      ...defaultStadiumSearchRequest(),
+      versions: [23],
+      pageSize: 5,
+      sort: 'name' as const,
+      direction: 'asc' as const,
+    };
+    const refereeRows = [
+      ...database.searchReferees(refereeRequest).rows,
+      ...database.searchReferees({ ...refereeRequest, offset: 5 }).rows,
+    ];
+    const stadiumRows = [
+      ...database.searchStadiums(stadiumRequest).rows,
+      ...database.searchStadiums({ ...stadiumRequest, offset: 5 }).rows,
+    ];
+
+    expect(new Set(refereeRows.map((row) => row.key)).size).toBe(10);
+    expect(new Set(stadiumRows.map((row) => row.key)).size).toBe(10);
+    expect(database.searchReferees({ ...refereeRequest, text: "Referee' OR 1=1 --" }).total).toBe(
+      0,
+    );
+    expect(database.searchStadiums({ ...stadiumRequest, text: "Stadium' OR 1=1 --" }).total).toBe(
+      0,
+    );
+  });
+
+  it('returns referee and stadium facets with source country flags', () => {
+    expect(
+      database.suggestEntityFacets({
+        entity: 'referee',
+        facet: 'nationality',
+        text: 'England',
+        versions: [23],
+      })[0],
+    ).toMatchObject({ id: 14, label: 'England', countryCode: 'gb-eng' });
+    expect(
+      database.suggestEntityFacets({
+        entity: 'stadium',
+        facet: 'team',
+        text: 'Manchester United',
+        versions: [23],
+      })[0],
+    ).toMatchObject({ key: 'manchester united' });
+  });
+
   it('reports exact canonical metadata', () => {
     expect(database.info()).toMatchObject({
       editions: 227_572,
       teamEditions: 8_907,
       leagueEditions: 560,
+      refereeEditions: 2_516,
+      stadiumEditions: 1_371,
       teamLinks: 241_640,
       sourceFiles: 306,
     });

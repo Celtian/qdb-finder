@@ -51,6 +51,20 @@ export class Home {
         route: '/leagues',
         count: info.leagueEditions,
       },
+      {
+        title: 'Referees',
+        description: 'Explore officials, nationalities, league assignments and FIFA histories.',
+        icon: 'sports',
+        route: '/referees',
+        count: info.refereeEditions,
+      },
+      {
+        title: 'Stadiums',
+        description: 'Compare grounds, capacities, pitch sizes and linked teams by edition.',
+        icon: 'stadium',
+        route: '/stadiums',
+        count: info.stadiumEditions,
+      },
     ];
   });
 

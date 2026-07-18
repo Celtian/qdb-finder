@@ -149,6 +149,15 @@
           <button type="button" mat-button (click)="clearFilters()">Clear</button>
         </div>
       }
+      @if (contextStadium(); as stadium) {
+        <div class="context-banner">
+          <mat-icon>filter_alt</mat-icon>
+          <span
+            >Showing FIFA {{ stadium.version }} teams for <strong>{{ stadium.name }}</strong></span
+          >
+          <button type="button" mat-button (click)="clearFilters()">Clear</button>
+        </div>
+      }
       <mat-form-field class="entity-search" appearance="outline">
         <mat-label>Search teams</mat-label>
         <mat-icon matPrefix>search</mat-icon>

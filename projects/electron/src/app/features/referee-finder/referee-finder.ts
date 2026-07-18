@@ -17,20 +17,21 @@ import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
-import { scoreValueClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { Qdb } from '../../core/qdb';
 import {
-  defaultTeamSearchRequest,
+  defaultRefereeSearchRequest,
   type EntityFacetOption,
   type LeagueEditionRow,
-  type StadiumEditionRow,
-  type TeamEditionRow,
-  type TeamResultPage,
-  type TeamSearchRequest,
-  type TeamSortField,
+  type RefereeEditionRow,
+  type RefereeResultPage,
+  type RefereeSearchRequest,
+  type RefereeSortField,
 } from '../../core/qdb-contracts';
-import { TeamDetail } from '../team-detail/team-detail';
+import { RefereeDetail } from '../referee-detail/referee-detail';
+
+type RefereeFacet = 'nationality' | 'league';
+type AvailabilityFilter = 'all' | 'real' | 'generic';
 
 interface FilterDisplay {
   key: string;
@@ -38,24 +39,10 @@ interface FilterDisplay {
   countryCode?: string;
 }
 
-type TeamFacet = 'league' | 'country';
-
-interface TeamDisplay extends TeamEditionRow {
-  overallClass: string;
-  attackClass: string;
-  midfieldClass: string;
-  defenceClass: string;
+interface RefereeDisplay extends RefereeEditionRow {
+  leagueText: string;
 }
 
-const scoreClass = (value: number | null): string =>
-  value === null ? '' : `score-badge ${scoreValueClass(value)}`;
-const teamDisplay = (row: TeamEditionRow): TeamDisplay => ({
-  ...row,
-  overallClass: scoreClass(row.overall),
-  attackClass: scoreClass(row.attack),
-  midfieldClass: scoreClass(row.midfield),
-  defenceClass: scoreClass(row.defence),
-});
 const validVersion = (value: string | null): number | undefined => {
   const version = Number(value);
   return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
@@ -66,7 +53,7 @@ const validId = (value: string | null): number | undefined => {
 };
 
 @Component({
-  selector: 'app-team-finder',
+  selector: 'app-referee-finder',
   imports: [
     FormField,
     CountryFlag,
@@ -83,10 +70,10 @@ const validId = (value: string | null): number | undefined => {
     MatSortModule,
     MatTableModule,
   ],
-  templateUrl: './team-finder.html',
-  styleUrl: './team-finder.css',
+  templateUrl: './referee-finder.html',
+  styleUrl: './referee-finder.css',
 })
-export class TeamFinder {
+export class RefereeFinder {
   private readonly qdb = inject(Qdb);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
@@ -97,7 +84,7 @@ export class TeamFinder {
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
   protected readonly request = signal(this.initialRequest());
-  protected readonly result = signal<TeamResultPage>({
+  protected readonly result = signal<RefereeResultPage>({
     rows: [],
     total: 0,
     offset: 0,
@@ -106,45 +93,39 @@ export class TeamFinder {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
-  protected readonly contextStadium = signal<StadiumEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
     'version',
-    'country',
-    'league',
-    'squadSize',
-    'overall',
-    'attack',
-    'midfield',
-    'defence',
+    'nationality',
+    'leagues',
+    'age',
+    'height',
+    'real',
   ];
   protected readonly versions = Array.from({ length: 13 }, (_, index) => 23 - index);
-  protected readonly ratingFilters = [
-    { key: 'overall', label: 'Overall' },
-    { key: 'attack', label: 'Attack' },
-    { key: 'midfield', label: 'Midfield' },
-    { key: 'defence', label: 'Defence' },
-  ] as const;
-  protected readonly suggestions = signal<Record<'league' | 'country', EntityFacetOption[]>>({
+  protected readonly availability = signal<AvailabilityFilter>('all');
+  protected readonly suggestions = signal<Record<RefereeFacet, EntityFacetOption[]>>({
+    nationality: [],
     league: [],
-    country: [],
   });
-  protected readonly labels = signal<Record<'league' | 'country', Record<string, FilterDisplay>>>({
+  protected readonly labels = signal<Record<RefereeFacet, Record<string, FilterDisplay>>>({
+    nationality: {},
     league: {},
-    country: {},
   });
+  protected readonly selectedNationalities = computed(() =>
+    this.request().nationalityIds.map((id): FilterDisplay => {
+      const key = String(id);
+      return this.labels().nationality[key] ?? { key, label: key };
+    }),
+  );
   protected readonly selectedLeagues = computed(() =>
     this.request().leagueKeys.map(
       (key): FilterDisplay => this.labels().league[key] ?? { key, label: key },
     ),
   );
-  protected readonly selectedCountries = computed(() =>
-    this.request().countryIds.map((id): FilterDisplay => {
-      const key = String(id);
-      return this.labels().country[key] ?? { key, label: key };
-    }),
+  protected readonly rows = computed<RefereeDisplay[]>(() =>
+    this.result().rows.map((row) => ({ ...row, leagueText: row.leagues.join(', ') })),
   );
-  protected readonly rows = computed(() => this.result().rows.map(teamDisplay));
   protected readonly isNarrow = toSignal(
     this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
     { initialValue: false },
@@ -154,14 +135,11 @@ export class TeamFinder {
     return Boolean(
       request.text ||
       request.versions.length ||
+      request.nationalityIds.length ||
       request.leagueKeys.length ||
-      request.countryIds.length ||
       request.leagueEdition ||
-      request.stadiumEdition ||
-      Object.keys(request.overall).length ||
-      Object.keys(request.attack).length ||
-      Object.keys(request.midfield).length ||
-      Object.keys(request.defence).length,
+      request.isReal !== undefined ||
+      Object.keys(request.age).length,
     );
   });
 
@@ -176,8 +154,6 @@ export class TeamFinder {
     });
     const context = this.request().leagueEdition;
     if (context) void this.loadContextLeague(context);
-    const stadiumContext = this.request().stadiumEdition;
-    if (stadiumContext) void this.loadContextStadium(stadiumContext);
   }
 
   protected setVersions(versions: number[]): void {
@@ -185,34 +161,42 @@ export class TeamFinder {
     void this.search();
   }
 
-  protected setRange(
-    kind: 'overall' | 'attack' | 'midfield' | 'defence',
-    boundary: 'min' | 'max',
-    event: Event,
-  ): void {
+  protected setAge(boundary: 'min' | 'max', event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
-    const number = raw === '' ? undefined : Number(raw);
     this.request.update((value) => ({
       ...value,
-      [kind]: { ...value[kind], [boundary]: number },
+      age: { ...value.age, [boundary]: raw === '' ? undefined : Number(raw) },
       offset: 0,
     }));
     void this.search();
   }
 
-  protected async suggest(facet: TeamFacet, event: Event): Promise<void> {
-    const text = (event.target as HTMLInputElement).value;
+  protected setAvailability(value: AvailabilityFilter): void {
+    this.availability.set(value);
+    this.request.update((request) => ({
+      ...request,
+      isReal: value === 'all' ? undefined : value === 'real',
+      offset: 0,
+    }));
+    void this.search();
+  }
+
+  protected async suggest(facet: RefereeFacet, event: Event): Promise<void> {
     const options = await this.qdb.suggestEntityFacets({
-      entity: 'team',
+      entity: 'referee',
       facet,
-      text,
+      text: (event.target as HTMLInputElement).value,
       versions: this.request().versions,
       limit: 20,
     });
     this.suggestions.update((value) => ({ ...value, [facet]: options }));
   }
 
-  protected addFacet(facet: TeamFacet, option: EntityFacetOption, input: HTMLInputElement): void {
+  protected addFacet(
+    facet: RefereeFacet,
+    option: EntityFacetOption,
+    input: HTMLInputElement,
+  ): void {
     if (facet === 'league')
       this.request.update((value) => ({
         ...value,
@@ -223,7 +207,7 @@ export class TeamFinder {
       const id = option.id;
       this.request.update((value) => ({
         ...value,
-        countryIds: [...new Set([...value.countryIds, id])],
+        nationalityIds: [...new Set([...value.nationalityIds, id])],
         offset: 0,
       }));
     }
@@ -242,7 +226,7 @@ export class TeamFinder {
     void this.search();
   }
 
-  protected removeFacet(facet: TeamFacet, key: string): void {
+  protected removeFacet(facet: RefereeFacet, key: string): void {
     if (facet === 'league')
       this.request.update((value) => ({
         ...value,
@@ -252,7 +236,7 @@ export class TeamFinder {
     else
       this.request.update((value) => ({
         ...value,
-        countryIds: value.countryIds.filter((item) => item !== Number(key)),
+        nationalityIds: value.nationalityIds.filter((item) => item !== Number(key)),
         offset: 0,
       }));
     void this.search();
@@ -260,10 +244,10 @@ export class TeamFinder {
 
   protected clearFilters(): void {
     this.model.set({ text: '' });
-    this.request.set(defaultTeamSearchRequest());
-    this.labels.set({ league: {}, country: {} });
+    this.request.set(defaultRefereeSearchRequest());
+    this.labels.set({ nationality: {}, league: {} });
+    this.availability.set('all');
     this.contextLeague.set(undefined);
-    this.contextStadium.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
@@ -282,21 +266,21 @@ export class TeamFinder {
   }
 
   protected sort(event: Sort): void {
+    if (!event.direction) return;
     const direction = event.direction;
-    if (!direction) return;
     this.request.update((value) => ({
       ...value,
-      sort: event.active as TeamSortField,
+      sort: event.active as RefereeSortField,
       direction,
       offset: 0,
     }));
     void this.search();
   }
 
-  protected async openTeam(row: TeamEditionRow): Promise<void> {
-    const team = await this.qdb.getTeam(row);
-    this.dialog.open(TeamDetail, {
-      data: team,
+  protected async openReferee(row: RefereeEditionRow): Promise<void> {
+    const referee = await this.qdb.getReferee(row);
+    this.dialog.open(RefereeDetail, {
+      data: referee,
       width: '900px',
       maxWidth: '96vw',
       maxHeight: '92vh',
@@ -304,16 +288,13 @@ export class TeamFinder {
     });
   }
 
-  private initialRequest(): TeamSearchRequest {
-    const request = defaultTeamSearchRequest();
+  private initialRequest(): RefereeSearchRequest {
+    const request = defaultRefereeSearchRequest();
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
-    const stadiumId = validId(this.route.snapshot.queryParamMap.get('stadiumId'));
-    if (!version || Boolean(leagueId) === Boolean(stadiumId)) return request;
-    if (leagueId) return { ...request, versions: [version], leagueEdition: { version, leagueId } };
-    if (stadiumId)
-      return { ...request, versions: [version], stadiumEdition: { version, stadiumId } };
-    return request;
+    return version && leagueId
+      ? { ...request, versions: [version], leagueEdition: { version, leagueId } }
+      : request;
   }
 
   private async loadContextLeague(key: { version: number; leagueId: number }): Promise<void> {
@@ -324,24 +305,16 @@ export class TeamFinder {
     }
   }
 
-  private async loadContextStadium(key: { version: number; stadiumId: number }): Promise<void> {
-    try {
-      this.contextStadium.set(await this.qdb.getStadium(key));
-    } catch {
-      this.request.update((value) => ({ ...value, stadiumEdition: undefined }));
-    }
-  }
-
   private async search(): Promise<void> {
     const sequence = ++this.requestSequence;
     this.loading.set(true);
     this.error.set('');
     try {
-      const result = await this.qdb.searchTeams(this.request());
+      const result = await this.qdb.searchReferees(this.request());
       if (sequence === this.requestSequence) this.result.set(result);
     } catch (error) {
       if (sequence === this.requestSequence)
-        this.error.set(error instanceof Error ? error.message : 'Team search failed.');
+        this.error.set(error instanceof Error ? error.message : 'Referee search failed.');
     } finally {
       if (sequence === this.requestSequence) this.loading.set(false);
     }

@@ -1,0 +1,79 @@
+<header class="detail-header">
+  <div>
+    <p class="eyebrow">FIFA {{ referee.version }} referee</p>
+    <h2 mat-dialog-title>{{ referee.name }}</h2>
+    <p class="country-line">
+      @if (referee.nationalityCode) {
+        <app-country-flag
+          size="lg"
+          decorative
+          [code]="referee.nationalityCode"
+          [countryName]="referee.nationalityName"
+        />
+      }
+      <span>{{ referee.nationalityName || 'Unknown nationality' }}</span>
+    </p>
+  </div>
+  <button
+    type="button"
+    class="close-button"
+    mat-icon-button
+    mat-dialog-close
+    aria-label="Close referee details"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+<mat-dialog-content>
+  <div class="metric-grid">
+    @for (metric of metrics; track metric.label) {
+      <div>
+        <span>{{ metric.label }}</span
+        ><strong>{{ metric.value }}</strong>
+      </div>
+    }
+  </div>
+  <section aria-labelledby="referee-leagues-heading">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Assignments</p>
+        <h3 id="referee-leagues-heading">League editions</h3>
+      </div>
+      <span>{{ referee.leaguesPreview.length }}</span>
+    </div>
+    @if (referee.leaguesPreview.length) {
+      <div class="preview-list">
+        @for (league of referee.leaguesPreview; track league.key) {
+          <div class="preview-row league-row">
+            <strong>{{ league.name }}</strong
+            ><span class="country-line compact">
+              @if (league.countryCode) {
+                <app-country-flag decorative [code]="league.countryCode" />
+              }
+              <span>{{ league.countryName || '—' }}</span></span
+            ><span>Tier {{ league.level ?? '—' }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-preview">No linked league is available for this referee edition.</p>
+    }
+  </section>
+  <mat-expansion-panel
+    ><mat-expansion-panel-header
+      ><mat-panel-title>Raw referee fields</mat-panel-title></mat-expansion-panel-header
+    >
+    <dl class="raw-fields">
+      @for (field of referee.raw | keyvalue; track field.key) {
+        <dt>{{ field.key }}</dt>
+        <dd>{{ field.value }}</dd>
+      }
+    </dl></mat-expansion-panel
+  >
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button type="button" mat-button mat-dialog-close>Close</button>
+  <button type="button" mat-flat-button [disabled]="!referee.leagueCount" (click)="viewLeagues()">
+    <mat-icon>emoji_events</mat-icon>View leagues
+  </button>
+</mat-dialog-actions>

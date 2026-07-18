@@ -66,3 +66,48 @@ mat-sidenav.filters .mat-drawer-inner-container {
   background: #ffdcc2;
   color: #713600;
 }
+
+.score-value {
+  border: 1px solid transparent;
+}
+
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.score-red {
+  background: #fde7e9;
+  border-color: #f4b7bb;
+  color: #8c1d18;
+}
+
+.score-orange {
+  background: #ffeadf;
+  border-color: #ffc6a5;
+  color: #8a3800;
+}
+
+.score-yellow {
+  background: #fff4c2;
+  border-color: #e8d172;
+  color: #604b00;
+}
+
+.score-lime {
+  background: #e7f3c5;
+  border-color: #bfd77c;
+  color: #365e00;
+}
+
+.score-green {
+  background: #ccebdc;
+  border-color: #8fcdb0;
+  color: #064c35;
+}

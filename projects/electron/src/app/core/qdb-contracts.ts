@@ -118,6 +118,6 @@ export const defaultSearchRequest = (): SearchRequest => ({
   potential: {},
   pageSize: 50,
   offset: 0,
-  sort: 'bestRating',
+  sort: 'version',
   direction: 'desc',
 });

@@ -64,6 +64,23 @@ describe('PlayerDetail', () => {
     expect([...attackerBadges].every((badge) => badge.textContent?.includes('ST'))).toBe(true);
   });
 
+  it('exposes the value color band for player attributes', () => {
+    const testable = component as unknown as {
+      scoreValueClass(value: number): string;
+    };
+
+    expect(testable.scoreValueClass(80)).toBe('score-value score-lime');
+  });
+
+  it('colors overall and potential by their value bands', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const scores = element.querySelectorAll('.metric-grid .score-badge');
+
+    expect(scores).toHaveLength(2);
+    expect(scores[0].classList.contains('score-lime')).toBe(true);
+    expect(scores[1].classList.contains('score-green')).toBe(true);
+  });
+
   it('renders a large decorative nationality flag', () => {
     const element = fixture.nativeElement as HTMLElement;
     const flag = element.querySelector('app-country-flag');

@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { scoreValueClass } from '../../core/attribute-value';
 import { Qdb } from '../../core/qdb';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import {
@@ -97,6 +98,7 @@ export class PlayerFinder {
     'ST',
   ];
   protected readonly positionBadgeClass = positionBadgeClass;
+  protected readonly scoreValueClass = scoreValueClass;
   protected readonly suggestions = signal<Record<FilterKind, FilterSuggestion[]>>({
     nationality: [],
     team: [],

@@ -1,7 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { FilterSuggestion, PlayerSearchRow, SearchResultPage } from '../../core/qdb-contracts';
+import type {
+  FilterSuggestion,
+  PlayerSearchRow,
+  SearchRequest,
+  SearchResultPage,
+} from '../../core/qdb-contracts';
 import { PlayerFinder } from './player-finder';
 
 describe('PlayerFinder', () => {
@@ -40,6 +45,14 @@ describe('PlayerFinder', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('sorts the newest FIFA editions first by default', () => {
+    const testable = component as unknown as {
+      request(): SearchRequest;
+    };
+
+    expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
   });
 
   it('searches immediately when a number range changes', async () => {
@@ -160,6 +173,12 @@ describe('PlayerFinder', () => {
     );
     expect(nationalityCell?.textContent).toContain('Brazil');
     expect(nationalityCell?.querySelector('app-country-flag')).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('td.cdk-column-overall .score-lime'),
+    ).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('td.cdk-column-potential .score-green'),
+    ).toBeTruthy();
 
     testable.result.set({
       rows: [{ ...testableResultRow, nationality: 'Unknown nation', nationalityCode: '' }],

@@ -289,12 +289,18 @@
               <ng-container matColumnDef="overall"
                 ><th mat-header-cell *matHeaderCellDef mat-sort-header="overall">OVR</th>
                 <td mat-cell *matCellDef="let row">
-                  <strong>{{ row.overall }}</strong>
+                  <strong [class]="'score-badge ' + scoreValueClass(row.overall)">
+                    {{ row.overall }}
+                  </strong>
                 </td></ng-container
               >
               <ng-container matColumnDef="potential"
                 ><th mat-header-cell *matHeaderCellDef mat-sort-header="potential">POT</th>
-                <td mat-cell *matCellDef="let row">{{ row.potential }}</td></ng-container
+                <td mat-cell *matCellDef="let row">
+                  <span [class]="'score-badge ' + scoreValueClass(row.potential)">
+                    {{ row.potential }}
+                  </span>
+                </td></ng-container
               >
               <ng-container matColumnDef="bestRating"
                 ><th mat-header-cell *matHeaderCellDef mat-sort-header="bestRating">Best</th>

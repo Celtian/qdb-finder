@@ -5,6 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { scoreValueClass } from '../../core/attribute-value';
 import type { PlayerDetails } from '../../core/qdb-contracts';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { positionBadgeClass } from '../../core/position';
@@ -26,4 +27,5 @@ import { positionBadgeClass } from '../../core/position';
 export class PlayerDetail {
   protected readonly player = inject<PlayerDetails>(MAT_DIALOG_DATA);
   protected readonly positionBadgeClass = positionBadgeClass;
+  protected readonly scoreValueClass = scoreValueClass;
 }

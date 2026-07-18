@@ -26,10 +26,16 @@
 <mat-dialog-content>
   <div class="metric-grid">
     <div>
-      <span>Overall</span><strong>{{ player.overall }}</strong>
+      <span>Overall</span
+      ><strong [class]="'score-badge ' + scoreValueClass(player.overall)">
+        {{ player.overall }}
+      </strong>
     </div>
     <div>
-      <span>Potential</span><strong>{{ player.potential }}</strong>
+      <span>Potential</span
+      ><strong [class]="'score-badge ' + scoreValueClass(player.potential)">
+        {{ player.potential }}
+      </strong>
     </div>
     <div>
       <span>Best rating</span
@@ -72,7 +78,7 @@
     <mat-tab label="Attributes"
       ><div class="ratings">
         @for (attribute of player.attributes | keyvalue; track attribute.key) {
-          <span
+          <span [class]="scoreValueClass(attribute.value)"
             >{{ attribute.key }} <strong>{{ attribute.value }}</strong></span
           >
         }

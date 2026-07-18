@@ -2,8 +2,13 @@ name: 🚀 Build & Publish
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
+
+# on:
+#  push:
+#    tags:
+#      - 'v*'
 
 permissions:
   contents: write
@@ -15,7 +20,7 @@ concurrency:
 jobs:
   publish:
     name: 📦 Validate, publish & deploy
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: 🗜️ Checkout
         uses: actions/checkout@v7
@@ -58,6 +63,13 @@ jobs:
           test -f .electron/electron/main/index.js
           test -f .electron/electron/preload.js
           test -f resources/database/qdb.sqlite
+
+      - name: 🪟 Install Windows packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends mono-devel wine
+          mono --version
+          wine --version
 
       - name: 🚀 Publish draft GitHub Release
         run: yarn electron-forge publish --arch=x64 --platform=win32

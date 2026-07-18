@@ -72,7 +72,7 @@ yarn db:validate
 yarn make
 ```
 
-Electron Forge creates a Windows x64 Squirrel installer and ZIP. A `v*` tag matching `package.json` and pointing at `master` runs the `🚀 Build & Publish` workflow, rebuilds and validates the full database, publishes a draft GitHub Release, and deploys the prerendered documentation.
+Electron Forge creates a Windows x64 Squirrel installer and ZIP. A `v*` tag matching `package.json` and pointing at `master` runs the `🚀 Build & Publish` workflow, rebuilds and validates the full database, publishes a draft GitHub Release, and deploys the prerendered documentation to the `gh-pages` branch. The repository must provide an `ACTIONS_DEPLOY_KEY` secret whose matching public deploy key has write access, and GitHub Pages must publish from the root of `gh-pages`.
 
 Pull requests run the `🧪 Test PR` workflow, including the full database build, source validation, production builds, and Windows x64 package verification.
 

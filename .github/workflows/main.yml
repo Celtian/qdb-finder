@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
-  pages: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -16,7 +14,7 @@ concurrency:
 
 jobs:
   publish:
-    name: 📦 Validate & publish
+    name: 📦 Validate, publish & deploy
     runs-on: windows-latest
     steps:
       - name: 🗜️ Checkout
@@ -66,21 +64,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📚 Upload documentation pages
+      - name: 🛠️ Copy index.html to 404.html
         if: contains(github.ref, 'beta') == false
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist/docs/browser
+        shell: bash
+        run: cp ./dist/docs/browser/index.html ./dist/docs/browser/404.html
 
-  deploy:
-    name: 📚 Deploy documentation
-    if: contains(github.ref, 'beta') == false
-    needs: publish
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: 🚀 Deploy documentation
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: 🚀 Deploy Github Pages
+        if: contains(github.ref, 'beta') == false
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_branch: gh-pages
+          publish_dir: ./dist/docs/browser

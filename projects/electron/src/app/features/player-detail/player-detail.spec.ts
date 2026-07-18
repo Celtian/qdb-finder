@@ -62,4 +62,15 @@ describe('PlayerDetail', () => {
     expect(attackerBadges).toHaveLength(2);
     expect([...attackerBadges].every((badge) => badge.textContent?.includes('ST'))).toBe(true);
   });
+
+  it('renders an accessible Material icon button to close the dialog', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const closeButton = element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Close player details"]',
+    );
+
+    expect(closeButton).toBeTruthy();
+    expect(closeButton?.classList.contains('mat-mdc-icon-button')).toBe(true);
+    expect(closeButton?.querySelector('mat-icon')?.textContent).toContain('close');
+  });
 });

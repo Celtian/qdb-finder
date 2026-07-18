@@ -1,8 +1,13 @@
 .detail-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 2rem;
   padding: 1.25rem 1.5rem 0;
+}
+.close-button {
+  flex: 0 0 auto;
+  margin: -0.5rem -0.5rem 0 0;
 }
 .detail-header h2,
 .detail-header p {

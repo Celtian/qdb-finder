@@ -123,11 +123,15 @@ table {
   min-width: 1020px;
 }
 .player-link {
+  display: inline-block;
+  max-width: 100%;
   border: 0;
   background: transparent;
   color: var(--qdb-brand);
   font: inherit;
   font-weight: 700;
+  line-height: 1.25;
+  text-align: start;
   cursor: pointer;
   padding: 0.5rem 0;
 }

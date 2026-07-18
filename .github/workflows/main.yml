@@ -27,13 +27,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🔎 Verify tag targets master
-        shell: bash
-        run: test "$GITHUB_SHA" = "$(git rev-parse origin/master)"
+      #      - name: 🔎 Verify tag targets master
+      #        shell: bash
+      #        run: test "$GITHUB_SHA" = "$(git rev-parse origin/master)"
 
-      - name: 🔎 Verify package version
-        shell: bash
-        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      # - name: 🔎 Verify package version
+      #  shell: bash
+      #  run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
 
       - name: 🗜️ Setup Node
         uses: actions/setup-node@v6

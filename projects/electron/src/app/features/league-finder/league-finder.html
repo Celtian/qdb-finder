@@ -1,0 +1,195 @@
+<mat-sidenav-container class="entity-shell">
+  <mat-sidenav
+    #filters
+    class="entity-filters"
+    [mode]="isNarrow() ? 'over' : 'side'"
+    [opened]="!isNarrow()"
+  >
+    <div class="filter-content">
+      <div class="filter-heading">
+        <div>
+          <p>QDB Finder</p>
+          <h2>League filters</h2>
+        </div>
+        <button
+          type="button"
+          mat-icon-button
+          aria-label="Close league filters"
+          (click)="filters.close()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <mat-form-field appearance="outline">
+        <mat-label>FIFA versions</mat-label>
+        <mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
+          @for (version of versions; track version) {
+            <mat-option [value]="version">FIFA {{ version }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Country</mat-label>
+        <input
+          #countryInput
+          matInput
+          [matAutocomplete]="countryAuto"
+          (focus)="suggestCountries($event)"
+          (input)="suggestCountries($event)"
+        />
+        <mat-autocomplete
+          #countryAuto="matAutocomplete"
+          (optionSelected)="addCountry($event.option.value, countryInput)"
+        >
+          @for (option of countrySuggestions(); track option.key) {
+            <mat-option [value]="option">
+              <span class="country-with-flag">
+                @if (option.countryCode) {
+                  <app-country-flag decorative [code]="option.countryCode" />
+                }
+                <span>{{ option.label }} · {{ option.count.toLocaleString() }}</span>
+              </span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <mat-chip-set aria-label="Selected countries">
+        @for (country of selectedCountries(); track country.key) {
+          <mat-chip (removed)="removeCountry(country.key)">
+            <span class="country-with-flag">
+              @if (country.countryCode) {
+                <app-country-flag decorative [code]="country.countryCode" />
+              }
+              <span>{{ country.label }}</span>
+            </span>
+            <button type="button" matChipRemove [attr.aria-label]="'Remove ' + country.label">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip>
+        }
+      </mat-chip-set>
+      <mat-form-field appearance="outline">
+        <mat-label>League tiers</mat-label>
+        <mat-select multiple [value]="request().levels" (valueChange)="setLevels($event)">
+          @for (level of levels; track level) {
+            <mat-option [value]="level">Tier {{ level }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button type="button" mat-button [disabled]="!hasFilters()" (click)="clearFilters()">
+        Reset
+      </button>
+    </div>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <header class="entity-topbar">
+      <button
+        type="button"
+        mat-icon-button
+        aria-label="Open league filters"
+        (click)="filters.toggle()"
+      >
+        <mat-icon>tune</mat-icon>
+      </button>
+      <div>
+        <p class="eyebrow">Competitions across the world</p>
+        <h1>Browse league editions</h1>
+      </div>
+    </header>
+    <main>
+      <mat-form-field class="entity-search" appearance="outline">
+        <mat-label>Search leagues</mat-label><mat-icon matPrefix>search</mat-icon>
+        <input matInput autocomplete="off" [formField]="searchForm.text" />
+        <button
+          type="button"
+          mat-icon-button
+          matSuffix
+          aria-label="Clear league search"
+          [disabled]="!model().text"
+          (click)="model.set({ text: '' })"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+      @if (loading()) {
+        <div class="state">
+          <mat-spinner diameter="42" />
+          <p>Searching leagues…</p>
+        </div>
+      } @else if (error()) {
+        <div class="state error">
+          <mat-icon>database_off</mat-icon>
+          <h2>Leagues unavailable</h2>
+          <p>{{ error() }}</p>
+          <button type="button" mat-flat-button (click)="retrySearch()">Try again</button>
+        </div>
+      } @else if (!result().rows.length) {
+        <div class="state">
+          <mat-icon>emoji_events</mat-icon>
+          <h2>No leagues match these filters</h2>
+        </div>
+      } @else {
+        <section class="results" aria-live="polite">
+          <div class="result-count">
+            <strong>{{ result().total.toLocaleString() }}</strong> league editions
+          </div>
+          <div class="table-scroll">
+            <table
+              mat-table
+              matSort
+              [dataSource]="result().rows"
+              [matSortActive]="request().sort"
+              [matSortDirection]="request().direction"
+              (matSortChange)="sort($event)"
+            >
+              <ng-container matColumnDef="name">
+                <th *matHeaderCellDef mat-header-cell mat-sort-header="name">League</th>
+                <td *matCellDef="let row" mat-cell>
+                  <button type="button" class="entity-link" (click)="openLeague(row)">
+                    {{ row.name }}
+                  </button>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="version">
+                <th *matHeaderCellDef mat-header-cell mat-sort-header="version">Edition</th>
+                <td *matCellDef="let row" mat-cell>FIFA {{ row.version }}</td>
+              </ng-container>
+              <ng-container matColumnDef="country">
+                <th *matHeaderCellDef mat-header-cell mat-sort-header="country">Country</th>
+                <td *matCellDef="let row" mat-cell>
+                  <span class="country-with-flag">
+                    @if (row.countryCode) {
+                      <app-country-flag decorative [code]="row.countryCode" />
+                    }
+                    <span>{{ row.countryName || '—' }}</span>
+                  </span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="level">
+                <th *matHeaderCellDef mat-header-cell mat-sort-header="level">Tier</th>
+                <td *matCellDef="let row" mat-cell>{{ row.level ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="teamCount">
+                <th *matHeaderCellDef mat-header-cell mat-sort-header="teamCount">Teams</th>
+                <td *matCellDef="let row" mat-cell>{{ row.teamCount }}</td>
+              </ng-container>
+              <ng-container matColumnDef="playerCount">
+                <th *matHeaderCellDef mat-header-cell mat-sort-header="playerCount">Players</th>
+                <td *matCellDef="let row" mat-cell>{{ row.playerCount }}</td>
+              </ng-container>
+              <tr *matHeaderRowDef="columns; sticky: true" mat-header-row></tr>
+              <tr *matRowDef="let row; columns: columns" mat-row (dblclick)="openLeague(row)"></tr>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="result().total"
+            [pageSize]="result().pageSize"
+            [pageIndex]="result().offset / result().pageSize"
+            [pageSizeOptions]="[25, 50, 100]"
+            (page)="page($event)"
+          />
+        </section>
+      }
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

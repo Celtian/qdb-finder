@@ -200,6 +200,16 @@
       </div>
     </header>
     <main>
+      @if (context(); as entity) {
+        <div class="context-banner">
+          <mat-icon>filter_alt</mat-icon>
+          <span>
+            Showing FIFA {{ entity.version }} players from <strong>{{ entity.name }}</strong>
+            {{ contextKind() }}
+          </span>
+          <button type="button" mat-button (click)="clearFilters()">Clear</button>
+        </div>
+      }
       <mat-form-field class="search" appearance="outline"
         ><mat-label>Search players, teams, leagues or countries</mat-label
         ><mat-icon matPrefix>search</mat-icon

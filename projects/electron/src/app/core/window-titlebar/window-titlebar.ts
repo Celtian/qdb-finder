@@ -1,10 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { AppNavigationMenu } from '../app-navigation-menu/app-navigation-menu';
 
 @Component({
   selector: 'app-window-titlebar',
-  imports: [NgOptimizedImage, MatIconModule],
+  imports: [AppNavigationMenu, NgOptimizedImage, MatIconModule],
   templateUrl: './window-titlebar.html',
   styleUrl: './window-titlebar.css',
 })

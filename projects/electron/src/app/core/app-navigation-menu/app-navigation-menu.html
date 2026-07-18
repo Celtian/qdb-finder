@@ -1,0 +1,34 @@
+<button
+  class="navigation-trigger"
+  type="button"
+  mat-icon-button
+  aria-label="Open main navigation"
+  [matMenuTriggerFor]="navigationMenu"
+>
+  <mat-icon>menu</mat-icon>
+</button>
+
+<mat-menu #navigationMenu="matMenu" aria-label="Primary navigation">
+  <a
+    mat-menu-item
+    routerLink="/"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    <mat-icon>home</mat-icon>
+    <span>Home</span>
+  </a>
+  <a mat-menu-item routerLink="/players" routerLinkActive="active" ariaCurrentWhenActive="page">
+    <mat-icon>groups</mat-icon>
+    <span>Players</span>
+  </a>
+  <a mat-menu-item routerLink="/teams" routerLinkActive="active" ariaCurrentWhenActive="page">
+    <mat-icon>shield</mat-icon>
+    <span>Teams</span>
+  </a>
+  <a mat-menu-item routerLink="/leagues" routerLinkActive="active" ariaCurrentWhenActive="page">
+    <mat-icon>emoji_events</mat-icon>
+    <span>Leagues</span>
+  </a>
+</mat-menu>

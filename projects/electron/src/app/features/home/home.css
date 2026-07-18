@@ -1,0 +1,130 @@
+:host {
+  display: block;
+  height: 100%;
+  overflow: auto;
+  background:
+    radial-gradient(circle at top right, rgb(35 86 168 / 12%), transparent 35rem), #f7f8fc;
+}
+
+main {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 5rem);
+}
+
+header {
+  max-width: 720px;
+  margin-bottom: 2.5rem;
+}
+
+h1,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.eyebrow {
+  color: var(--qdb-brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lead {
+  color: #5e6472;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.browse-tile {
+  min-width: 0;
+  text-decoration: none;
+}
+
+.browse-tile mat-card {
+  height: 100%;
+  border: 1px solid #e2e5ef;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.browse-tile:hover mat-card {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgb(35 45 75 / 14%);
+}
+
+.browse-tile:focus-visible {
+  outline: 3px solid var(--qdb-brand);
+  outline-offset: 3px;
+}
+
+.tile-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #e8efff;
+  color: var(--qdb-brand);
+}
+
+mat-card-content {
+  min-height: 7rem;
+  padding-top: 1.25rem;
+  color: #5e6472;
+  line-height: 1.55;
+}
+
+mat-card-actions {
+  gap: 0.35rem;
+  color: var(--qdb-brand);
+  font-weight: 700;
+}
+
+.state {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #646b78;
+}
+
+.state > mat-icon {
+  width: 54px;
+  height: 54px;
+  font-size: 54px;
+}
+
+.state h2 {
+  margin-bottom: 0.25rem;
+  color: #20232b;
+}
+
+@media (max-width: 900px) {
+  .tile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  main {
+    padding: 1.5rem 1rem;
+  }
+
+  .tile-grid {
+    grid-template-columns: 1fr;
+  }
+}

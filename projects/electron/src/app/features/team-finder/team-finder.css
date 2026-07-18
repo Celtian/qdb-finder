@@ -1,0 +1,5 @@
+@import '../entity-finder.css';
+
+table {
+  min-width: 1120px;
+}

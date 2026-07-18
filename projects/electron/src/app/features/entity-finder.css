@@ -4,195 +4,206 @@
   min-width: 0;
 }
 
-.shell {
+.entity-shell {
   height: 100%;
   background: #f7f8fc;
 }
-.filters {
+
+.entity-filters {
   width: 310px;
-  background: #fff;
+  overflow-x: hidden;
   border-right: 1px solid #e2e5ef;
+  background: #fff;
 }
+
 .filter-content {
   width: 100%;
   min-width: 0;
   padding: 1.25rem;
   overflow-x: hidden;
 }
+
 .filter-heading,
-.topbar {
+.entity-topbar,
+.context-banner {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
+
 .filter-heading {
   justify-content: space-between;
   margin-bottom: 1.25rem;
 }
+
 .filter-heading p,
 .filter-heading h2,
-.topbar p,
-.topbar h1 {
+.entity-topbar p,
+.entity-topbar h1 {
   margin: 0;
 }
-.filters mat-form-field {
+
+.entity-filters mat-form-field,
+.entity-filters mat-chip-set {
   display: block;
   width: 100%;
 }
-.filters mat-chip-set {
-  display: block;
+
+.entity-filters mat-chip-set {
   margin: -0.7rem 0 1rem;
 }
-.filters fieldset {
-  border: 0;
-  padding: 0;
+
+.entity-filters fieldset {
   margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
 }
-.filters legend {
-  font-weight: 600;
+
+.entity-filters legend {
   margin-bottom: 0.5rem;
+  font-weight: 600;
+  text-transform: capitalize;
 }
+
 .range {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.6rem;
 }
+
 .range > * {
   min-width: 0;
 }
+
 .range label {
-  font-size: 0.75rem;
   color: #555;
+  font-size: 0.75rem;
 }
+
 .range input {
   display: block;
   width: 100%;
+  min-width: 0;
   padding: 0.7rem;
   border: 1px solid #abb2c2;
   border-radius: 8px;
   font: inherit;
-  min-width: 0;
 }
-.filter-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.filter-note {
-  font-size: 0.8rem;
-  color: #656b79;
-  line-height: 1.45;
-}
-.topbar {
+
+.entity-topbar {
   padding: 1rem 2rem;
-  background: #fff;
   border-bottom: 1px solid #e2e5ef;
+  background: #fff;
 }
-.topbar h1 {
+
+.entity-topbar h1 {
   font-size: 1.4rem;
 }
+
 .eyebrow {
   color: var(--qdb-brand);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
   font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
+
 main {
   padding: 1.5rem 2rem;
 }
-.search {
+
+.entity-search {
   width: min(760px, 100%);
 }
+
 .context-banner {
-  display: flex;
   width: fit-content;
   max-width: 100%;
-  align-items: center;
-  gap: 0.75rem;
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
   border-radius: 12px;
   background: #e8efff;
   color: #163f7a;
 }
+
 .results {
-  background: #fff;
+  overflow: hidden;
   border: 1px solid #e2e5ef;
   border-radius: 16px;
-  overflow: hidden;
+  background: #fff;
   box-shadow: 0 8px 30px rgb(35 45 75 / 6%);
 }
+
 .result-count {
   padding: 1rem 1.25rem;
   border-bottom: 1px solid #e2e5ef;
 }
+
 .table-scroll {
   overflow: auto;
 }
+
 table {
   width: 100%;
-  min-width: 1020px;
 }
-.player-link {
+
+.entity-link {
   display: inline-block;
   max-width: 100%;
+  padding: 0.5rem 0;
   border: 0;
   background: transparent;
   color: var(--qdb-brand);
+  cursor: pointer;
   font: inherit;
   font-weight: 700;
   line-height: 1.25;
   text-align: start;
-  cursor: pointer;
-  padding: 0.5rem 0;
 }
-.rating {
-  min-width: 4.4rem;
-  justify-content: center;
-  white-space: nowrap;
-}
-.nationality-with-flag {
+
+.country-with-flag {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 0.45rem;
-  min-width: 0;
 }
+
 .state {
-  min-height: 420px;
   display: flex;
+  min-height: 420px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
   color: #646b78;
+  text-align: center;
 }
-.state mat-icon {
+
+.state > mat-icon {
   width: 54px;
   height: 54px;
   font-size: 54px;
 }
+
 .state h2 {
-  color: #20232b;
   margin: 0.8rem 0 0.2rem;
+  color: #20232b;
 }
-.state.error mat-icon {
-  color: #b3261e;
-}
+
 @media (max-width: 900px) {
-  .filters {
+  .entity-filters {
     width: min(340px, 88vw);
   }
-  main {
+
+  main,
+  .entity-topbar {
     padding: 1rem;
   }
-  .topbar {
-    padding: 1rem;
-  }
-  .shell ::ng-deep .mat-drawer {
+
+  .entity-shell ::ng-deep .mat-drawer {
     position: fixed;
   }
-  .shell ::ng-deep .mat-drawer-backdrop {
+
+  .entity-shell ::ng-deep .mat-drawer-backdrop {
     visibility: visible;
   }
 }

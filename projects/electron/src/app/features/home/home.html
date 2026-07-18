@@ -1,0 +1,46 @@
+<main>
+  <header>
+    <p class="eyebrow">Offline FIFA database</p>
+    <h1>Explore every edition</h1>
+    <p class="lead">
+      Browse players, teams and leagues across thirteen FIFA databases without an internet
+      connection.
+    </p>
+  </header>
+  @if (loading()) {
+    <div class="state" aria-live="polite">
+      <mat-spinner diameter="42" />
+      <p>Loading database summary…</p>
+    </div>
+  } @else if (error()) {
+    <div class="state error">
+      <mat-icon>database_off</mat-icon>
+      <h2>Database unavailable</h2>
+      <p>{{ error() }}</p>
+      <button type="button" mat-flat-button (click)="retry()">Try again</button>
+    </div>
+  } @else {
+    <section class="tile-grid" aria-label="Browse database">
+      @for (tile of tiles(); track tile.route) {
+        <a class="browse-tile" [routerLink]="tile.route">
+          <mat-card>
+            <mat-card-header>
+              <div mat-card-avatar class="tile-icon">
+                <mat-icon>{{ tile.icon }}</mat-icon>
+              </div>
+              <mat-card-title>{{ tile.title }}</mat-card-title>
+              <mat-card-subtitle>{{ tile.count.toLocaleString() }} editions</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content
+              ><p>{{ tile.description }}</p></mat-card-content
+            >
+            <mat-card-actions align="end">
+              <span>Browse {{ tile.title.toLocaleLowerCase() }}</span>
+              <mat-icon>arrow_forward</mat-icon>
+            </mat-card-actions>
+          </mat-card>
+        </a>
+      }
+    </section>
+  }
+</main>

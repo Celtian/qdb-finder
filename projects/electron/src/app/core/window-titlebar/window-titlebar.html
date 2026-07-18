@@ -1,7 +1,10 @@
 <header class="titlebar">
-  <div class="brand">
-    <img ngSrc="qdb-finder.png" width="24" height="24" alt="" priority />
-    <span>QDB Finder</span>
+  <div class="app-identity">
+    <app-navigation-menu />
+    <div class="brand">
+      <img ngSrc="qdb-finder.png" width="24" height="24" alt="" priority />
+      <span>QDB Finder</span>
+    </div>
   </div>
   @if (desktop && !desktop.nativeControls) {
     <nav class="window-actions" aria-label="Window controls">

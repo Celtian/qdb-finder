@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { PlayerDatabase } from '../../projects/electron/electron/database';
-import { defaultSearchRequest } from '../../projects/electron/src/app/core/qdb-contracts';
+import {
+  defaultLeagueSearchRequest,
+  defaultSearchRequest,
+  defaultTeamSearchRequest,
+} from '../../projects/electron/src/app/core/qdb-contracts';
 
 const path = resolve(process.cwd(), 'resources', 'database', 'qdb.sqlite');
 const integration = describe.skipIf(!existsSync(path));
@@ -63,9 +67,125 @@ integration('player queries', () => {
     expect(database.search({ ...request, text: "Messi' OR 1=1 --" }).total).toBe(0);
   });
 
+  it('keeps same-name team editions distinct and returns nullable legacy ratings', () => {
+    const arsenal = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      text: 'Arsenal',
+      versions: [23],
+    });
+    const legacy = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      versions: [11],
+      pageSize: 1,
+    });
+
+    expect(arsenal.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ teamId: 1, leagueId: 13 }),
+        expect.objectContaining({ teamId: 116_009, leagueId: 2216 }),
+      ]),
+    );
+    expect(legacy.rows[0]).toMatchObject({ overall: null, attack: null, foundationYear: null });
+  });
+
+  it('returns league country codes, counts and edition previews', () => {
+    const leagues = database.searchLeagues({
+      ...defaultLeagueSearchRequest(),
+      text: 'Premier League',
+      versions: [23],
+    });
+    const premierLeague = leagues.rows.find((row) => row.leagueId === 13);
+    const legacyLeague = database.searchLeagues({
+      ...defaultLeagueSearchRequest(),
+      versions: [22],
+      pageSize: 1,
+    });
+
+    expect(premierLeague).toMatchObject({
+      countryCode: 'gb-eng',
+      level: 1,
+      teamCount: 20,
+      playerCount: 636,
+    });
+    expect(database.getLeague({ version: 23, leagueId: 13 }).teams[0]).toMatchObject({
+      version: 23,
+      leagueId: 13,
+    });
+    expect(legacyLeague.rows[0]?.isWomen).toBeNull();
+  });
+
+  it('keeps entity pagination stable and treats injection-shaped names as text', () => {
+    const teamRequest = {
+      ...defaultTeamSearchRequest(),
+      versions: [23],
+      pageSize: 5,
+      sort: 'name' as const,
+      direction: 'asc' as const,
+    };
+    const first = database.searchTeams(teamRequest);
+    const second = database.searchTeams({ ...teamRequest, offset: 5 });
+
+    expect(new Set([...first.rows, ...second.rows].map((row) => row.key)).size).toBe(10);
+    expect(database.searchTeams({ ...teamRequest, text: "Arsenal' OR 1=1 --" }).total).toBe(0);
+    expect(
+      database.searchLeagues({
+        ...defaultLeagueSearchRequest(),
+        text: "Premier' OR 1=1 --",
+      }).total,
+    ).toBe(0);
+  });
+
+  it('filters players by exact team and league edition IDs', () => {
+    const men = database.search({
+      ...request,
+      versions: [23],
+      teamEdition: { version: 23, teamId: 1 },
+      pageSize: 100,
+    });
+    const women = database.search({
+      ...request,
+      versions: [23],
+      teamEdition: { version: 23, teamId: 116_009 },
+      pageSize: 100,
+    });
+    const league = database.search({
+      ...request,
+      versions: [23],
+      leagueEdition: { version: 23, leagueId: 13 },
+    });
+
+    expect(men.total).toBe(33);
+    expect(women.total).toBe(20);
+    expect(men.rows.every((row) => row.teams.includes('Arsenal'))).toBe(true);
+    expect(league.total).toBe(636);
+  });
+
+  it('returns version-aware country and league facets', () => {
+    expect(
+      database.suggestEntityFacets({
+        entity: 'team',
+        facet: 'country',
+        text: 'England',
+        versions: [23],
+      })[0],
+    ).toMatchObject({ id: 14, label: 'England', countryCode: 'gb-eng' });
+    expect(
+      database.suggestEntityFacets({
+        entity: 'team',
+        facet: 'league',
+        text: 'Premier',
+        versions: [23],
+      }),
+    ).toEqual(
+      expect.arrayContaining([expect.objectContaining({ key: 'england premier league (1)' })]),
+    );
+  });
+
   it('reports exact canonical metadata', () => {
     expect(database.info()).toMatchObject({
       editions: 227_572,
+      teamEditions: 8_907,
+      leagueEditions: 560,
       teamLinks: 241_640,
       sourceFiles: 306,
     });

@@ -1,13 +1,25 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import type {
   DatabaseInfo,
+  EntityFacetOption,
+  EntityFacetRequest,
   FilterSuggestion,
   FilterSuggestionRequest,
+  LeagueDetails,
+  LeagueEditionKey,
+  LeagueEditionRow,
+  LeagueResultPage,
+  LeagueSearchRequest,
   PlayerDetails,
   PlayerEditionKey,
   PlayerSearchRow,
   SearchRequest,
   SearchResultPage,
+  TeamDetails,
+  TeamEditionKey,
+  TeamEditionRow,
+  TeamResultPage,
+  TeamSearchRequest,
 } from '../src/app/core/qdb-contracts';
 
 type Row = Record<string, string | number | null>;
@@ -20,10 +32,34 @@ const sortColumns: Record<SearchRequest['sort'], string> = {
   potential: 'p.potential',
   bestRating: 'p.best_rating',
 };
+const teamSortColumns: Record<TeamSearchRequest['sort'], string> = {
+  name: 't.team_name COLLATE NOCASE',
+  version: 't.version',
+  league: 't.league_name COLLATE NOCASE',
+  squadSize: 't.squad_size',
+  overall: 't.overall',
+  attack: 't.attack',
+  midfield: 't.midfield',
+  defence: 't.defence',
+};
+const leagueSortColumns: Record<LeagueSearchRequest['sort'], string> = {
+  name: 'l.league_name COLLATE NOCASE',
+  version: 'l.version',
+  country: 'l.country_name COLLATE NOCASE',
+  level: 'l.level',
+  teamCount: 'l.team_count',
+  playerCount: 'l.player_count',
+};
 
 const parseList = (value: string | null): string[] =>
   value ? value.split('|').filter(Boolean) : [];
 const parseObject = <T>(value: string | null): T => JSON.parse(value ?? '{}') as T;
+const nullableNumber = (value: string | number | null): number | null =>
+  value === null ? null : Number(value);
+const normalizeSearchText = (value: string): string =>
+  value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase('en').trim();
+const likeValue = (value: string): string =>
+  `%${normalizeSearchText(value).replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`;
 
 export class PlayerDatabase {
   private readonly database: DatabaseSync;
@@ -45,6 +81,8 @@ export class PlayerDatabase {
     this.addListFilter('p.nationality_key', request.nationalities, where, values);
     this.addExistsFilter('team_key', request.teams, where, values);
     this.addExistsFilter('league_key', request.leagues, where, values);
+    this.addExactEditionFilter('team_id', request.teamEdition, where, values);
+    this.addExactEditionFilter('league_id', request.leagueEdition, where, values);
     this.addDelimitedFilter('p.positions', request.positions, where, values);
     this.addRange('p.age', request.age, where, values);
     this.addRange('p.overall', request.overall, where, values);
@@ -77,6 +115,163 @@ export class PlayerDatabase {
       offset,
       pageSize,
     };
+  }
+
+  searchTeams(request: TeamSearchRequest): TeamResultPage {
+    const where: string[] = [];
+    const values: SQLInputValue[] = [];
+    if (request.text.trim()) {
+      where.push("t.team_key LIKE ? ESCAPE '\\'");
+      values.push(likeValue(request.text));
+    }
+    this.addListFilter('t.version', request.versions, where, values);
+    this.addListFilter('t.league_key', request.leagueKeys, where, values);
+    this.addListFilter('t.country_id', request.countryIds, where, values);
+    this.addRange('t.overall', request.overall, where, values);
+    this.addRange('t.attack', request.attack, where, values);
+    this.addRange('t.midfield', request.midfield, where, values);
+    this.addRange('t.defence', request.defence, where, values);
+    if (request.leagueEdition) {
+      where.push('t.version = ? AND t.league_id = ?');
+      values.push(request.leagueEdition.version, request.leagueEdition.leagueId);
+    }
+    const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const total = Number(
+      (
+        this.database
+          .prepare(`SELECT count(*) AS total FROM team_edition t ${clause}`)
+          .get(...values) as Row
+      )['total'],
+    );
+    const pageSize = Math.min(Math.max(request.pageSize, 1), 200);
+    const offset = Math.max(request.offset, 0);
+    const direction = request.direction === 'asc' ? 'ASC' : 'DESC';
+    const rows = this.database
+      .prepare(
+        `SELECT * FROM team_edition t ${clause}
+         ORDER BY ${teamSortColumns[request.sort]} ${direction}, t.team_name ASC, t.key ASC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(...values, pageSize, offset) as Row[];
+    return { rows: rows.map((row) => this.toTeamRow(row)), total, offset, pageSize };
+  }
+
+  getTeam(key: TeamEditionKey): TeamDetails {
+    const row = this.database
+      .prepare('SELECT * FROM team_edition WHERE version = ? AND team_id = ?')
+      .get(key.version, key.teamId) as Row | undefined;
+    if (!row) throw new Error('Team edition was not found.');
+    const players = this.database
+      .prepare(
+        `SELECT p.*, group_concat(DISTINCT all_pt.team_name) AS team_names,
+          group_concat(DISTINCT all_pt.league_name) AS league_names
+         FROM player_edition p
+         LEFT JOIN player_team all_pt ON all_pt.player_key = p.key
+         WHERE EXISTS (
+           SELECT 1 FROM player_team selected
+           WHERE selected.player_key = p.key AND selected.version = ? AND selected.team_id = ?
+         )
+         GROUP BY p.key
+         ORDER BY p.overall DESC, p.best_rating DESC, p.display_name ASC
+         LIMIT 10`,
+      )
+      .all(key.version, key.teamId) as Row[];
+    return {
+      ...this.toTeamRow(row),
+      players: players.map((player) => this.toSearchRow(player)),
+      raw: parseObject<Record<string, string | number>>(String(row['raw_json'])),
+    };
+  }
+
+  searchLeagues(request: LeagueSearchRequest): LeagueResultPage {
+    const where: string[] = [];
+    const values: SQLInputValue[] = [];
+    if (request.text.trim()) {
+      where.push("l.league_key LIKE ? ESCAPE '\\'");
+      values.push(likeValue(request.text));
+    }
+    this.addListFilter('l.version', request.versions, where, values);
+    this.addListFilter('l.country_id', request.countryIds, where, values);
+    this.addListFilter('l.level', request.levels, where, values);
+    const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const total = Number(
+      (
+        this.database
+          .prepare(`SELECT count(*) AS total FROM league_edition l ${clause}`)
+          .get(...values) as Row
+      )['total'],
+    );
+    const pageSize = Math.min(Math.max(request.pageSize, 1), 200);
+    const offset = Math.max(request.offset, 0);
+    const direction = request.direction === 'asc' ? 'ASC' : 'DESC';
+    const rows = this.database
+      .prepare(
+        `SELECT * FROM league_edition l ${clause}
+         ORDER BY ${leagueSortColumns[request.sort]} ${direction}, l.league_name ASC, l.key ASC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(...values, pageSize, offset) as Row[];
+    return { rows: rows.map((row) => this.toLeagueRow(row)), total, offset, pageSize };
+  }
+
+  getLeague(key: LeagueEditionKey): LeagueDetails {
+    const row = this.database
+      .prepare('SELECT * FROM league_edition WHERE version = ? AND league_id = ?')
+      .get(key.version, key.leagueId) as Row | undefined;
+    if (!row) throw new Error('League edition was not found.');
+    const teams = this.database
+      .prepare(
+        `SELECT * FROM team_edition
+         WHERE version = ? AND league_id = ?
+         ORDER BY overall IS NULL, overall DESC, team_name ASC LIMIT 10`,
+      )
+      .all(key.version, key.leagueId) as Row[];
+    return {
+      ...this.toLeagueRow(row),
+      teams: teams.map((team) => this.toTeamRow(team)),
+      raw: parseObject<Record<string, string | number>>(String(row['raw_json'])),
+    };
+  }
+
+  suggestEntityFacets(request: EntityFacetRequest): EntityFacetOption[] {
+    if (request.entity === 'league' && request.facet === 'league') return [];
+    const table = request.entity === 'team' ? 'team_edition' : 'league_edition';
+    const alias = request.entity === 'team' ? 't' : 'l';
+    const isCountry = request.facet === 'country';
+    const key = isCountry ? 'country_id' : 'league_key';
+    const label = isCountry ? 'country_name' : 'league_name';
+    const code = isCountry ? `max(${alias}.country_code)` : "''";
+    const values: SQLInputValue[] = [];
+    const where = [
+      `${alias}.${key} IS NOT NULL`,
+      `${alias}.${key} <> ''`,
+      `${alias}.${label} <> ''`,
+    ];
+    if (request.text.trim()) {
+      where.push(`${alias}.${label} LIKE ? ESCAPE '\\'`);
+      values.push(
+        `%${request.text.trim().replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`,
+      );
+    }
+    if (request.versions.length) {
+      where.push(`${alias}.version IN (${request.versions.map(() => '?').join(',')})`);
+      values.push(...request.versions);
+    }
+    const rows = this.database
+      .prepare(
+        `SELECT ${alias}.${key} AS key, max(${alias}.${label}) AS label,
+          count(*) AS count, ${code} AS country_code
+         FROM ${table} ${alias} WHERE ${where.join(' AND ')}
+         GROUP BY ${alias}.${key} ORDER BY count DESC, label ASC LIMIT ?`,
+      )
+      .all(...values, Math.min(request.limit ?? 50, 100)) as Row[];
+    return rows.map((facet) => ({
+      key: String(facet['key']),
+      label: String(facet['label']),
+      count: Number(facet['count']),
+      id: isCountry ? Number(facet['key']) : undefined,
+      countryCode: String(facet['country_code'] ?? ''),
+    }));
   }
 
   getPlayer(key: PlayerEditionKey): PlayerDetails {
@@ -159,6 +354,8 @@ export class PlayerDatabase {
     );
     return {
       editions: Number(metadata['player_editions'] ?? 0),
+      teamEditions: Number(metadata['team_editions'] ?? 0),
+      leagueEditions: Number(metadata['league_editions'] ?? 0),
       teamLinks: Number(metadata['team_player_links'] ?? 0),
       sourceFiles: Number(metadata['source_files'] ?? 0),
       versions: String(metadata['versions'] ?? '')
@@ -192,6 +389,43 @@ export class PlayerDatabase {
       potential: Number(row['potential']),
       bestPosition: String(row['best_position']),
       bestRating: Number(row['best_rating']),
+    };
+  }
+
+  private toTeamRow(row: Row): TeamEditionRow {
+    return {
+      key: String(row['key']),
+      version: Number(row['version']),
+      teamId: Number(row['team_id']),
+      name: String(row['team_name']),
+      leagueId: nullableNumber(row['league_id']),
+      leagueKey: String(row['league_key'] ?? ''),
+      leagueName: String(row['league_name'] ?? ''),
+      countryId: nullableNumber(row['country_id']),
+      countryName: String(row['country_name'] ?? ''),
+      countryCode: String(row['country_code'] ?? ''),
+      squadSize: Number(row['squad_size']),
+      overall: nullableNumber(row['overall']),
+      attack: nullableNumber(row['attack']),
+      midfield: nullableNumber(row['midfield']),
+      defence: nullableNumber(row['defence']),
+      foundationYear: nullableNumber(row['foundation_year']),
+    };
+  }
+
+  private toLeagueRow(row: Row): LeagueEditionRow {
+    return {
+      key: String(row['key']),
+      version: Number(row['version']),
+      leagueId: Number(row['league_id']),
+      name: String(row['league_name']),
+      countryId: nullableNumber(row['country_id']),
+      countryName: String(row['country_name'] ?? ''),
+      countryCode: String(row['country_code'] ?? ''),
+      level: nullableNumber(row['level']),
+      isWomen: row['is_women'] === null ? null : Boolean(row['is_women']),
+      teamCount: Number(row['team_count']),
+      playerCount: Number(row['player_count']),
     };
   }
 
@@ -230,6 +464,20 @@ export class PlayerDatabase {
       `EXISTS (SELECT 1 FROM player_team f WHERE f.player_key = p.key AND f.${column} IN (${input.map(() => '?').join(',')}))`,
     );
     values.push(...input);
+  }
+
+  private addExactEditionFilter(
+    column: 'team_id' | 'league_id',
+    key: TeamEditionKey | LeagueEditionKey | undefined,
+    where: string[],
+    values: SQLInputValue[],
+  ): void {
+    if (!key) return;
+    const id = 'teamId' in key ? key.teamId : key.leagueId;
+    where.push(
+      `EXISTS (SELECT 1 FROM player_team exact WHERE exact.player_key = p.key AND exact.version = ? AND exact.${column} = ?)`,
+    );
+    values.push(key.version, id);
   }
 
   private addDelimitedFilter(

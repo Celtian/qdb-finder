@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { ActivatedRoute, Router } from '@angular/router';
 import { scoreValueClass } from '../../core/attribute-value';
 import { Qdb } from '../../core/qdb';
 import { CountryFlag } from '../../core/country-flag/country-flag';
@@ -22,9 +23,11 @@ import {
   defaultSearchRequest,
   type FilterKind,
   type FilterSuggestion,
+  type LeagueDetails,
   type PlayerSearchRow,
   type SearchResultPage,
   type SortField,
+  type TeamDetails,
 } from '../../core/qdb-contracts';
 import { PlayerDetail } from '../player-detail/player-detail';
 import { map } from 'rxjs';
@@ -62,6 +65,14 @@ const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
   potentialClass: `score-badge ${scoreValueClass(row.potential)}`,
   bestRatingClass: `rating ${positionBadgeClass(row.bestPosition)}`,
 });
+const validVersion = (value: string | null): number | undefined => {
+  const version = Number(value);
+  return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
+};
+const validId = (value: string | null): number | undefined => {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
+};
 
 @Component({
   selector: 'app-player-finder',
@@ -88,11 +99,13 @@ export class PlayerFinder {
   private readonly qdb = inject(Qdb);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private requestSequence = 0;
   private debounceId?: ReturnType<typeof setTimeout>;
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(defaultSearchRequest());
+  protected readonly request = signal(this.initialRequest());
   protected readonly result = signal<SearchResultPage>({
     rows: [],
     total: 0,
@@ -101,6 +114,8 @@ export class PlayerFinder {
   });
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly context = signal<TeamDetails | LeagueDetails | undefined>(undefined);
+  protected readonly contextKind = signal<'team' | 'league' | undefined>(undefined);
   protected readonly columns = [
     'name',
     'version',
@@ -184,6 +199,8 @@ export class PlayerFinder {
       value.teams.length ||
       value.leagues.length ||
       value.positions.length ||
+      value.teamEdition ||
+      value.leagueEdition ||
       Object.keys(value.age).length ||
       Object.keys(value.overall).length ||
       Object.keys(value.potential).length,
@@ -199,6 +216,7 @@ export class PlayerFinder {
         void this.search();
       }, 250);
     });
+    void this.loadContext();
   }
 
   protected setVersions(versions: number[]): void {
@@ -288,6 +306,9 @@ export class PlayerFinder {
     this.request.set(defaultSearchRequest());
     this.filterLabels.set({ nationalities: {}, teams: {}, leagues: {} });
     this.nationalityCodes.set({});
+    this.context.set(undefined);
+    this.contextKind.set(undefined);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
   protected page(event: PageEvent): void {
@@ -318,6 +339,40 @@ export class PlayerFinder {
       maxHeight: '92vh',
       autoFocus: 'dialog',
     });
+  }
+
+  private initialRequest() {
+    const request = defaultSearchRequest();
+    const params = this.route.snapshot.queryParamMap;
+    const version = validVersion(params.get('version'));
+    const teamId = validId(params.get('teamId'));
+    const leagueId = validId(params.get('leagueId'));
+    if (!version || Boolean(teamId) === Boolean(leagueId)) return request;
+    if (teamId) return { ...request, versions: [version], teamEdition: { version, teamId } };
+    if (leagueId) return { ...request, versions: [version], leagueEdition: { version, leagueId } };
+    return request;
+  }
+
+  private async loadContext(): Promise<void> {
+    try {
+      if (this.request().teamEdition) {
+        const team = this.request().teamEdition;
+        if (!team) return;
+        this.context.set(await this.qdb.getTeam(team));
+        this.contextKind.set('team');
+      } else if (this.request().leagueEdition) {
+        const league = this.request().leagueEdition;
+        if (!league) return;
+        this.context.set(await this.qdb.getLeague(league));
+        this.contextKind.set('league');
+      }
+    } catch {
+      this.request.update((value) => ({
+        ...value,
+        teamEdition: undefined,
+        leagueEdition: undefined,
+      }));
+    }
   }
 
   private async search(): Promise<void> {

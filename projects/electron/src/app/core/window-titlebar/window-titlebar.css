@@ -10,12 +10,19 @@
   height: 44px;
   align-items: center;
   justify-content: space-between;
-  padding-left: 0.75rem;
+  padding-left: 0.25rem;
   border-bottom: 1px solid #dfe3ed;
   background: #fff;
   color: var(--mat-sys-on-surface, #1a1b20);
   user-select: none;
   -webkit-app-region: drag;
+}
+
+.app-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .brand {

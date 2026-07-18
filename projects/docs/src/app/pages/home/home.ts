@@ -15,11 +15,11 @@ const pages: Record<string, DocPage> = {
   overview: {
     eyebrow: 'QDB Finder',
     title: 'Search thirteen FIFA databases in one place',
-    lead: 'A fast, read-only desktop player finder built with Angular, Electron and SQLite FTS5.',
+    lead: 'A fast, read-only FIFA browser built with Angular, Electron and SQLite FTS5.',
     sections: [
       {
         title: 'Designed for discovery',
-        body: 'Search names and aliases, clubs, countries and leagues, then combine edition, position, age, overall and potential filters.',
+        body: 'Use the responsive home and navigation shell to browse player, team and league editions, then combine edition-specific filters and inspect complete details.',
       },
       {
         title: 'Local by default',
@@ -39,11 +39,17 @@ const pages: Record<string, DocPage> = {
   searching: {
     eyebrow: 'User guide',
     title: 'Searching and filtering',
-    lead: 'Start broad, then narrow results without loading the database into the renderer.',
-    sections: sections(
-      'Full-text and exact filters',
-      'Search player and alternate names, clubs, countries or leagues. Use the responsive drawer for FIFA edition, position, age, overall and potential.',
-    ),
+    lead: 'Start broad, then narrow player, team and league editions inside SQLite.',
+    sections: [
+      {
+        title: 'Players',
+        body: 'Search player and alternate names, clubs, countries or leagues. Filter FIFA edition, position, age, overall and potential, or open an exact squad from a team or league.',
+      },
+      {
+        title: 'Teams and leagues',
+        body: 'Compare edition-specific squads and ratings or browse leagues by country and tier. Detail dialogs preview related records and link to complete filtered results.',
+      },
+    ],
   },
   'supported-data': {
     eyebrow: 'Data coverage',
@@ -51,7 +57,7 @@ const pages: Record<string, DocPage> = {
     lead: 'Every supplied table covered by fifatables 0.2.10 is preserved.',
     sections: sections(
       'Verified schemas',
-      '306 files across 25 definitions become typed raw tables. The canonical layer expects 227,572 player editions and 241,640 team-player links.',
+      '306 files across 25 definitions become typed raw tables. The canonical layer expects 227,572 player editions, 8,907 team editions, 560 league editions and 241,640 team-player links.',
     ),
   },
   development: {

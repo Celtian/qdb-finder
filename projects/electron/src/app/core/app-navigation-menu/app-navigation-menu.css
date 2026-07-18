@@ -1,0 +1,24 @@
+:host {
+  display: inline-flex;
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
+}
+
+.navigation-trigger {
+  color: var(--mat-sys-on-surface, #1a1b20);
+  -webkit-app-region: no-drag;
+}
+
+.navigation-trigger:hover {
+  background: #edf0f6;
+}
+
+.navigation-trigger:focus-visible {
+  outline: 2px solid var(--qdb-brand);
+  outline-offset: -2px;
+}
+
+a.active {
+  background: #e8efff;
+  color: var(--qdb-brand);
+}

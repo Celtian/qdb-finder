@@ -1,0 +1,84 @@
+<header class="detail-header">
+  <div>
+    <p class="eyebrow">FIFA {{ league.version }} league</p>
+    <h2 mat-dialog-title>{{ league.name }}</h2>
+    <p class="country-line">
+      @if (league.countryCode) {
+        <app-country-flag
+          size="lg"
+          decorative
+          [code]="league.countryCode"
+          [countryName]="league.countryName"
+        />
+      }
+      <span>{{ league.countryName || 'Unknown country' }}</span>
+    </p>
+  </div>
+  <button
+    type="button"
+    class="close-button"
+    mat-icon-button
+    mat-dialog-close
+    aria-label="Close league details"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+<mat-dialog-content>
+  <div class="metric-grid">
+    <div>
+      <span>Tier</span><strong>{{ league.level ?? '—' }}</strong>
+    </div>
+    <div>
+      <span>Teams</span><strong>{{ league.teamCount }}</strong>
+    </div>
+    <div>
+      <span>Players</span><strong>{{ league.playerCount }}</strong>
+    </div>
+    <div>
+      <span>Competition</span><strong>{{ competition }}</strong>
+    </div>
+  </div>
+  <section aria-labelledby="league-teams-heading">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Top rated</p>
+        <h3 id="league-teams-heading">Team preview</h3>
+      </div>
+      <span>{{ teams.length }} of {{ league.teamCount }}</span>
+    </div>
+    @if (teams.length) {
+      <div class="preview-list">
+        @for (team of teams; track team.key) {
+          <div class="preview-row team-row">
+            <strong>{{ team.name }}</strong>
+            <span>{{ team.squadSize }} players</span>
+            <span [class]="team.overallClass">{{ team.overall ?? '—' }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-preview">No linked teams are available for this league edition.</p>
+    }
+  </section>
+  <mat-expansion-panel>
+    <mat-expansion-panel-header
+      ><mat-panel-title>Raw league fields</mat-panel-title></mat-expansion-panel-header
+    >
+    <dl class="raw-fields">
+      @for (field of league.raw | keyvalue; track field.key) {
+        <dt>{{ field.key }}</dt>
+        <dd>{{ field.value }}</dd>
+      }
+    </dl>
+  </mat-expansion-panel>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button type="button" mat-button mat-dialog-close>Close</button>
+  <button type="button" mat-button (click)="viewTeams()">
+    <mat-icon>shield</mat-icon>View teams
+  </button>
+  <button type="button" mat-flat-button (click)="viewPlayers()">
+    <mat-icon>groups</mat-icon>View players
+  </button>
+</mat-dialog-actions>

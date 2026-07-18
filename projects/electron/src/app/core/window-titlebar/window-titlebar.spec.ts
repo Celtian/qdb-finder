@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import type { QdbWindowApi } from '../qdb-contracts';
 import { WindowTitlebar } from './window-titlebar';
 
@@ -22,7 +23,10 @@ describe('WindowTitlebar', () => {
     maximizedListener = undefined;
     window.qdbWindow = windowApi;
     vi.clearAllMocks();
-    await TestBed.configureTestingModule({ imports: [WindowTitlebar] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [WindowTitlebar],
+      providers: [provideRouter([])],
+    }).compileComponents();
   });
 
   afterEach(() => {
@@ -35,7 +39,8 @@ describe('WindowTitlebar', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('.brand')?.textContent).toContain('QDB Finder');
-    expect(element.querySelectorAll('button')).toHaveLength(3);
+    expect(element.querySelector('[aria-label="Open main navigation"]')).toBeTruthy();
+    expect(element.querySelectorAll('.window-actions button')).toHaveLength(3);
     expect(element.querySelector('[aria-label="Minimize window"]')).toBeTruthy();
     expect(element.querySelector('[aria-label="Maximize window"]')).toBeTruthy();
     expect(element.querySelector('[aria-label="Close window"]')).toBeTruthy();

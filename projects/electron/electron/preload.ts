@@ -4,6 +4,11 @@ import type { QdbApi, QdbWindowApi } from '../src/app/core/qdb-contracts';
 const api: QdbApi = {
   searchPlayers: (request) => ipcRenderer.invoke('qdb:search', request),
   getPlayer: (key) => ipcRenderer.invoke('qdb:player', key),
+  searchTeams: (request) => ipcRenderer.invoke('qdb:teams:search', request),
+  getTeam: (key) => ipcRenderer.invoke('qdb:team', key),
+  searchLeagues: (request) => ipcRenderer.invoke('qdb:leagues:search', request),
+  getLeague: (key) => ipcRenderer.invoke('qdb:league', key),
+  suggestEntityFacets: (request) => ipcRenderer.invoke('qdb:entity-facets', request),
   suggestFilters: (request) => ipcRenderer.invoke('qdb:suggest', request),
   getDatabaseInfo: () => ipcRenderer.invoke('qdb:info'),
 };

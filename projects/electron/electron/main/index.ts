@@ -2,9 +2,14 @@ import { app, BrowserWindow, ipcMain, Menu, shell, type IpcMainInvokeEvent } fro
 import { join } from 'node:path';
 import { updateElectronApp } from 'update-electron-app';
 import type {
+  EntityFacetRequest,
   FilterSuggestionRequest,
+  LeagueEditionKey,
+  LeagueSearchRequest,
   PlayerEditionKey,
   SearchRequest,
+  TeamEditionKey,
+  TeamSearchRequest,
 } from '../../src/app/core/qdb-contracts';
 import { PlayerDatabase } from '../database';
 
@@ -79,6 +84,17 @@ app.whenReady().then(async () => {
   database = new PlayerDatabase(databasePath());
   ipcMain.handle('qdb:search', (_event, request: SearchRequest) => database.search(request));
   ipcMain.handle('qdb:player', (_event, key: PlayerEditionKey) => database.getPlayer(key));
+  ipcMain.handle('qdb:teams:search', (_event, request: TeamSearchRequest) =>
+    database.searchTeams(request),
+  );
+  ipcMain.handle('qdb:team', (_event, key: TeamEditionKey) => database.getTeam(key));
+  ipcMain.handle('qdb:leagues:search', (_event, request: LeagueSearchRequest) =>
+    database.searchLeagues(request),
+  );
+  ipcMain.handle('qdb:league', (_event, key: LeagueEditionKey) => database.getLeague(key));
+  ipcMain.handle('qdb:entity-facets', (_event, request: EntityFacetRequest) =>
+    database.suggestEntityFacets(request),
+  );
   ipcMain.handle('qdb:suggest', (_event, request: FilterSuggestionRequest) =>
     database.suggest(request),
   );

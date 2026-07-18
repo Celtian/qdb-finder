@@ -25,6 +25,8 @@ export const FIFAS = Object.values(Fifa);
 export const TABLES = Object.values(Table);
 export const EXPECTED_EDITIONS = 227_572;
 export const EXPECTED_TEAM_LINKS = 241_640;
+export const EXPECTED_TEAM_EDITIONS = 8_907;
+export const EXPECTED_LEAGUE_EDITIONS = 560;
 export const POSITION_IDS = Object.values(Position);
 const positionById = Object.fromEntries(POSITION_IDS.map((position, index) => [index, position]));
 
@@ -48,6 +50,8 @@ export interface ImportSummary {
   rawRows: number;
   playerEditions: number;
   teamLinks: number;
+  teamEditions: number;
+  leagueEditions: number;
 }
 
 export const decodeFifaText = (buffer: Buffer): string => {
@@ -106,6 +110,12 @@ const normalize = (value: string): string =>
 const asNumber = (value: string | number | null | undefined, fallback = 0): number =>
   Number(value ?? fallback);
 const asText = (value: string | number | null | undefined): string => String(value ?? '').trim();
+const optionalNumber = (value: string | number | null | undefined): number | null =>
+  value === undefined || value === null ? null : Number(value);
+const optionalPositiveNumber = (value: string | number | null | undefined): number | null => {
+  const number = optionalNumber(value);
+  return number && number > 0 ? number : null;
+};
 
 const nationalityCodeOverrides = new Map<number, string>([
   [14, 'gb-eng'],
@@ -181,6 +191,23 @@ const createSchema = (db: DatabaseSync): void =>
     player_id INTEGER NOT NULL, team_id INTEGER NOT NULL, team_key TEXT NOT NULL, team_name TEXT NOT NULL,
     league_id INTEGER, league_key TEXT NOT NULL, league_name TEXT NOT NULL, position TEXT NOT NULL,
     jersey_number INTEGER, PRIMARY KEY(player_key, team_id)
+  );
+  CREATE TABLE league_edition (
+    key TEXT PRIMARY KEY, version INTEGER NOT NULL, league_id INTEGER NOT NULL,
+    league_key TEXT NOT NULL, league_name TEXT NOT NULL, country_id INTEGER,
+    country_name TEXT NOT NULL, country_code TEXT NOT NULL, level INTEGER,
+    is_women INTEGER, team_count INTEGER NOT NULL DEFAULT 0,
+    player_count INTEGER NOT NULL DEFAULT 0, raw_json TEXT NOT NULL,
+    UNIQUE(version, league_id)
+  );
+  CREATE TABLE team_edition (
+    key TEXT PRIMARY KEY, version INTEGER NOT NULL, team_id INTEGER NOT NULL,
+    team_key TEXT NOT NULL, team_name TEXT NOT NULL, league_id INTEGER,
+    league_key TEXT NOT NULL, league_name TEXT NOT NULL, country_id INTEGER,
+    country_name TEXT NOT NULL, country_code TEXT NOT NULL,
+    squad_size INTEGER NOT NULL DEFAULT 0, overall INTEGER, attack INTEGER,
+    midfield INTEGER, defence INTEGER, foundation_year INTEGER, raw_json TEXT NOT NULL,
+    UNIQUE(version, team_id)
   );
   CREATE VIRTUAL TABLE player_search USING fts5(player_key UNINDEXED, display_name, aliases, teams,
     nationality, leagues, tokenize='unicode61 remove_diacritics 2');
@@ -287,12 +314,18 @@ const ratingFor = (
 const buildCanonical = (
   db: DatabaseSync,
   examplesPath: string,
-): { players: number; links: number } => {
+): { players: number; links: number; teams: number; leagues: number } => {
   const playerInsert = db.prepare(
     `INSERT INTO player_edition VALUES (${Array.from({ length: 29 }, () => '?').join(',')})`,
   );
   const linkInsert = db.prepare(
     'INSERT OR IGNORE INTO player_team VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  );
+  const teamInsert = db.prepare(
+    `INSERT INTO team_edition VALUES (${Array.from({ length: 18 }, () => '?').join(',')})`,
+  );
+  const leagueInsert = db.prepare(
+    `INSERT INTO league_edition VALUES (${Array.from({ length: 13 }, () => '?').join(',')})`,
   );
   const nationalityCodeFallback = collectNationalityCodes(
     FIFAS.filter((fifa) => Number(fifa.slice(4)) >= 16).flatMap((fifa) =>
@@ -301,6 +334,8 @@ const buildCanonical = (
   );
   let players = 0;
   let links = 0;
+  let teamsCount = 0;
+  let leaguesCount = 0;
   for (const fifa of FIFAS) {
     const version = Number(fifa.slice(4));
     const snapshot = versionSnapshot(examplesPath, fifa);
@@ -316,8 +351,11 @@ const buildCanonical = (
         ];
       }),
     );
-    const teams = mapBy(tableRows(db, fifa, Table.Teams), 'teamid', 'teamname');
-    const leagues = mapBy(tableRows(db, fifa, Table.Leagues), 'leagueid', 'leaguename');
+    const teamRows = tableRows(db, fifa, Table.Teams);
+    const leagueRows = tableRows(db, fifa, Table.Leagues);
+    const teams = mapBy(teamRows, 'teamid', 'teamname');
+    const leagues = mapBy(leagueRows, 'leagueid', 'leaguename');
+    const leagueRowsById = new Map(leagueRows.map((row) => [asNumber(row['leagueid']), row]));
     const teamLeagues = new Map<number, number>();
     for (const row of tableRows(db, fifa, Table.LeagueTeamLinks))
       teamLeagues.set(asNumber(row['teamid']), asNumber(row['leagueid']));
@@ -328,6 +366,58 @@ const buildCanonical = (
     }
     db.exec('BEGIN');
     try {
+      for (const league of leagueRows) {
+        const leagueId = asNumber(league['leagueid']);
+        const leagueName = asText(league['leaguename']);
+        const countryId = optionalNumber(league['countryid']);
+        leagueInsert.run(
+          `${version}:${leagueId}`,
+          version,
+          leagueId,
+          normalize(leagueName),
+          leagueName,
+          countryId,
+          countryId === null ? '' : (nations.get(countryId) ?? ''),
+          countryId === null ? '' : (nationCodes.get(countryId) ?? ''),
+          optionalNumber(league['level']),
+          league['iswomencompetition'] === undefined
+            ? null
+            : Number(Boolean(asNumber(league['iswomencompetition']))),
+          0,
+          0,
+          JSON.stringify(league),
+        );
+        leaguesCount += 1;
+      }
+      for (const team of teamRows) {
+        const teamId = asNumber(team['teamid']);
+        const teamName = asText(team['teamname']);
+        const leagueId = teamLeagues.get(teamId) ?? null;
+        const league = leagueId === null ? undefined : leagueRowsById.get(leagueId);
+        const leagueName = leagueId === null ? '' : (leagues.get(leagueId) ?? '');
+        const countryId = league ? optionalNumber(league['countryid']) : null;
+        teamInsert.run(
+          `${version}:${teamId}`,
+          version,
+          teamId,
+          normalize(teamName),
+          teamName,
+          leagueId,
+          normalize(leagueName),
+          leagueName,
+          countryId,
+          countryId === null ? '' : (nations.get(countryId) ?? ''),
+          countryId === null ? '' : (nationCodes.get(countryId) ?? ''),
+          0,
+          optionalNumber(team['overallrating']),
+          optionalNumber(team['attackrating']),
+          optionalNumber(team['midfieldrating']),
+          optionalNumber(team['defenserating']),
+          optionalPositiveNumber(team['foundationyear']),
+          JSON.stringify(team),
+        );
+        teamsCount += 1;
+      }
       for (const player of tableRows(db, fifa, Table.Players)) {
         const playerId = asNumber(player['playerid']);
         const key = `${version}:${playerId}`;
@@ -415,6 +505,22 @@ const buildCanonical = (
     }
   }
   db.exec(`
+    CREATE INDEX idx_player_team_edition ON player_team(version, team_id);
+    CREATE INDEX idx_player_league_edition ON player_team(version, league_id);
+    CREATE INDEX idx_team_league_edition ON team_edition(version, league_id);
+    UPDATE team_edition SET squad_size = (
+      SELECT count(DISTINCT player_key) FROM player_team pt
+      WHERE pt.version = team_edition.version AND pt.team_id = team_edition.team_id
+    );
+    UPDATE league_edition SET
+      team_count = (
+        SELECT count(*) FROM team_edition t
+        WHERE t.version = league_edition.version AND t.league_id = league_edition.league_id
+      ),
+      player_count = (
+        SELECT count(DISTINCT player_key) FROM player_team pt
+        WHERE pt.version = league_edition.version AND pt.league_id = league_edition.league_id
+      );
     INSERT INTO player_search
       SELECT p.key, p.display_name, p.aliases, coalesce(group_concat(DISTINCT pt.team_name), ''),
         p.nationality_name, coalesce(group_concat(DISTINCT pt.league_name), '')
@@ -428,8 +534,16 @@ const buildCanonical = (
     CREATE INDEX idx_team_key ON player_team(team_key);
     CREATE INDEX idx_league_key ON player_team(league_key);
     CREATE INDEX idx_team_player ON player_team(player_key);
+    CREATE INDEX idx_team_edition_version ON team_edition(version);
+    CREATE INDEX idx_team_edition_name ON team_edition(team_key);
+    CREATE INDEX idx_team_edition_league ON team_edition(league_key);
+    CREATE INDEX idx_team_edition_country ON team_edition(country_id);
+    CREATE INDEX idx_team_edition_overall ON team_edition(overall);
+    CREATE INDEX idx_league_edition_version ON league_edition(version);
+    CREATE INDEX idx_league_edition_name ON league_edition(league_key);
+    CREATE INDEX idx_league_edition_country ON league_edition(country_id);
   `);
-  return { players, links };
+  return { players, links, teams: teamsCount, leagues: leaguesCount };
 };
 
 export const buildDatabase = (options: ImportOptions): ImportSummary => {
@@ -451,6 +565,8 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       source_files: raw.files,
       raw_rows: raw.rows,
       player_editions: canonical.players,
+      team_editions: canonical.teams,
+      league_editions: canonical.leagues,
       team_player_links: canonical.links,
     };
     for (const [key, value] of Object.entries(values)) metadata.run(key, String(value));
@@ -462,10 +578,13 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       throw new Error(`SQLite foreign key check found ${foreignKeys.length} errors.`);
     if (
       options.verifyExpectedCounts !== false &&
-      (canonical.players !== EXPECTED_EDITIONS || canonical.links !== EXPECTED_TEAM_LINKS)
+      (canonical.players !== EXPECTED_EDITIONS ||
+        canonical.links !== EXPECTED_TEAM_LINKS ||
+        canonical.teams !== EXPECTED_TEAM_EDITIONS ||
+        canonical.leagues !== EXPECTED_LEAGUE_EDITIONS)
     )
       throw new Error(
-        `Unexpected canonical counts: ${canonical.players} players, ${canonical.links} links.`,
+        `Unexpected canonical counts: ${canonical.players} players, ${canonical.teams} teams, ${canonical.leagues} leagues, ${canonical.links} links.`,
       );
     db.exec(
       "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
@@ -475,6 +594,8 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       rawRows: raw.rows,
       playerEditions: canonical.players,
       teamLinks: canonical.links,
+      teamEditions: canonical.teams,
+      leagueEditions: canonical.leagues,
     };
   } finally {
     db.close();

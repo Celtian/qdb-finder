@@ -6,11 +6,13 @@ const db = new DatabaseSync(path, { readOnly: true });
 const integrity = db.prepare('PRAGMA integrity_check').get()?.['integrity_check'];
 const players = db.prepare('SELECT count(*) AS count FROM player_edition').get()?.['count'];
 const links = db.prepare('SELECT count(*) AS count FROM player_team').get()?.['count'];
+const teams = db.prepare('SELECT count(*) AS count FROM team_edition').get()?.['count'];
+const leagues = db.prepare('SELECT count(*) AS count FROM league_edition').get()?.['count'];
 const fts = db
   .prepare("SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'")
   .get()?.['count'];
 db.close();
 if (integrity !== 'ok') throw new Error(`Integrity check failed: ${String(integrity)}`);
 console.log(
-  `Database valid: ${String(players)} players, ${String(links)} links, ${String(fts)} Messi matches.`,
+  `Database valid: ${String(players)} players, ${String(teams)} teams, ${String(leagues)} leagues, ${String(links)} links, ${String(fts)} Messi matches.`,
 );

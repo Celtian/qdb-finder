@@ -47,6 +47,7 @@ export interface ImportOptions {
   examplesPath: string;
   outputPath: string;
   verifyExpectedCounts?: boolean;
+  progress?: (message: string) => void;
 }
 
 export interface ImportSummary {
@@ -61,6 +62,23 @@ export interface ImportSummary {
   refereeLeagueLinks: number;
   stadiumTeamLinks: number;
 }
+
+const runPhase = <T>(label: string, progress: ImportOptions['progress'], action: () => T): T => {
+  progress?.(`[db:build] ${label}...`);
+  const startedAt = Date.now();
+  try {
+    const result = action();
+    progress?.(
+      `[db:build] ${label} completed in ${((Date.now() - startedAt) / 1_000).toFixed(2)}s.`,
+    );
+    return result;
+  } catch (error) {
+    progress?.(
+      `[db:build] ${label} failed after ${((Date.now() - startedAt) / 1_000).toFixed(2)}s.`,
+    );
+    throw error;
+  }
+};
 
 export const decodeFifaText = (buffer: Buffer): string => {
   if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe)
@@ -751,47 +769,57 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
   }
   const db = new DatabaseSync(options.outputPath);
   try {
-    createSchema(db);
-    const raw = importRawTables(db, options.examplesPath);
-    const canonical = buildCanonical(db, options.examplesPath);
-    const metadata = db.prepare('INSERT INTO metadata VALUES (?, ?)');
-    const values = {
-      generated_at: new Date().toISOString(),
-      versions: '11,12,13,14,15,16,17,18,19,20,21,22,23',
-      source_files: raw.files,
-      raw_rows: raw.rows,
-      player_editions: canonical.players,
-      team_editions: canonical.teams,
-      league_editions: canonical.leagues,
-      referee_editions: canonical.referees,
-      stadium_editions: canonical.stadiums,
-      referee_league_links: canonical.refereeLeagueLinks,
-      stadium_team_links: canonical.stadiumTeamLinks,
-      team_player_links: canonical.links,
-    };
-    for (const [key, value] of Object.entries(values)) metadata.run(key, String(value));
-    const integrity = db.prepare('PRAGMA integrity_check').get() as SqlRow;
-    if (integrity['integrity_check'] !== 'ok')
-      throw new Error(`SQLite integrity check failed: ${integrity['integrity_check']}`);
-    const foreignKeys = db.prepare('PRAGMA foreign_key_check').all();
-    if (foreignKeys.length)
-      throw new Error(`SQLite foreign key check found ${foreignKeys.length} errors.`);
-    if (
-      options.verifyExpectedCounts !== false &&
-      (canonical.players !== EXPECTED_EDITIONS ||
-        canonical.links !== EXPECTED_TEAM_LINKS ||
-        canonical.teams !== EXPECTED_TEAM_EDITIONS ||
-        canonical.leagues !== EXPECTED_LEAGUE_EDITIONS ||
-        canonical.referees !== EXPECTED_REFEREE_EDITIONS ||
-        canonical.stadiums !== EXPECTED_STADIUM_EDITIONS ||
-        canonical.refereeLeagueLinks !== EXPECTED_REFEREE_LEAGUE_LINKS ||
-        canonical.stadiumTeamLinks !== EXPECTED_STADIUM_TEAM_LINKS)
-    )
-      throw new Error(
-        `Unexpected canonical counts: ${canonical.players} players, ${canonical.teams} teams, ${canonical.leagues} leagues, ${canonical.referees} referees, ${canonical.stadiums} stadiums, ${canonical.links} player-team links, ${canonical.refereeLeagueLinks} referee-league links, ${canonical.stadiumTeamLinks} stadium-team links.`,
-      );
-    db.exec(
-      "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
+    runPhase('Creating schema', options.progress, () => createSchema(db));
+    const raw = runPhase('Importing source tables', options.progress, () =>
+      importRawTables(db, options.examplesPath),
+    );
+    const canonical = runPhase('Building canonical data and indexes', options.progress, () =>
+      buildCanonical(db, options.examplesPath),
+    );
+    runPhase('Writing metadata', options.progress, () => {
+      const metadata = db.prepare('INSERT INTO metadata VALUES (?, ?)');
+      const values = {
+        generated_at: new Date().toISOString(),
+        versions: '11,12,13,14,15,16,17,18,19,20,21,22,23',
+        source_files: raw.files,
+        raw_rows: raw.rows,
+        player_editions: canonical.players,
+        team_editions: canonical.teams,
+        league_editions: canonical.leagues,
+        referee_editions: canonical.referees,
+        stadium_editions: canonical.stadiums,
+        referee_league_links: canonical.refereeLeagueLinks,
+        stadium_team_links: canonical.stadiumTeamLinks,
+        team_player_links: canonical.links,
+      };
+      for (const [key, value] of Object.entries(values)) metadata.run(key, String(value));
+    });
+    runPhase('Validating database', options.progress, () => {
+      const integrity = db.prepare('PRAGMA integrity_check').get() as SqlRow;
+      if (integrity['integrity_check'] !== 'ok')
+        throw new Error(`SQLite integrity check failed: ${integrity['integrity_check']}`);
+      const foreignKeys = db.prepare('PRAGMA foreign_key_check').all();
+      if (foreignKeys.length)
+        throw new Error(`SQLite foreign key check found ${foreignKeys.length} errors.`);
+      if (
+        options.verifyExpectedCounts !== false &&
+        (canonical.players !== EXPECTED_EDITIONS ||
+          canonical.links !== EXPECTED_TEAM_LINKS ||
+          canonical.teams !== EXPECTED_TEAM_EDITIONS ||
+          canonical.leagues !== EXPECTED_LEAGUE_EDITIONS ||
+          canonical.referees !== EXPECTED_REFEREE_EDITIONS ||
+          canonical.stadiums !== EXPECTED_STADIUM_EDITIONS ||
+          canonical.refereeLeagueLinks !== EXPECTED_REFEREE_LEAGUE_LINKS ||
+          canonical.stadiumTeamLinks !== EXPECTED_STADIUM_TEAM_LINKS)
+      )
+        throw new Error(
+          `Unexpected canonical counts: ${canonical.players} players, ${canonical.teams} teams, ${canonical.leagues} leagues, ${canonical.referees} referees, ${canonical.stadiums} stadiums, ${canonical.links} player-team links, ${canonical.refereeLeagueLinks} referee-league links, ${canonical.stadiumTeamLinks} stadium-team links.`,
+        );
+    });
+    runPhase('Optimizing search data and vacuuming', options.progress, () =>
+      db.exec(
+        "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
+      ),
     );
     return {
       sourceFiles: raw.files,

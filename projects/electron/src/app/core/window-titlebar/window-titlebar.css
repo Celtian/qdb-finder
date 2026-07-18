@@ -33,6 +33,7 @@
 
 .window-actions {
   display: flex;
+  flex: 0 0 auto;
   height: 100%;
   -webkit-app-region: no-drag;
 }

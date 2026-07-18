@@ -9,6 +9,9 @@ const api: QdbApi = {
 };
 
 const windowApi: QdbWindowApi = {
+  nativeControls:
+    process.platform === 'linux' &&
+    Boolean(process.env['WSL_DISTRO_NAME'] || process.env['WSL_INTEROP']),
   minimize: () => ipcRenderer.invoke('qdb:window:minimize'),
   toggleMaximize: () => ipcRenderer.invoke('qdb:window:toggle-maximize'),
   close: () => ipcRenderer.invoke('qdb:window:close'),

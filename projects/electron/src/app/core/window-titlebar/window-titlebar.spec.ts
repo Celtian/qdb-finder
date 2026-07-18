@@ -5,6 +5,7 @@ import { WindowTitlebar } from './window-titlebar';
 describe('WindowTitlebar', () => {
   let maximizedListener: ((maximized: boolean) => void) | undefined;
   const windowApi: QdbWindowApi = {
+    nativeControls: false,
     minimize: vi.fn(() => Promise.resolve()),
     toggleMaximize: vi.fn(async () => maximizedListener?.(true)),
     close: vi.fn(() => Promise.resolve()),
@@ -54,5 +55,16 @@ describe('WindowTitlebar', () => {
     expect(windowApi.toggleMaximize).toHaveBeenCalledOnce();
     expect(windowApi.close).toHaveBeenCalledOnce();
     expect(element.querySelector('[aria-label="Restore window"]')).toBeTruthy();
+    expect(element.querySelector('[aria-label="Restore window"] mat-icon')?.textContent).toContain(
+      'filter_none',
+    );
+  });
+
+  it('uses the host controls when Electron provides a window controls overlay', async () => {
+    window.qdbWindow = { ...windowApi, nativeControls: true };
+    const fixture = TestBed.createComponent(WindowTitlebar);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('.window-actions')).toBeNull();
   });
 });

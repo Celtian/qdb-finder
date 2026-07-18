@@ -96,6 +96,7 @@ export interface QdbApi {
 }
 
 export interface QdbWindowApi {
+  readonly nativeControls: boolean;
   minimize(): Promise<void>;
   toggleMaximize(): Promise<void>;
   close(): Promise<void>;

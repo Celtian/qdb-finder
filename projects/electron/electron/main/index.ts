@@ -1,13 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  Menu,
-  screen,
-  shell,
-  type IpcMainInvokeEvent,
-  type Rectangle,
-} from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell, type IpcMainInvokeEvent } from 'electron';
 import { join } from 'node:path';
 import { updateElectronApp } from 'update-electron-app';
 import type {
@@ -19,38 +10,18 @@ import { PlayerDatabase } from '../database';
 
 let database: PlayerDatabase;
 
-const useLinuxWorkAreaMaximize =
-  process.platform === 'linux' && Boolean(process.env['WAYLAND_DISPLAY']);
-const restoredBounds = new WeakMap<BrowserWindow, Rectangle>();
-const workAreaMaximizedWindows = new WeakSet<BrowserWindow>();
+const useWslWindowControls =
+  process.platform === 'linux' &&
+  Boolean(process.env['WSL_DISTRO_NAME'] || process.env['WSL_INTEROP']);
 
-if (useLinuxWorkAreaMaximize) app.commandLine.appendSwitch('ozone-platform', 'x11');
 app.disableHardwareAcceleration();
 
-const isWindowMaximized = (window: BrowserWindow): boolean =>
-  workAreaMaximizedWindows.has(window) || window.isMaximized();
-
 const sendMaximizedState = (window: BrowserWindow): void =>
-  window.webContents.send('qdb:window:maximized-change', isWindowMaximized(window));
+  window.webContents.send('qdb:window:maximized-change', window.isMaximized());
 
 const toggleWindowMaximized = (window: BrowserWindow): void => {
-  if (!useLinuxWorkAreaMaximize) {
-    if (window.isMaximized()) window.unmaximize();
-    else window.maximize();
-    return;
-  }
-
-  if (workAreaMaximizedWindows.has(window)) {
-    const bounds = restoredBounds.get(window);
-    workAreaMaximizedWindows.delete(window);
-    if (bounds) window.setBounds(bounds);
-  } else {
-    const bounds = window.getBounds();
-    restoredBounds.set(window, bounds);
-    workAreaMaximizedWindows.add(window);
-    window.setBounds(screen.getDisplayMatching(bounds).workArea);
-  }
-  sendMaximizedState(window);
+  if (window.isMaximized()) window.unmaximize();
+  else window.maximize();
 };
 
 const senderWindow = (event: IpcMainInvokeEvent): BrowserWindow | undefined =>
@@ -69,7 +40,16 @@ const createWindow = async (): Promise<void> => {
     minWidth: 900,
     minHeight: 620,
     show: false,
-    frame: false,
+    ...(useWslWindowControls
+      ? {
+          titleBarStyle: 'hidden' as const,
+          titleBarOverlay: {
+            color: '#ffffff',
+            symbolColor: '#1a1b20',
+            height: 44,
+          },
+        }
+      : { frame: false }),
     autoHideMenuBar: true,
     backgroundColor: '#f7f8fc',
     icon: join(app.getAppPath(), 'resources', 'icons', 'qdb-finder.png'),
@@ -112,7 +92,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('qdb:window:close', (event) => senderWindow(event)?.close());
   ipcMain.handle('qdb:window:is-maximized', (event) => {
     const window = senderWindow(event);
-    return window ? isWindowMaximized(window) : false;
+    return window?.isMaximized() ?? false;
   });
   if (app.isPackaged) updateElectronApp();
   await createWindow();

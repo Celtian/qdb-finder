@@ -30,6 +30,12 @@ const positionById = Object.fromEntries(POSITION_IDS.map((position, index) => [i
 
 type RawRow = Record<string, string | number>;
 type SqlRow = Record<string, string | number | null>;
+type NationCodeValue = string | number | null | undefined;
+
+export interface NationCodeRow {
+  nationid?: NationCodeValue;
+  isocountrycode?: NationCodeValue;
+}
 
 export interface ImportOptions {
   examplesPath: string;
@@ -100,6 +106,38 @@ const normalize = (value: string): string =>
 const asNumber = (value: string | number | null | undefined, fallback = 0): number =>
   Number(value ?? fallback);
 const asText = (value: string | number | null | undefined): string => String(value ?? '').trim();
+
+const nationalityCodeOverrides = new Map<number, string>([
+  [14, 'gb-eng'],
+  [35, 'gb-nir'],
+  [42, 'gb-sct'],
+  [50, 'gb-wls'],
+  [219, 'xk'],
+]);
+
+export const collectNationalityCodes = (
+  rows: readonly NationCodeRow[],
+): ReadonlyMap<number, string> => {
+  const codes = new Map<number, string>();
+  for (const row of rows) {
+    const nationId = asNumber(row.nationid);
+    const code = asText(row.isocountrycode).toLocaleLowerCase('en');
+    if (nationId !== 0 && code) codes.set(nationId, code);
+  }
+  return codes;
+};
+
+export const resolveNationalityCode = (
+  nationId: number,
+  sourceCode: NationCodeValue,
+  fallbackCodes: ReadonlyMap<number, string>,
+): string => {
+  if (nationId === 0) return '';
+  const override = nationalityCodeOverrides.get(nationId);
+  if (override) return override;
+  const normalizedSource = asText(sourceCode).toLocaleLowerCase('en');
+  return normalizedSource || fallbackCodes.get(nationId) || '';
+};
 const isoDate = (value: string | number): string | null => {
   if (!Number(value)) return null;
   const date = Date.fromFifaDate(Number(value));
@@ -130,6 +168,7 @@ const createSchema = (db: DatabaseSync): void =>
     key TEXT PRIMARY KEY, version INTEGER NOT NULL, player_id INTEGER NOT NULL,
     display_name TEXT NOT NULL, first_name TEXT NOT NULL, last_name TEXT NOT NULL,
     common_name TEXT NOT NULL, jersey_name TEXT NOT NULL, aliases TEXT NOT NULL,
+    nationality_id INTEGER NOT NULL, nationality_code TEXT NOT NULL,
     nationality_key TEXT NOT NULL, nationality_name TEXT NOT NULL, birth_date TEXT, snapshot_date TEXT NOT NULL,
     age INTEGER, positions TEXT NOT NULL, overall INTEGER NOT NULL, potential INTEGER NOT NULL,
     best_position TEXT NOT NULL, best_rating INTEGER NOT NULL, height INTEGER, weight INTEGER,
@@ -250,10 +289,15 @@ const buildCanonical = (
   examplesPath: string,
 ): { players: number; links: number } => {
   const playerInsert = db.prepare(
-    `INSERT INTO player_edition VALUES (${Array.from({ length: 27 }, () => '?').join(',')})`,
+    `INSERT INTO player_edition VALUES (${Array.from({ length: 29 }, () => '?').join(',')})`,
   );
   const linkInsert = db.prepare(
     'INSERT OR IGNORE INTO player_team VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  );
+  const nationalityCodeFallback = collectNationalityCodes(
+    FIFAS.filter((fifa) => Number(fifa.slice(4)) >= 16).flatMap((fifa) =>
+      tableRows(db, fifa, Table.Nations),
+    ),
   );
   let players = 0;
   let links = 0;
@@ -261,7 +305,17 @@ const buildCanonical = (
     const version = Number(fifa.slice(4));
     const snapshot = versionSnapshot(examplesPath, fifa);
     const names = mapBy(tableRows(db, fifa, Table.PlayerNames), 'nameid', 'name');
-    const nations = mapBy(tableRows(db, fifa, Table.Nations), 'nationid', 'nationname');
+    const nationRows = tableRows(db, fifa, Table.Nations);
+    const nations = mapBy(nationRows, 'nationid', 'nationname');
+    const nationCodes = new Map(
+      nationRows.map((row) => {
+        const nationId = asNumber(row['nationid']);
+        return [
+          nationId,
+          resolveNationalityCode(nationId, row['isocountrycode'], nationalityCodeFallback),
+        ];
+      }),
+    );
     const teams = mapBy(tableRows(db, fifa, Table.Teams), 'teamid', 'teamname');
     const leagues = mapBy(tableRows(db, fifa, Table.Leagues), 'leagueid', 'leaguename');
     const teamLeagues = new Map<number, number>();
@@ -290,7 +344,9 @@ const buildCanonical = (
         const preferred = positions[0] ?? 'Unknown';
         const overall = asNumber(player['overallrating']);
         const potential = asNumber(player['potential'], overall);
-        const nationality = nations.get(asNumber(player['nationality'])) ?? '';
+        const nationalityId = asNumber(player['nationality']);
+        const nationality = nations.get(nationalityId) ?? '';
+        const nationalityCode = nationCodes.get(nationalityId) ?? '';
         const birthDate = isoDate(asNumber(player['birthdate']));
         const attributes = Object.fromEntries(
           Object.values(Attribute).map((attribute) => [
@@ -309,6 +365,8 @@ const buildCanonical = (
           common,
           jersey,
           [first, last, common, jersey].filter(Boolean).join(' '),
+          nationalityId,
+          nationalityCode,
           normalize(nationality),
           nationality,
           birthDate,

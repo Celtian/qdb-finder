@@ -19,6 +19,7 @@ describe('PlayerDetail', () => {
             playerId: 1,
             name: 'Test Player',
             nationality: 'Testland',
+            nationalityCode: 'cz',
             teams: [],
             leagues: [],
             positions: ['ST'],
@@ -61,6 +62,18 @@ describe('PlayerDetail', () => {
 
     expect(attackerBadges).toHaveLength(2);
     expect([...attackerBadges].every((badge) => badge.textContent?.includes('ST'))).toBe(true);
+  });
+
+  it('renders a large decorative nationality flag', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const flag = element.querySelector('app-country-flag');
+    const image = flag?.querySelector('img');
+
+    expect(flag).toBeTruthy();
+    expect(image?.getAttribute('width')).toBe('40');
+    expect(image?.getAttribute('height')).toBe('30');
+    expect(image?.getAttribute('alt')).toBe('');
+    expect(flag?.querySelector('picture')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('renders an accessible Material icon button to close the dialog', () => {

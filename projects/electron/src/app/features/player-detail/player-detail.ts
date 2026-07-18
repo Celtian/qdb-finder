@@ -6,12 +6,14 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import type { PlayerDetails } from '../../core/qdb-contracts';
+import { CountryFlag } from '../../core/country-flag/country-flag';
 import { positionBadgeClass } from '../../core/position';
 
 @Component({
   selector: 'app-player-detail',
   imports: [
     KeyValuePipe,
+    CountryFlag,
     MatButtonModule,
     MatDialogModule,
     MatExpansionModule,

@@ -16,6 +16,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { Qdb } from '../../core/qdb';
+import { CountryFlag } from '../../core/country-flag/country-flag';
 import {
   defaultSearchRequest,
   type FilterKind,
@@ -34,6 +35,7 @@ type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
   selector: 'app-player-finder',
   imports: [
     FormField,
+    CountryFlag,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -105,6 +107,7 @@ export class PlayerFinder {
     teams: {},
     leagues: {},
   });
+  protected readonly nationalityCodes = signal<Record<string, string>>({});
   protected readonly isNarrow = toSignal(
     this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
     { initialValue: false },
@@ -185,6 +188,11 @@ export class PlayerFinder {
       ...value,
       [field]: { ...value[field], [key]: label },
     }));
+    if (field === 'nationalities' && option.nationalityCode)
+      this.nationalityCodes.update((value) => ({
+        ...value,
+        [key]: option.nationalityCode ?? '',
+      }));
     input.value = '';
     void this.search();
   }
@@ -200,15 +208,23 @@ export class PlayerFinder {
         Object.entries(value[field]).filter(([labelKey]) => labelKey !== key),
       ),
     }));
+    if (field === 'nationalities')
+      this.nationalityCodes.update((value) =>
+        Object.fromEntries(Object.entries(value).filter(([codeKey]) => codeKey !== key)),
+      );
     void this.search();
   }
   protected filterLabel(field: ExactFilterField, key: string): string {
     return this.filterLabels()[field][key] ?? key;
   }
+  protected nationalityCode(key: string): string {
+    return this.nationalityCodes()[key] ?? '';
+  }
   protected clearFilters(): void {
     this.model.set({ text: '' });
     this.request.set(defaultSearchRequest());
     this.filterLabels.set({ nationalities: {}, teams: {}, leagues: {} });
+    this.nationalityCodes.set({});
     void this.search();
   }
   protected page(event: PageEvent): void {

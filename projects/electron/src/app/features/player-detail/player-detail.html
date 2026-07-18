@@ -2,7 +2,17 @@
   <div>
     <p class="eyebrow">FIFA {{ player.version }}</p>
     <h2 mat-dialog-title>{{ player.name }}</h2>
-    <p>{{ player.nationality }} · {{ player.teams.join(', ') || 'Free agent' }}</p>
+    <p class="nationality">
+      @if (player.nationalityCode) {
+        <app-country-flag
+          [code]="player.nationalityCode"
+          [countryName]="player.nationality"
+          size="lg"
+          decorative
+        />
+      }
+      <span>{{ player.nationality }} · {{ player.teams.join(', ') || 'Free agent' }}</span>
+    </p>
     <div class="position-list" aria-label="Positions">
       @for (position of player.positions; track position) {
         <span [class]="positionBadgeClass(position)">{{ position }}</span>

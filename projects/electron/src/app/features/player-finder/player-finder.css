@@ -140,6 +140,12 @@ table {
   justify-content: center;
   white-space: nowrap;
 }
+.nationality-with-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
 .state {
   min-height: 420px;
   display: flex;

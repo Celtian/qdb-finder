@@ -112,11 +112,16 @@ export class PlayerDatabase {
 
   suggest(request: FilterSuggestionRequest): FilterSuggestion[] {
     const source = {
-      nationality: ['player_edition', 'nationality_key', 'nationality_name'],
-      team: ['player_team', 'team_key', 'team_name'],
-      league: ['player_team', 'league_key', 'league_name'],
+      nationality: {
+        table: 'player_edition',
+        key: 'nationality_key',
+        label: 'nationality_name',
+        code: 'nationality_code',
+      },
+      team: { table: 'player_team', key: 'team_key', label: 'team_name', code: undefined },
+      league: { table: 'player_team', key: 'league_key', label: 'league_name', code: undefined },
     }[request.kind];
-    const [table, key, label] = source;
+    const { table, key, label, code } = source;
     const values: SQLInputValue[] = [];
     const where = [`${key} <> ''`];
     if (request.text.trim()) {
@@ -131,7 +136,8 @@ export class PlayerDatabase {
     }
     const rows = this.database
       .prepare(
-        `SELECT ${key} AS key, max(${label}) AS label, count(*) AS count
+        `SELECT ${key} AS key, max(${label}) AS label, count(*) AS count,
+          ${code ? `max(${code})` : "''"} AS nationality_code
         FROM ${table} WHERE ${where.join(' AND ')} GROUP BY ${key}
         ORDER BY count DESC, label ASC LIMIT ?`,
       )
@@ -140,6 +146,7 @@ export class PlayerDatabase {
       key: String(row['key']),
       label: String(row['label']),
       count: Number(row['count']),
+      nationalityCode: String(row['nationality_code'] ?? ''),
     }));
   }
 
@@ -172,6 +179,7 @@ export class PlayerDatabase {
       playerId: Number(row['player_id']),
       name: String(row['display_name']),
       nationality: String(row['nationality_name'] ?? ''),
+      nationalityCode: String(row['nationality_code'] ?? ''),
       teams: parseList(
         row['team_names'] === null ? null : String(row['team_names']).replaceAll(',', '|'),
       ),

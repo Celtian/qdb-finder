@@ -30,6 +30,7 @@ export interface PlayerSearchRow extends PlayerEditionKey {
   key: string;
   name: string;
   nationality: string;
+  nationalityCode: string;
   teams: string[];
   leagues: string[];
   positions: string[];
@@ -77,6 +78,7 @@ export interface FilterSuggestion {
   key: string;
   label: string;
   count: number;
+  nationalityCode?: string;
 }
 
 export interface DatabaseInfo {

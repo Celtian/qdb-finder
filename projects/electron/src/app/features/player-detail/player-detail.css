@@ -13,6 +13,11 @@
 .detail-header p {
   margin: 0.15rem 0;
 }
+.nationality {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
 .eyebrow {
   color: var(--qdb-brand);
   font-weight: 700;

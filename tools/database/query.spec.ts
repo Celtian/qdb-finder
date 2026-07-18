@@ -37,6 +37,25 @@ integration('player queries', () => {
     ).toBe(true);
   });
 
+  it('returns Nations-table codes for current and pre-FIFA-16 editions', () => {
+    const current = database.search({
+      ...request,
+      versions: [23],
+      nationalities: ['argentina'],
+    });
+    const legacy = database.search({
+      ...request,
+      versions: [11],
+      nationalities: ['germany'],
+    });
+
+    expect(current.rows[0]?.nationalityCode).toBe('ar');
+    expect(legacy.rows[0]?.nationalityCode).toBe('de');
+    expect(
+      database.suggest({ kind: 'nationality', text: 'England', versions: [23] })[0],
+    ).toMatchObject({ nationalityCode: 'gb-eng' });
+  });
+
   it('keeps pagination stable and treats injection-shaped input as text', () => {
     const first = database.search({ ...request, text: 'Messi', pageSize: 5 });
     const second = database.search({ ...request, text: 'Messi', pageSize: 5, offset: 5 });

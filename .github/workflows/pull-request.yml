@@ -1,0 +1,47 @@
+name: 🧪 Test PR
+
+'on': pull_request
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 🛠️ Validate & Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🗜️ Checkout
+        uses: actions/checkout@v7
+
+      - name: 🗜️ Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.18.0
+
+      - name: 🛠️ Install dependencies
+        uses: ./.github/actions/cached-deps
+
+      - name: 🗃️ Build database
+        run: yarn db:build
+
+      - name: 🔎 Validate database
+        run: yarn db:validate
+
+      - name: ✅ Validate source
+        run: yarn validate
+
+      - name: 🏗️ Build applications
+        run: yarn build
+
+      - name: 📦 Package Windows x64 application
+        run: yarn electron-forge package --arch=x64 --platform=win32
+
+      - name: 🔎 Verify artifact layout
+        run: |
+          test -f "out/qdb-finder-win32-x64/QDB Finder.exe"
+          test -f out/qdb-finder-win32-x64/resources/app.asar
+          test -f out/qdb-finder-win32-x64/resources/database/qdb.sqlite

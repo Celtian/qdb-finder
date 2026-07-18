@@ -1,0 +1,164 @@
+.shell {
+  height: 100vh;
+  background: #f7f8fc;
+}
+.filters {
+  width: 310px;
+  padding: 1.25rem;
+  background: #fff;
+  border-right: 1px solid #e2e5ef;
+}
+.filter-heading,
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.filter-heading {
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.filter-heading p,
+.filter-heading h2,
+.topbar p,
+.topbar h1 {
+  margin: 0;
+}
+.filters mat-form-field {
+  display: block;
+  width: 100%;
+}
+.filters mat-chip-set {
+  display: block;
+  margin: -0.7rem 0 1rem;
+}
+.filters fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+.filters legend {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.range label {
+  font-size: 0.75rem;
+  color: #555;
+}
+.range input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #abb2c2;
+  border-radius: 8px;
+  font: inherit;
+}
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.filter-note {
+  font-size: 0.8rem;
+  color: #656b79;
+  line-height: 1.45;
+}
+.topbar {
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #e2e5ef;
+}
+.topbar h1 {
+  font-size: 1.4rem;
+}
+.eyebrow {
+  color: var(--qdb-brand);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.7rem;
+}
+main {
+  padding: 1.5rem 2rem;
+}
+.search {
+  width: min(760px, 100%);
+}
+.results {
+  background: #fff;
+  border: 1px solid #e2e5ef;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgb(35 45 75 / 6%);
+}
+.result-count {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e5ef;
+}
+.table-scroll {
+  overflow: auto;
+}
+table {
+  width: 100%;
+  min-width: 1020px;
+}
+.player-link {
+  border: 0;
+  background: transparent;
+  color: var(--qdb-brand);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+.rating {
+  display: inline-block;
+  background: #dce9ff;
+  color: #0b438d;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-weight: 700;
+}
+.state {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #646b78;
+}
+.state mat-icon {
+  width: 54px;
+  height: 54px;
+  font-size: 54px;
+}
+.state h2 {
+  color: #20232b;
+  margin: 0.8rem 0 0.2rem;
+}
+.state.error mat-icon {
+  color: #b3261e;
+}
+@media (max-width: 900px) {
+  .filters {
+    width: min(340px, 88vw);
+  }
+  main {
+    padding: 1rem;
+  }
+  .topbar {
+    padding: 1rem;
+  }
+  .shell ::ng-deep .mat-drawer {
+    position: fixed;
+  }
+  .shell ::ng-deep .mat-drawer-backdrop {
+    visibility: visible;
+  }
+}

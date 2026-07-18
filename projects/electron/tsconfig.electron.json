@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../.electron",
+    "rootDir": ".",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "target": "ES2022",
+    "types": ["node"],
+    "sourceMap": true,
+    "noEmit": false
+  },
+  "include": ["electron/**/*.ts", "src/app/core/qdb-contracts.ts"]
+}

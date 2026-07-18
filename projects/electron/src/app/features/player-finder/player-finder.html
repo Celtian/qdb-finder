@@ -1,0 +1,285 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    #filters
+    class="filters"
+    [mode]="isNarrow() ? 'over' : 'side'"
+    [opened]="!isNarrow()"
+  >
+    <div class="filter-heading">
+      <div>
+        <p>QDB Finder</p>
+        <h2>Filters</h2>
+      </div>
+      <button mat-icon-button aria-label="Close filters" (click)="filters.close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <mat-form-field appearance="outline"
+      ><mat-label>FIFA versions</mat-label
+      ><mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
+        @for (version of versions; track version) {
+          <mat-option [value]="version">FIFA {{ version }}</mat-option>
+        }
+      </mat-select></mat-form-field
+    >
+    <mat-form-field appearance="outline">
+      <mat-label>Nationality</mat-label>
+      <input
+        #nationalityInput
+        matInput
+        [matAutocomplete]="nationalityAuto"
+        (focus)="suggest('nationality', $event)"
+        (input)="suggest('nationality', $event)"
+      />
+      <mat-autocomplete
+        #nationalityAuto="matAutocomplete"
+        (optionSelected)="addExactFilter('nationalities', $event.option.value, nationalityInput)"
+      >
+        @for (option of suggestions().nationality; track option.key) {
+          <mat-option [value]="option.key"
+            >{{ option.label }} · {{ option.count.toLocaleString() }}</mat-option
+          >
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-chip-set aria-label="Selected nationalities">
+      @for (key of request().nationalities; track key) {
+        <mat-chip (removed)="removeExactFilter('nationalities', key)"
+          >{{ key
+          }}<button matChipRemove [attr.aria-label]="'Remove ' + key">
+            <mat-icon>cancel</mat-icon>
+          </button></mat-chip
+        >
+      }
+    </mat-chip-set>
+    <mat-form-field appearance="outline">
+      <mat-label>Team</mat-label>
+      <input
+        #teamInput
+        matInput
+        [matAutocomplete]="teamAuto"
+        (focus)="suggest('team', $event)"
+        (input)="suggest('team', $event)"
+      />
+      <mat-autocomplete
+        #teamAuto="matAutocomplete"
+        (optionSelected)="addExactFilter('teams', $event.option.value, teamInput)"
+      >
+        @for (option of suggestions().team; track option.key) {
+          <mat-option [value]="option.key"
+            >{{ option.label }} · {{ option.count.toLocaleString() }}</mat-option
+          >
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-chip-set aria-label="Selected teams">
+      @for (key of request().teams; track key) {
+        <mat-chip (removed)="removeExactFilter('teams', key)"
+          >{{ key
+          }}<button matChipRemove [attr.aria-label]="'Remove ' + key">
+            <mat-icon>cancel</mat-icon>
+          </button></mat-chip
+        >
+      }
+    </mat-chip-set>
+    <mat-form-field appearance="outline">
+      <mat-label>League</mat-label>
+      <input
+        #leagueInput
+        matInput
+        [matAutocomplete]="leagueAuto"
+        (focus)="suggest('league', $event)"
+        (input)="suggest('league', $event)"
+      />
+      <mat-autocomplete
+        #leagueAuto="matAutocomplete"
+        (optionSelected)="addExactFilter('leagues', $event.option.value, leagueInput)"
+      >
+        @for (option of suggestions().league; track option.key) {
+          <mat-option [value]="option.key"
+            >{{ option.label }} · {{ option.count.toLocaleString() }}</mat-option
+          >
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-chip-set aria-label="Selected leagues">
+      @for (key of request().leagues; track key) {
+        <mat-chip (removed)="removeExactFilter('leagues', key)"
+          >{{ key
+          }}<button matChipRemove [attr.aria-label]="'Remove ' + key">
+            <mat-icon>cancel</mat-icon>
+          </button></mat-chip
+        >
+      }
+    </mat-chip-set>
+    <mat-form-field appearance="outline"
+      ><mat-label>Positions</mat-label
+      ><mat-select multiple [value]="request().positions" (valueChange)="setPositions($event)">
+        @for (position of positions; track position) {
+          <mat-option [value]="position">{{ position }}</mat-option>
+        }
+      </mat-select></mat-form-field
+    >
+    <fieldset>
+      <legend>Age</legend>
+      <div class="range">
+        <label>Min<input type="number" (input)="setRange('age', 'min', $event)" /></label
+        ><label>Max<input type="number" (input)="setRange('age', 'max', $event)" /></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Overall</legend>
+      <div class="range">
+        <label
+          >Min<input
+            type="number"
+            min="1"
+            max="99"
+            (input)="setRange('overall', 'min', $event)" /></label
+        ><label
+          >Max<input type="number" min="1" max="99" (input)="setRange('overall', 'max', $event)"
+        /></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Potential</legend>
+      <div class="range">
+        <label
+          >Min<input
+            type="number"
+            min="1"
+            max="99"
+            (input)="setRange('potential', 'min', $event)" /></label
+        ><label
+          >Max<input type="number" min="1" max="99" (input)="setRange('potential', 'max', $event)"
+        /></label>
+      </div>
+    </fieldset>
+    <p class="filter-note">
+      Team, league and nationality are exact filters and are also searchable in the main box.
+    </p>
+    <div class="filter-actions">
+      <button mat-flat-button (click)="applyFilters()">Apply filters</button
+      ><button mat-button [disabled]="!hasFilters()" (click)="clearFilters()">Reset</button>
+    </div>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <header class="topbar">
+      <button mat-icon-button aria-label="Open filters" (click)="filters.toggle()">
+        <mat-icon>tune</mat-icon>
+      </button>
+      <div>
+        <p class="eyebrow">Offline FIFA database</p>
+        <h1>Find any player, any edition</h1>
+      </div>
+    </header>
+    <main>
+      <mat-form-field class="search" appearance="outline"
+        ><mat-label>Search players, teams, leagues or countries</mat-label
+        ><mat-icon matPrefix>search</mat-icon
+        ><input matInput [formField]="searchForm.text" autocomplete="off" /><button
+          mat-icon-button
+          matSuffix
+          aria-label="Clear search"
+          [disabled]="!model().text"
+          (click)="model.set({ text: '' })"
+        >
+          <mat-icon>close</mat-icon>
+        </button></mat-form-field
+      >
+      @if (loading()) {
+        <div class="state">
+          <mat-spinner diameter="42" />
+          <p>Searching the database…</p>
+        </div>
+      } @else if (error()) {
+        <div class="state error">
+          <mat-icon>database_off</mat-icon>
+          <h2>Database unavailable</h2>
+          <p>{{ error() }}</p>
+          <button mat-flat-button (click)="applyFilters()">Try again</button>
+        </div>
+      } @else if (!result().rows.length) {
+        <div class="state">
+          <mat-icon>person_search</mat-icon>
+          <h2>
+            {{ hasFilters() ? 'No players match these filters' : 'Start with a player name' }}
+          </h2>
+          <p>Try Messi, Argentina, Arsenal, or a combination of edition and rating filters.</p>
+        </div>
+      } @else {
+        <section class="results" aria-live="polite">
+          <div class="result-count">
+            <strong>{{ result().total.toLocaleString() }}</strong> player editions
+          </div>
+          <div class="table-scroll">
+            <table
+              mat-table
+              matSort
+              [dataSource]="result().rows"
+              [matSortActive]="request().sort"
+              [matSortDirection]="request().direction"
+              (matSortChange)="sort($event)"
+            >
+              <ng-container matColumnDef="name"
+                ><th mat-header-cell *matHeaderCellDef mat-sort-header="name">Player</th>
+                <td mat-cell *matCellDef="let row">
+                  <button class="player-link" (click)="openPlayer(row)">{{ row.name }}</button>
+                </td></ng-container
+              >
+              <ng-container matColumnDef="version"
+                ><th mat-header-cell *matHeaderCellDef mat-sort-header="version">Edition</th>
+                <td mat-cell *matCellDef="let row">FIFA {{ row.version }}</td></ng-container
+              >
+              <ng-container matColumnDef="nationality"
+                ><th mat-header-cell *matHeaderCellDef>Nationality</th>
+                <td mat-cell *matCellDef="let row">{{ row.nationality || '—' }}</td></ng-container
+              >
+              <ng-container matColumnDef="teams"
+                ><th mat-header-cell *matHeaderCellDef>Teams</th>
+                <td mat-cell *matCellDef="let row">
+                  {{ row.teams.join(', ') || 'Free agent' }}
+                </td></ng-container
+              >
+              <ng-container matColumnDef="positions"
+                ><th mat-header-cell *matHeaderCellDef>Positions</th>
+                <td mat-cell *matCellDef="let row">
+                  {{ row.positions.join(' · ') }}
+                </td></ng-container
+              >
+              <ng-container matColumnDef="age"
+                ><th mat-header-cell *matHeaderCellDef mat-sort-header="age">Age</th>
+                <td mat-cell *matCellDef="let row">{{ row.age ?? '—' }}</td></ng-container
+              >
+              <ng-container matColumnDef="overall"
+                ><th mat-header-cell *matHeaderCellDef mat-sort-header="overall">OVR</th>
+                <td mat-cell *matCellDef="let row">
+                  <strong>{{ row.overall }}</strong>
+                </td></ng-container
+              >
+              <ng-container matColumnDef="potential"
+                ><th mat-header-cell *matHeaderCellDef mat-sort-header="potential">POT</th>
+                <td mat-cell *matCellDef="let row">{{ row.potential }}</td></ng-container
+              >
+              <ng-container matColumnDef="bestRating"
+                ><th mat-header-cell *matHeaderCellDef mat-sort-header="bestRating">Best</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="rating">{{ row.bestRating }} {{ row.bestPosition }}</span>
+                </td></ng-container
+              >
+              <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: columns" (dblclick)="openPlayer(row)"></tr>
+            </table>
+          </div>
+          <mat-paginator
+            [length]="result().total"
+            [pageSize]="result().pageSize"
+            [pageIndex]="result().offset / result().pageSize"
+            [pageSizeOptions]="[25, 50, 100]"
+            (page)="page($event)"
+          />
+        </section>
+      }
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

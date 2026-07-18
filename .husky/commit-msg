@@ -1,0 +1,4 @@
+if command -v quick-commitlint >/dev/null 2>&1; then
+  quick-commitlint "$1"
+fi
+yarn commitlint --edit "$1"

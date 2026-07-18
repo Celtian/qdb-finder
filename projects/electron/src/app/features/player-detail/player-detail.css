@@ -1,0 +1,70 @@
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.25rem 1.5rem 0;
+}
+.detail-header h2,
+.detail-header p {
+  margin: 0.15rem 0;
+}
+.eyebrow {
+  color: var(--qdb-brand);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.metric-grid div {
+  background: #eef2ff;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.metric-grid span {
+  display: block;
+  color: #5f6573;
+  font-size: 0.8rem;
+}
+.metric-grid strong {
+  font-size: 1.4rem;
+}
+.profile-grid,
+.raw-fields {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) 2fr;
+  gap: 0.5rem 1rem;
+  padding: 1rem;
+}
+.profile-grid dt,
+.raw-fields dt {
+  font-weight: 600;
+}
+.profile-grid dd,
+.raw-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ratings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+  padding: 1rem;
+}
+.ratings span {
+  display: flex;
+  justify-content: space-between;
+  background: #f4f5f8;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+}
+@media (max-width: 650px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

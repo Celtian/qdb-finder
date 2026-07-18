@@ -1,0 +1,27 @@
+:root {
+  --qdb-brand: #2356a8;
+  --qdb-accent: #006b5f;
+  --qdb-panel: #f8f9ff;
+  --mat-sys-primary: #2356a8;
+  --mat-sys-secondary: #006b5f;
+  --mat-sys-surface-container: #f1f3fa;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color-scheme: light;
+  background: var(--mat-sys-surface, #fafafa);
+  color: var(--mat-sys-on-surface, #1a1b20);
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

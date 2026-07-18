@@ -1,0 +1,73 @@
+<header class="detail-header">
+  <div>
+    <p class="eyebrow">FIFA {{ player.version }}</p>
+    <h2 mat-dialog-title>{{ player.name }}</h2>
+    <p>{{ player.nationality }} · {{ player.teams.join(', ') || 'Free agent' }}</p>
+  </div>
+  <button mat-button mat-dialog-close aria-label="Close player details">Close</button>
+</header>
+<mat-dialog-content>
+  <div class="metric-grid">
+    <div>
+      <span>Overall</span><strong>{{ player.overall }}</strong>
+    </div>
+    <div>
+      <span>Potential</span><strong>{{ player.potential }}</strong>
+    </div>
+    <div>
+      <span>Best rating</span><strong>{{ player.bestRating }} {{ player.bestPosition }}</strong>
+    </div>
+    <div>
+      <span>Age</span><strong>{{ player.age ?? '—' }}</strong>
+    </div>
+  </div>
+  <mat-tab-group>
+    <mat-tab label="Profile"
+      ><dl class="profile-grid">
+        <dt>Full name</dt>
+        <dd>{{ player.firstName }} {{ player.lastName }}</dd>
+        <dt>Common / jersey</dt>
+        <dd>{{ player.commonName || '—' }} / {{ player.jerseyName || '—' }}</dd>
+        <dt>Birth date</dt>
+        <dd>{{ player.birthDate || '—' }}</dd>
+        <dt>Snapshot</dt>
+        <dd>{{ player.snapshotDate }}</dd>
+        <dt>Height / weight</dt>
+        <dd>{{ player.height ?? '—' }} cm / {{ player.weight ?? '—' }} kg</dd>
+        <dt>Preferred foot</dt>
+        <dd>{{ player.preferredFoot }}</dd>
+        <dt>Work rates</dt>
+        <dd>{{ player.attackingWorkRate }} / {{ player.defensiveWorkRate }}</dd>
+      </dl></mat-tab
+    >
+    <mat-tab label="Position matrix"
+      ><div class="ratings">
+        @for (rating of player.ratings | keyvalue; track rating.key) {
+          <span
+            >{{ rating.key }} <strong>{{ rating.value }}</strong></span
+          >
+        }
+      </div></mat-tab
+    >
+    <mat-tab label="Attributes"
+      ><div class="ratings">
+        @for (attribute of player.attributes | keyvalue; track attribute.key) {
+          <span
+            >{{ attribute.key }} <strong>{{ attribute.value }}</strong></span
+          >
+        }
+      </div></mat-tab
+    >
+  </mat-tab-group>
+  <mat-expansion-panel
+    ><mat-expansion-panel-header
+      ><mat-panel-title>Raw player fields</mat-panel-title></mat-expansion-panel-header
+    >
+    <dl class="raw-fields">
+      @for (field of player.raw | keyvalue; track field.key) {
+        <dt>{{ field.key }}</dt>
+        <dd>{{ field.value }}</dd>
+      }
+    </dl>
+  </mat-expansion-panel>
+</mat-dialog-content>

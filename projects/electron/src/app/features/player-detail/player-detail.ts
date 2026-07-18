@@ -26,6 +26,22 @@ import { positionBadgeClass } from '../../core/position';
 })
 export class PlayerDetail {
   protected readonly player = inject<PlayerDetails>(MAT_DIALOG_DATA);
-  protected readonly positionBadgeClass = positionBadgeClass;
-  protected readonly scoreValueClass = scoreValueClass;
+  protected readonly teams = this.player.teams.join(', ') || 'Free agent';
+  protected readonly positions = this.player.positions.map((value) => ({
+    value,
+    className: positionBadgeClass(value),
+  }));
+  protected readonly overallClass = `score-badge ${scoreValueClass(this.player.overall)}`;
+  protected readonly potentialClass = `score-badge ${scoreValueClass(this.player.potential)}`;
+  protected readonly bestPositionClass = positionBadgeClass(this.player.bestPosition);
+  protected readonly ratings = Object.entries(this.player.ratings).map(([key, value]) => ({
+    key,
+    value,
+    className: positionBadgeClass(key),
+  }));
+  protected readonly attributes = Object.entries(this.player.attributes).map(([key, value]) => ({
+    key,
+    value,
+    className: scoreValueClass(value),
+  }));
 }

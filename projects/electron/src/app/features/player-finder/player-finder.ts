@@ -32,6 +32,37 @@ import { positionBadgeClass } from '../../core/position';
 
 type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
 
+interface FilterDisplay {
+  key: string;
+  label: string;
+  nationalityCode?: string;
+}
+
+interface PositionDisplay {
+  value: string;
+  className: string;
+}
+
+interface PlayerSearchDisplay extends PlayerSearchRow {
+  teamsLabel: string;
+  positionDisplays: PositionDisplay[];
+  overallClass: string;
+  potentialClass: string;
+  bestRatingClass: string;
+}
+
+const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
+  ...row,
+  teamsLabel: row.teams.join(', ') || 'Free agent',
+  positionDisplays: row.positions.map((value) => ({
+    value,
+    className: positionBadgeClass(value),
+  })),
+  overallClass: `score-badge ${scoreValueClass(row.overall)}`,
+  potentialClass: `score-badge ${scoreValueClass(row.potential)}`,
+  bestRatingClass: `rating ${positionBadgeClass(row.bestPosition)}`,
+});
+
 @Component({
   selector: 'app-player-finder',
   imports: [
@@ -97,8 +128,10 @@ export class PlayerFinder {
     'CF',
     'ST',
   ];
-  protected readonly positionBadgeClass = positionBadgeClass;
-  protected readonly scoreValueClass = scoreValueClass;
+  protected readonly positionOptions: PositionDisplay[] = this.positions.map((value) => ({
+    value,
+    className: positionBadgeClass(value),
+  }));
   protected readonly suggestions = signal<Record<FilterKind, FilterSuggestion[]>>({
     nationality: [],
     team: [],
@@ -110,6 +143,34 @@ export class PlayerFinder {
     leagues: {},
   });
   protected readonly nationalityCodes = signal<Record<string, string>>({});
+  protected readonly selectedNationalities = computed<FilterDisplay[]>(() =>
+    this.request().nationalities.map((key) => ({
+      key,
+      label: this.filterLabels().nationalities[key] ?? key,
+      nationalityCode: this.nationalityCodes()[key],
+    })),
+  );
+  protected readonly selectedTeams = computed<FilterDisplay[]>(() =>
+    this.request().teams.map((key) => ({
+      key,
+      label: this.filterLabels().teams[key] ?? key,
+    })),
+  );
+  protected readonly selectedLeagues = computed<FilterDisplay[]>(() =>
+    this.request().leagues.map((key) => ({
+      key,
+      label: this.filterLabels().leagues[key] ?? key,
+    })),
+  );
+  protected readonly selectedPositions = computed<PositionDisplay[]>(() =>
+    this.request().positions.map((value) => ({
+      value,
+      className: positionBadgeClass(value),
+    })),
+  );
+  protected readonly resultRows = computed<PlayerSearchDisplay[]>(() =>
+    this.result().rows.map(playerSearchDisplay),
+  );
   protected readonly isNarrow = toSignal(
     this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
     { initialValue: false },

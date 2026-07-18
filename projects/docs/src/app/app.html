@@ -8,8 +8,8 @@
     <nav>
       @for (link of links; track link[0]) {
         <a
-          [routerLink]="'/' + link[0]"
           routerLinkActive="active"
+          [routerLink]="'/' + link[0]"
           [routerLinkActiveOptions]="{ exact: true }"
           >{{ link[1] }}</a
         >

@@ -66,10 +66,10 @@ describe('PlayerDetail', () => {
 
   it('exposes the value color band for player attributes', () => {
     const testable = component as unknown as {
-      scoreValueClass(value: number): string;
+      attributes: { className: string }[];
     };
 
-    expect(testable.scoreValueClass(80)).toBe('score-value score-lime');
+    expect(testable.attributes[0]?.className).toBe('score-value score-lime');
   });
 
   it('colors overall and potential by their value bands', () => {

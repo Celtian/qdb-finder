@@ -5,21 +5,27 @@
     <p class="nationality">
       @if (player.nationalityCode) {
         <app-country-flag
-          [code]="player.nationalityCode"
-          [countryName]="player.nationality"
           size="lg"
           decorative
+          [code]="player.nationalityCode"
+          [countryName]="player.nationality"
         />
       }
-      <span>{{ player.nationality }} · {{ player.teams.join(', ') || 'Free agent' }}</span>
+      <span>{{ player.nationality }} · {{ teams }}</span>
     </p>
     <div class="position-list" aria-label="Positions">
-      @for (position of player.positions; track position) {
-        <span [class]="positionBadgeClass(position)">{{ position }}</span>
+      @for (position of positions; track position.value) {
+        <span [class]="position.className">{{ position.value }}</span>
       }
     </div>
   </div>
-  <button class="close-button" mat-icon-button mat-dialog-close aria-label="Close player details">
+  <button
+    type="button"
+    class="close-button"
+    mat-icon-button
+    mat-dialog-close
+    aria-label="Close player details"
+  >
     <mat-icon>close</mat-icon>
   </button>
 </header>
@@ -27,19 +33,19 @@
   <div class="metric-grid">
     <div>
       <span>Overall</span
-      ><strong [class]="'score-badge ' + scoreValueClass(player.overall)">
+      ><strong [class]="overallClass">
         {{ player.overall }}
       </strong>
     </div>
     <div>
       <span>Potential</span
-      ><strong [class]="'score-badge ' + scoreValueClass(player.potential)">
+      ><strong [class]="potentialClass">
         {{ player.potential }}
       </strong>
     </div>
     <div>
       <span>Best rating</span
-      ><strong [class]="positionBadgeClass(player.bestPosition)"
+      ><strong [class]="bestPositionClass"
         >{{ player.bestRating }} {{ player.bestPosition }}</strong
       >
     </div>
@@ -68,8 +74,8 @@
     >
     <mat-tab label="Position matrix"
       ><div class="ratings">
-        @for (rating of player.ratings | keyvalue; track rating.key) {
-          <span [class]="positionBadgeClass(rating.key)"
+        @for (rating of ratings; track rating.key) {
+          <span [class]="rating.className"
             >{{ rating.key }} <strong>{{ rating.value }}</strong></span
           >
         }
@@ -77,8 +83,8 @@
     >
     <mat-tab label="Attributes"
       ><div class="ratings">
-        @for (attribute of player.attributes | keyvalue; track attribute.key) {
-          <span [class]="scoreValueClass(attribute.value)"
+        @for (attribute of attributes; track attribute.key) {
+          <span [class]="attribute.className"
             >{{ attribute.key }} <strong>{{ attribute.value }}</strong></span
           >
         }

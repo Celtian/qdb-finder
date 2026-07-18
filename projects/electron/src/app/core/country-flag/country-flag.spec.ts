@@ -18,8 +18,9 @@ describe('CountryFlag', () => {
     const image = element.querySelector('img');
 
     expect(source?.getAttribute('srcset')).toBe(
-      '/flags/20x15/cz.png 1x, /flags/40x30/cz.png 2x, /flags/60x45/cz.png 3x',
+      'flags/20x15/cz.png 1x, flags/40x30/cz.png 2x, flags/60x45/cz.png 3x',
     );
+    expect(image?.getAttribute('src')).toBe('flags/20x15/cz.png');
     expect(image?.getAttribute('width')).toBe('20');
     expect(image?.getAttribute('height')).toBe('15');
     expect(image?.getAttribute('alt')).toBe('CZ');
@@ -35,8 +36,9 @@ describe('CountryFlag', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('source')?.getAttribute('srcset')).toBe(
-      '/flags/40x30/cz.png 1x, /flags/80x60/cz.png 2x, /flags/120x90/cz.png 3x',
+      'flags/40x30/cz.png 1x, flags/80x60/cz.png 2x, flags/120x90/cz.png 3x',
     );
+    expect(element.querySelector('img')?.getAttribute('src')).toBe('flags/40x30/cz.png');
     expect(element.querySelector('img')?.getAttribute('width')).toBe('40');
     expect(element.querySelector('img')?.getAttribute('height')).toBe('30');
     expect(element.querySelector('img')?.getAttribute('alt')).toBe('Czechia');

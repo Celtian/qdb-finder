@@ -30,6 +30,9 @@
               }
             ],
             "styles": [
+              "@fontsource/roboto/400.css",
+              "@fontsource/roboto/500.css",
+              "@fontsource/roboto/700.css",
               "@angular/material/prebuilt-themes/azure-blue.css",
               "material-icons/iconfont/material-icons.css",
               "projects/electron/src/tailwind.css",
@@ -39,6 +42,11 @@
           "configurations": {
             "production": {
               "baseHref": "./",
+              "optimization": {
+                "styles": {
+                  "inlineCritical": false
+                }
+              },
               "budgets": [
                 {
                   "type": "initial",

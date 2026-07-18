@@ -119,7 +119,7 @@ describe('PlayerFinder', () => {
       'mat-chip app-country-flag img',
     );
     expect(flag?.getAttribute('ng-reflect-ng-src') ?? flag?.getAttribute('src')).toContain(
-      '/flags/20x15/br.png',
+      'flags/20x15/br.png',
     );
   });
 

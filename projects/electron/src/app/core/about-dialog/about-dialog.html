@@ -1,0 +1,47 @@
+<header class="about-header">
+  <div class="identity">
+    <img ngSrc="qdb-finder.png" width="56" height="56" alt="" priority />
+    <div>
+      <h2 mat-dialog-title>QDB Finder</h2>
+      <p class="version">Version {{ version }}</p>
+    </div>
+  </div>
+  <button
+    type="button"
+    class="close-button"
+    mat-icon-button
+    mat-dialog-close
+    aria-label="Close About dialog"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<mat-dialog-content>
+  <p class="description">Fast, offline FIFA database search across FIFA 11–23.</p>
+  <p class="legal">© {{ copyrightYear }} {{ author }} · MIT License</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" mat-button mat-dialog-close>Close</button>
+  <a
+    mat-button
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Open QDB Finder documentation in your browser"
+    [href]="documentationUrl"
+  >
+    <mat-icon>menu_book</mat-icon>
+    Documentation
+  </a>
+  <a
+    mat-flat-button
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Open the QDB Finder GitHub repository in your browser"
+    [href]="repositoryUrl"
+  >
+    <mat-icon>code</mat-icon>
+    GitHub
+  </a>
+</mat-dialog-actions>

@@ -190,6 +190,12 @@
                   </button>
                 </td></ng-container
               >
+              <ng-container matColumnDef="originalId"
+                ><th *matHeaderCellDef mat-header-cell>Original ID</th>
+                <td *matCellDef="let row" class="original-id" mat-cell>
+                  {{ row.stadiumId }}
+                </td></ng-container
+              >
               <ng-container matColumnDef="version"
                 ><th *matHeaderCellDef mat-header-cell mat-sort-header="version">Edition</th>
                 <td *matCellDef="let row" mat-cell>FIFA {{ row.version }}</td></ng-container

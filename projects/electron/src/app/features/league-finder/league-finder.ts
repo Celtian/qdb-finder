@@ -86,7 +86,15 @@ export class LeagueFinder {
   });
   protected readonly loading = signal(true);
   protected readonly error = signal('');
-  protected readonly columns = ['name', 'version', 'country', 'level', 'teamCount', 'playerCount'];
+  protected readonly columns = [
+    'name',
+    'originalId',
+    'version',
+    'country',
+    'level',
+    'teamCount',
+    'playerCount',
+  ];
   protected readonly versions = Array.from({ length: 13 }, (_, index) => 23 - index);
   protected readonly levels = Array.from({ length: 7 }, (_, index) => index + 1);
   protected readonly countrySuggestions = signal<EntityFacetOption[]>([]);

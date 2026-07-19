@@ -74,6 +74,9 @@ describe('StadiumDetail', () => {
     expect(element.textContent).toContain('105 × 68 m');
     expect(element.textContent).toContain('Manchester United');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
+    expect(
+      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('FIFA 23 stadium · Original ID 1');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

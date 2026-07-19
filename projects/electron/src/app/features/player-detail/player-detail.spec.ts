@@ -73,6 +73,15 @@ describe('PlayerDetail', () => {
     expect(component).toBeTruthy();
   });
 
+  it('renders the original player ID in the header metadata', () => {
+    const eyebrow = (fixture.nativeElement as HTMLElement).querySelector('.detail-header .eyebrow');
+
+    expect(eyebrow?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'FIFA 23 player · Original ID 1',
+    );
+    expect(eyebrow?.querySelector('.original-id')?.textContent?.trim()).toBe('Original ID 1');
+  });
+
   it('renders readable profile dates and preferred foot', () => {
     const element = fixture.nativeElement as HTMLElement;
     const terms = [...element.querySelectorAll<HTMLElement>('.profile-grid dt')];

@@ -97,6 +97,7 @@ export class RefereeFinder {
   protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'originalId',
     'version',
     'nationality',
     'leagues',

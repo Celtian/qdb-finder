@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { TeamSearchRequest } from '../../core/qdb-contracts';
+import type { TeamEditionRow, TeamResultPage, TeamSearchRequest } from '../../core/qdb-contracts';
 import { TeamFinder } from './team-finder';
 
 describe('TeamFinder', () => {
@@ -51,6 +51,48 @@ describe('TeamFinder', () => {
     await fixture.whenStable();
 
     expect(searchTeams).toHaveBeenCalledWith(expect.objectContaining({ overall: { min: 80 } }));
+  });
+
+  it('renders the original team ID as a non-sortable column after the name', async () => {
+    const row: TeamEditionRow = {
+      key: 'internal-team-key',
+      version: 23,
+      teamId: 116_009,
+      name: 'Test Team',
+      leagueId: 13,
+      leagueKey: 'test-league',
+      leagueName: 'Test League',
+      countryId: 14,
+      countryName: 'England',
+      countryCode: 'gb-eng',
+      squadSize: 25,
+      overall: 80,
+      attack: 81,
+      midfield: 79,
+      defence: 78,
+      foundationYear: 1900,
+    };
+    const testable = component as unknown as {
+      loading: { set(value: boolean): void };
+      error: { set(value: string): void };
+      result: { set(value: TeamResultPage): void };
+    };
+
+    testable.loading.set(false);
+    testable.error.set('');
+    testable.result.set({ rows: [row], total: 1, offset: 0, pageSize: 50 });
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const headers = [...element.querySelectorAll<HTMLElement>('th.mat-mdc-header-cell')].map(
+      (header) => header.textContent?.trim(),
+    );
+    const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
+    const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
+    expect(headers.slice(0, 3)).toEqual(['Team', 'Original ID', 'Edition']);
+    expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
+    expect(originalIdCell?.textContent?.trim()).toBe('116009');
+    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
   });
 });
 

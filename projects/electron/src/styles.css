@@ -30,6 +30,11 @@ mat-sidenav.filters .mat-drawer-inner-container {
   overflow-x: hidden;
 }
 
+.original-id {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .position-list {
   display: flex;
   flex-wrap: wrap;

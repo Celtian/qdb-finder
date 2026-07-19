@@ -105,6 +105,7 @@ export class StadiumFinder {
   protected readonly contextTeam = signal<TeamEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'originalId',
     'version',
     'country',
     'teams',

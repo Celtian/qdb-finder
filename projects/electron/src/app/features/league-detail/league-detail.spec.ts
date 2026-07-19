@@ -98,6 +98,9 @@ describe('LeagueDetail', () => {
     expect(element.textContent).toContain('England Premier League (1)');
     expect(element.textContent).toContain('Arsenal');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
+    expect(
+      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('FIFA 23 league · Original ID 13');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

@@ -178,9 +178,9 @@ describe('PlayerFinder', () => {
     };
     testable.loading.set(false);
     const testableResultRow: PlayerSearchRow = {
-      key: '23:1',
+      key: 'internal-player-key',
       version: 23,
-      playerId: 1,
+      playerId: 123_456,
       name: 'Test Player',
       nationality: 'Brazil',
       nationalityCode: 'br',
@@ -207,6 +207,15 @@ describe('PlayerFinder', () => {
     expect(nationalityCell?.textContent).toContain('Brazil');
     expect(nationalityCell?.querySelector('app-country-flag')).toBeTruthy();
     const element = fixture.nativeElement as HTMLElement;
+    const headers = [...element.querySelectorAll<HTMLElement>('th.mat-mdc-header-cell')].map(
+      (header) => header.textContent?.trim(),
+    );
+    const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
+    const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
+    expect(headers.slice(0, 3)).toEqual(['Player', 'Original ID', 'Edition']);
+    expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
+    expect(originalIdCell?.textContent?.trim()).toBe('123456');
+    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
     expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
     expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
     expect(

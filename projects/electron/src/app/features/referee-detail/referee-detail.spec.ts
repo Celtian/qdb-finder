@@ -72,6 +72,9 @@ describe('RefereeDetail', () => {
     expect(element.textContent).toContain('183 cm');
     expect(element.textContent).toContain('England Premier League (1)');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
+    expect(
+      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('FIFA 23 referee · Original ID 188446');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

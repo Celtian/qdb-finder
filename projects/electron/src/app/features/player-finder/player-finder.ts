@@ -120,6 +120,7 @@ export class PlayerFinder {
   protected readonly contextKind = signal<'team' | 'league' | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'originalId',
     'version',
     'nationality',
     'teams',

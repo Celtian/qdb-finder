@@ -3,7 +3,11 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { RefereeSearchRequest } from '../../core/qdb-contracts';
+import type {
+  RefereeEditionRow,
+  RefereeResultPage,
+  RefereeSearchRequest,
+} from '../../core/qdb-contracts';
 import { RefereeFinder } from './referee-finder';
 
 describe('RefereeFinder', () => {
@@ -88,6 +92,50 @@ describe('RefereeFinder', () => {
     await fixture.whenStable();
 
     expect(testable.request().gender).toBeUndefined();
+  });
+
+  it('renders the original referee ID as a non-sortable column after the name', async () => {
+    const row: RefereeEditionRow = {
+      key: 'internal-referee-key',
+      version: 23,
+      refereeId: 270_317,
+      name: 'Test Referee',
+      firstName: 'Test',
+      lastName: 'Referee',
+      nationalityId: 14,
+      nationalityName: 'England',
+      nationalityCode: 'gb-eng',
+      birthDate: '1980-01-01',
+      age: 43,
+      height: 183,
+      weight: 78,
+      foulStrictness: 1,
+      cardStrictness: 2,
+      isReal: true,
+      leagues: ['Test League'],
+      leagueCount: 1,
+    };
+    const testable = component as unknown as {
+      loading: { set(value: boolean): void };
+      error: { set(value: string): void };
+      result: { set(value: RefereeResultPage): void };
+    };
+
+    testable.loading.set(false);
+    testable.error.set('');
+    testable.result.set({ rows: [row], total: 1, offset: 0, pageSize: 50 });
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const headers = [...element.querySelectorAll<HTMLElement>('th.mat-mdc-header-cell')].map(
+      (header) => header.textContent?.trim(),
+    );
+    const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
+    const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
+    expect(headers.slice(0, 3)).toEqual(['Referee', 'Original ID', 'Edition']);
+    expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
+    expect(originalIdCell?.textContent?.trim()).toBe('270317');
+    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
   });
 });
 

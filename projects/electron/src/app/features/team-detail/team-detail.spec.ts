@@ -95,6 +95,9 @@ describe('TeamDetail', () => {
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(element.querySelector('.data-badge.score-lime')).toBeTruthy();
     expect(element.querySelector('.data-badge.position-attacker')).toBeTruthy();
+    expect(
+      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('FIFA 23 team · Original ID 1');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

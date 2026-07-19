@@ -1,6 +1,9 @@
 <header class="detail-header">
   <div>
-    <p class="eyebrow">FIFA {{ player.version }}</p>
+    <p class="eyebrow">
+      FIFA {{ player.version }} player ·
+      <span class="original-id">Original ID {{ player.playerId }}</span>
+    </p>
     <h2 mat-dialog-title>{{ player.name }}</h2>
     <p class="nationality">
       @if (player.nationalityCode) {

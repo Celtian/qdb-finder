@@ -46,6 +46,25 @@ describe('WindowTitlebar', () => {
     expect(element.querySelector('[aria-label="Close window"]')).toBeTruthy();
   });
 
+  it('uses matching rectangular geometry for navigation and window controls', async () => {
+    const fixture = TestBed.createComponent(WindowTitlebar);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const navigation = element.querySelector<HTMLElement>('[aria-label="Open main navigation"]');
+    const minimize = element.querySelector<HTMLElement>('[aria-label="Minimize window"]');
+    const navigationStyle = getComputedStyle(navigation!);
+    const minimizeStyle = getComputedStyle(minimize!);
+
+    expect(navigation?.classList.contains('mat-mdc-icon-button')).toBe(false);
+    expect(navigationStyle.width).toBe('48px');
+    expect(navigationStyle.height).toBe('44px');
+    expect(navigationStyle.width).toBe(minimizeStyle.width);
+    expect(navigationStyle.height).toBe(minimizeStyle.height);
+    expect(navigationStyle.borderRadius).toBe('0px');
+    expect(navigationStyle.borderRadius).toBe(minimizeStyle.borderRadius);
+  });
+
   it('delegates all window actions to the preload API', async () => {
     const fixture = TestBed.createComponent(WindowTitlebar);
     await fixture.whenStable();

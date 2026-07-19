@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type {
+  EntityFacetOption,
+  RefereeDetails,
   RefereeEditionRow,
   RefereeResultPage,
   RefereeSearchRequest,
@@ -19,6 +22,8 @@ describe('RefereeFinder', () => {
     offset: request.offset,
     pageSize: request.pageSize,
   }));
+  const suggestEntityFacets = vi.fn(async (): Promise<EntityFacetOption[]> => []);
+  const getReferee = vi.fn(async (): Promise<RefereeDetails> => ({}) as RefereeDetails);
 
   beforeEach(async () => {
     searchReferees.mockClear();
@@ -31,8 +36,8 @@ describe('RefereeFinder', () => {
           useValue: {
             searchReferees,
             getLeague: vi.fn(),
-            getReferee: vi.fn(),
-            suggestEntityFacets: vi.fn(async () => []),
+            getReferee,
+            suggestEntityFacets,
           },
         },
       ],
@@ -41,6 +46,8 @@ describe('RefereeFinder', () => {
     fixture = TestBed.createComponent(RefereeFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    suggestEntityFacets.mockClear();
+    getReferee.mockClear();
   });
 
   it('renders the empty state after loading', async () => {
@@ -136,6 +143,97 @@ describe('RefereeFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('270317');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+  });
+
+  it('supports the complete facet, paging, sorting and detail workflow', async () => {
+    const input = document.createElement('input');
+    const league = { key: 'premier', label: 'Premier League', count: 1 };
+    const nationality = {
+      key: '14',
+      id: 14,
+      label: 'England',
+      count: 1,
+      countryCode: 'gb-eng',
+    };
+    const row = {
+      key: '23:1',
+      version: 23,
+      refereeId: 1,
+      name: 'Test Referee',
+      firstName: 'Test',
+      lastName: 'Referee',
+      nationalityId: 14,
+      nationalityName: 'England',
+      nationalityCode: 'gb-eng',
+      birthDate: null,
+      age: 40,
+      height: 180,
+      weight: 75,
+      foulStrictness: 1,
+      cardStrictness: 1,
+      isReal: true,
+      leagues: ['Premier League'],
+      leagueCount: 1,
+    } satisfies RefereeEditionRow;
+    const testable = component as unknown as {
+      request(): RefereeSearchRequest;
+      error(): string;
+      rows(): { leagueText: string }[];
+      setVersions(versions: number[]): void;
+      setGender(gender: 'all' | 'men' | 'women'): void;
+      setAge(boundary: 'min' | 'max', event: Event): void;
+      setAvailability(value: 'all' | 'real' | 'generic'): void;
+      suggest(facet: 'nationality' | 'league', event: Event): Promise<void>;
+      addFacet(
+        facet: 'nationality' | 'league',
+        option: EntityFacetOption,
+        input: HTMLInputElement,
+      ): void;
+      removeFacet(facet: 'nationality' | 'league', key: string): void;
+      page(event: { pageIndex: number; pageSize: number }): void;
+      sort(event: { active: string; direction: 'asc' | '' }): void;
+      retrySearch(): void;
+      openReferee(row: RefereeEditionRow): Promise<void>;
+      clearFilters(): void;
+      result: { set(value: RefereeResultPage): void };
+    };
+
+    suggestEntityFacets.mockResolvedValue([nationality]);
+    getReferee.mockResolvedValue({ ...row, leaguesPreview: [], raw: {} });
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue(null as never);
+
+    testable.setVersions([23]);
+    testable.setGender('men');
+    testable.setAge('max', { target: { value: '' } } as unknown as Event);
+    testable.setAvailability('generic');
+    testable.setAvailability('all');
+    await testable.suggest('nationality', { target: { value: 'Eng' } } as unknown as Event);
+    testable.addFacet('league', league, input);
+    testable.addFacet('nationality', nationality, input);
+    testable.addFacet('nationality', league, input);
+    testable.removeFacet('league', league.key);
+    testable.removeFacet('nationality', String(nationality.id));
+    testable.page({ pageIndex: 2, pageSize: 25 });
+    testable.sort({ active: 'name', direction: '' });
+    testable.sort({ active: 'name', direction: 'asc' });
+    testable.retrySearch();
+    await testable.openReferee(row);
+    testable.result.set({ rows: [row], total: 1, offset: 0, pageSize: 50 });
+    expect(testable.rows()[0]?.leagueText).toBe('Premier League');
+    expect(open).toHaveBeenCalledOnce();
+
+    searchReferees.mockRejectedValueOnce(new Error('Referee unavailable'));
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Referee unavailable');
+    searchReferees.mockRejectedValueOnce('failure');
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Referee search failed.');
+
+    testable.clearFilters();
+    await fixture.whenStable();
+    expect(testable.request()).toMatchObject({ nationalityIds: [], leagueKeys: [] });
   });
 });
 

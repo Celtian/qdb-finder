@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type {
+  EntityFacetOption,
+  LeagueDetails,
   LeagueEditionRow,
   LeagueResultPage,
   LeagueSearchRequest,
@@ -14,6 +17,8 @@ describe('LeagueFinder', () => {
   let component: LeagueFinder;
   let fixture: ComponentFixture<LeagueFinder>;
   const searchLeagues = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
+  const suggestEntityFacets = vi.fn(async (): Promise<EntityFacetOption[]> => []);
+  const getLeague = vi.fn(async (): Promise<LeagueDetails> => ({}) as LeagueDetails);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -24,14 +29,16 @@ describe('LeagueFinder', () => {
           provide: Qdb,
           useValue: {
             searchLeagues,
-            suggestEntityFacets: vi.fn(async () => []),
-            getLeague: vi.fn(),
+            suggestEntityFacets,
+            getLeague,
             getReferee: vi.fn(),
           },
         },
       ],
     }).compileComponents();
     searchLeagues.mockClear();
+    suggestEntityFacets.mockClear();
+    getLeague.mockClear();
     fixture = TestBed.createComponent(LeagueFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
@@ -89,6 +96,76 @@ describe('LeagueFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('2216');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+  });
+
+  it('supports the complete country, paging, sorting and detail workflow', async () => {
+    const input = document.createElement('input');
+    const country = {
+      key: '14',
+      id: 14,
+      label: 'England',
+      count: 1,
+      countryCode: 'gb-eng',
+    };
+    const missingId = { key: 'england', label: 'England', count: 1 };
+    const row = {
+      key: '23:13',
+      version: 23,
+      leagueId: 13,
+      name: 'Premier League',
+      countryId: 14,
+      countryName: 'England',
+      countryCode: 'gb-eng',
+      level: 1,
+      isWomen: false,
+      teamCount: 20,
+      playerCount: 636,
+    } satisfies LeagueEditionRow;
+    const testable = component as unknown as {
+      request(): LeagueSearchRequest;
+      error(): string;
+      setVersions(versions: number[]): void;
+      setLevels(levels: number[]): void;
+      suggestCountries(event: Event): Promise<void>;
+      addCountry(option: EntityFacetOption, input: HTMLInputElement): void;
+      removeCountry(key: string): void;
+      page(event: { pageIndex: number; pageSize: number }): void;
+      sort(event: { active: string; direction: 'asc' | '' }): void;
+      retrySearch(): void;
+      openLeague(row: LeagueEditionRow): Promise<void>;
+      clearFilters(): void;
+    };
+
+    suggestEntityFacets.mockResolvedValue([country]);
+    getLeague.mockResolvedValue({ ...row, teams: [], referees: [], refereeCount: 0, raw: {} });
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue(null as never);
+
+    testable.setVersions([23]);
+    testable.setLevels([1]);
+    await testable.suggestCountries({ target: { value: 'Eng' } } as unknown as Event);
+    testable.addCountry(missingId, input);
+    testable.addCountry(country, input);
+    testable.removeCountry(String(country.id));
+    testable.page({ pageIndex: 2, pageSize: 25 });
+    testable.sort({ active: 'name', direction: '' });
+    testable.sort({ active: 'name', direction: 'asc' });
+    testable.retrySearch();
+    await testable.openLeague(row);
+    expect(open).toHaveBeenCalledOnce();
+
+    searchLeagues.mockRejectedValueOnce(new Error('League unavailable'));
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('League unavailable');
+
+    searchLeagues.mockRejectedValueOnce('failure');
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('League search failed.');
+
+    testable.clearFilters();
+    await fixture.whenStable();
+    expect(testable.request()).toMatchObject({ offset: 0, levels: [], countryIds: [] });
   });
 });
 

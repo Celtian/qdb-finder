@@ -1,5 +1,5 @@
 article {
-  padding-bottom: 4rem;
+  padding-bottom: 2rem;
 }
 .eyebrow {
   text-transform: uppercase;
@@ -32,6 +32,49 @@ section p {
   line-height: 1.75;
   color: #465064;
 }
+
+ul {
+  display: grid;
+  gap: 0.65rem;
+  padding-left: 1.25rem;
+  color: #465064;
+  line-height: 1.65;
+}
+
+.note {
+  padding: 1rem 1.1rem;
+  border-left: 4px solid #2362bd;
+  border-radius: 0 8px 8px 0;
+  background: #eaf1ff;
+  color: #263d64;
+}
+
+.section-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.section-links a {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #b9c9e8;
+  border-radius: 7px;
+  background: #f3f6fc;
+  color: #174d9f;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.section-links a:hover {
+  background: #e4edff;
+}
+
+.section-links a:focus-visible {
+  outline: 2px solid #2362bd;
+  outline-offset: 2px;
+}
+
 pre {
   background: #101c35;
   color: #dae5ff;

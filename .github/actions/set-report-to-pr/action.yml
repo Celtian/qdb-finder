@@ -1,0 +1,50 @@
+name: Set report to PR
+description: Set a code coverage report as a sticky pull-request comment
+inputs:
+  coverage-file:
+    description: Cobertura coverage file
+    required: true
+  report-name:
+    description: Coverage report heading
+    required: true
+  comment-header:
+    description: Unique sticky comment header
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Find PR
+      id: finder
+      uses: jwalton/gh-find-current-pr@v1
+
+    - name: Code Coverage Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: ${{ inputs.coverage-file }}
+        badge: true
+        fail_below_min: true
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: true
+        indicators: true
+        output: both
+        thresholds: '85 90'
+
+    - name: Add Report Heading
+      shell: bash
+      env:
+        REPORT_NAME: ${{ inputs.report-name }}
+        COMMENT_HEADER: ${{ inputs.comment-header }}
+      run: |
+        {
+          printf '## %s\n\n' "$REPORT_NAME"
+          cat code-coverage-results.md
+        } > "$RUNNER_TEMP/code-coverage-results-$COMMENT_HEADER.md"
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        number: ${{ steps.finder.outputs.pr }}
+        header: ${{ inputs.comment-header }}
+        recreate: true
+        path: ${{ runner.temp }}/code-coverage-results-${{ inputs.comment-header }}.md

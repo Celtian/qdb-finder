@@ -1,0 +1,84 @@
+:host {
+  display: block;
+}
+
+.about-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 0;
+}
+
+.identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 1rem;
+}
+
+.identity img {
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
+.identity h2,
+.identity p,
+.description,
+.legal {
+  margin: 0;
+}
+
+.identity h2 {
+  padding: 0;
+  font-size: 1.6rem;
+}
+
+.version {
+  margin-top: 0.2rem !important;
+  color: #626978;
+  font-variant-numeric: tabular-nums;
+}
+
+.close-button {
+  flex: 0 0 auto;
+}
+
+mat-dialog-content {
+  padding-top: 1.25rem;
+}
+
+.description {
+  line-height: 1.55;
+}
+
+.legal {
+  margin-top: 1rem;
+  color: #626978;
+  font-size: 0.85rem;
+}
+
+mat-dialog-actions {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.75rem 1.5rem 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .about-header {
+    padding: 1.25rem 1rem 0;
+  }
+
+  mat-dialog-content {
+    padding-inline: 1rem;
+  }
+
+  mat-dialog-actions {
+    justify-content: stretch;
+    padding-inline: 1rem;
+  }
+
+  mat-dialog-actions > * {
+    flex: 1 1 100%;
+  }
+}

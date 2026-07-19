@@ -1,15 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { TeamEditionRow, TeamResultPage, TeamSearchRequest } from '../../core/qdb-contracts';
+import type {
+  EntityFacetOption,
+  TeamDetails,
+  TeamEditionRow,
+  TeamResultPage,
+  TeamSearchRequest,
+} from '../../core/qdb-contracts';
 import { TeamFinder } from './team-finder';
 
 describe('TeamFinder', () => {
   let component: TeamFinder;
   let fixture: ComponentFixture<TeamFinder>;
   const searchTeams = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
+  const suggestEntityFacets = vi.fn(async (): Promise<EntityFacetOption[]> => []);
+  const getTeam = vi.fn(async (): Promise<TeamDetails> => ({}) as TeamDetails);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -20,14 +29,16 @@ describe('TeamFinder', () => {
           provide: Qdb,
           useValue: {
             searchTeams,
-            suggestEntityFacets: vi.fn(async () => []),
-            getTeam: vi.fn(),
+            suggestEntityFacets,
+            getTeam,
             getLeague: vi.fn(),
           },
         },
       ],
     }).compileComponents();
     searchTeams.mockClear();
+    suggestEntityFacets.mockClear();
+    getTeam.mockClear();
     fixture = TestBed.createComponent(TeamFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
@@ -93,6 +104,93 @@ describe('TeamFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('116009');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+  });
+
+  it('supports the complete interactive filter, paging, sorting and detail workflow', async () => {
+    const input = document.createElement('input');
+    const option = { key: 'premier', label: 'Premier League', count: 1 };
+    const country = {
+      key: '14',
+      id: 14,
+      label: 'England',
+      count: 1,
+      countryCode: 'gb-eng',
+    };
+    const row = {
+      key: '23:11',
+      version: 23,
+      teamId: 11,
+      name: 'Manchester United',
+      leagueId: 13,
+      leagueKey: 'premier',
+      leagueName: 'Premier League',
+      countryId: 14,
+      countryName: 'England',
+      countryCode: 'gb-eng',
+      squadSize: 25,
+      overall: 80,
+      attack: 81,
+      midfield: 79,
+      defence: 78,
+      foundationYear: 1878,
+    } satisfies TeamEditionRow;
+    const testable = component as unknown as {
+      request(): TeamSearchRequest;
+      rows(): { overallClass: string }[];
+      setVersions(versions: number[]): void;
+      setRange(kind: 'overall', boundary: 'min' | 'max', event: Event): void;
+      suggest(facet: 'league' | 'country', event: Event): Promise<void>;
+      addFacet(
+        facet: 'league' | 'country',
+        option: EntityFacetOption,
+        input: HTMLInputElement,
+      ): void;
+      removeFacet(facet: 'league' | 'country', key: string): void;
+      page(event: { pageIndex: number; pageSize: number }): void;
+      sort(event: { active: string; direction: 'asc' | '' }): void;
+      retrySearch(): void;
+      openTeam(row: TeamEditionRow): Promise<void>;
+      clearFilters(): void;
+      result: { set(value: TeamResultPage): void };
+      error(): string;
+    };
+
+    suggestEntityFacets.mockResolvedValue([country]);
+    getTeam.mockResolvedValue({ ...row, players: [], stadium: null, raw: {} });
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue(null as never);
+
+    testable.setVersions([23]);
+    testable.setRange('overall', 'min', { target: { value: '70' } } as unknown as Event);
+    testable.setRange('overall', 'max', { target: { value: '' } } as unknown as Event);
+    await testable.suggest('country', { target: { value: 'Eng' } } as unknown as Event);
+    testable.addFacet('league', option, input);
+    testable.addFacet('country', country, input);
+    testable.addFacet('country', option, input);
+    testable.removeFacet('league', option.key);
+    testable.removeFacet('country', String(country.id));
+    testable.page({ pageIndex: 2, pageSize: 25 });
+    testable.sort({ active: 'name', direction: '' });
+    testable.sort({ active: 'name', direction: 'asc' });
+    testable.retrySearch();
+    await testable.openTeam(row);
+
+    testable.result.set({ rows: [{ ...row, overall: null }], total: 1, offset: 0, pageSize: 50 });
+    expect(testable.rows()[0]?.overallClass).toBe('');
+    expect(open).toHaveBeenCalledOnce();
+
+    searchTeams.mockRejectedValueOnce(new Error('Team unavailable'));
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Team unavailable');
+
+    searchTeams.mockRejectedValueOnce('failure');
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Team search failed.');
+
+    testable.clearFilters();
+    await fixture.whenStable();
+    expect(testable.request()).toMatchObject({ offset: 0, leagueKeys: [], countryIds: [] });
   });
 });
 

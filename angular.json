@@ -83,7 +83,12 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageInclude": ["projects/electron/src/app/**/*.ts"],
+            "coverageExclude": ["projects/electron/src/app/**/*.spec.ts"],
+            "coverageReporters": ["text", "html", "cobertura"]
+          }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
@@ -164,7 +169,12 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageInclude": ["projects/docs/src/app/**/*.ts"],
+            "coverageExclude": ["projects/docs/src/app/**/*.spec.ts"],
+            "coverageReporters": ["text", "html", "cobertura"]
+          }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

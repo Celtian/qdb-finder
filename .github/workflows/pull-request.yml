@@ -3,7 +3,9 @@ name: 🧪 Test PR
 'on': pull_request
 
 permissions:
+  checks: write
   contents: read
+  pull-requests: write
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
@@ -31,8 +33,38 @@ jobs:
       - name: 🔎 Validate database
         run: yarn db:validate
 
-      - name: ✅ Validate source
-        run: yarn validate
+      - name: 🧹 Check formatting
+        run: yarn format:check
+
+      - name: 🧹 Lint
+        run: yarn lint
+
+      - name: 🧪 Test with coverage
+        run: yarn test:coverage
+
+      - name: 📊 Set Electron coverage report to PR
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
+        uses: ./.github/actions/set-report-to-pr
+        with:
+          coverage-file: coverage/electron/cobertura-coverage.xml
+          report-name: Electron Coverage
+          comment-header: electron-coverage-report
+
+      - name: 📊 Set documentation coverage report to PR
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
+        uses: ./.github/actions/set-report-to-pr
+        with:
+          coverage-file: coverage/docs/cobertura-coverage.xml
+          report-name: Documentation Coverage
+          comment-header: documentation-coverage-report
+
+      - name: 📊 Set tools coverage report to PR
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
+        uses: ./.github/actions/set-report-to-pr
+        with:
+          coverage-file: coverage/tools/cobertura-coverage.xml
+          report-name: Node Tools Coverage
+          comment-header: node-tools-coverage-report
 
       - name: 🏗️ Build applications
         run: yarn build

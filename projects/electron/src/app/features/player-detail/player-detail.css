@@ -60,6 +60,73 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+.position-matrix {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 0.45rem;
+  overflow: hidden;
+  margin: 1rem;
+  border: 1px solid #c3ddc6;
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: #edf7ee;
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 0.5px),
+      rgb(80 137 87 / 30%) calc(50% - 0.5px),
+      rgb(80 137 87 / 30%) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 0 3rem,
+      rgb(80 137 87 / 30%) 3rem 3.075rem,
+      transparent 3.075rem
+    );
+}
+.position-matrix::before,
+.position-matrix::after {
+  position: absolute;
+  left: 32%;
+  z-index: 0;
+  width: 36%;
+  height: 13%;
+  border: 1px solid rgb(80 137 87 / 30%);
+  content: '';
+}
+.position-matrix::before {
+  top: -1px;
+  border-top: 0;
+}
+.position-matrix::after {
+  bottom: -1px;
+  border-bottom: 0;
+}
+.position-matrix-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  min-height: 3rem;
+}
+.position-rating {
+  display: flex;
+  min-width: 0;
+  min-height: 3rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  box-shadow: 0 1px 2px rgb(32 64 37 / 12%);
+}
 .ratings {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -73,14 +140,22 @@
   padding: 0.55rem 0.7rem;
   border-radius: 8px;
 }
-.ratings span.position-attacker,
-.ratings span.position-midfielder,
-.ratings span.position-defender,
-.ratings span.position-goalkeeper {
-  font-size: inherit;
-}
 @media (max-width: 650px) {
   .metric-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .position-matrix {
+    gap: 0.3rem;
+    margin: 0.75rem 0;
+    padding: 0.65rem 0.5rem;
+  }
+  .position-matrix-row {
+    gap: 0.3rem;
+    min-height: 2.5rem;
+  }
+  .position-rating {
+    min-height: 2.5rem;
+    padding: 0.2rem 0.1rem;
+    font-size: 0.7rem;
   }
 }

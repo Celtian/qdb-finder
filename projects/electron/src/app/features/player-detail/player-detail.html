@@ -73,11 +73,21 @@
       </dl></mat-tab
     >
     <mat-tab label="Position matrix"
-      ><div class="ratings">
-        @for (rating of ratings; track rating.key) {
-          <span [class]="rating.className"
-            >{{ rating.key }} <strong>{{ rating.value }}</strong></span
-          >
+      ><div class="position-matrix" role="group" aria-label="Position ratings">
+        @for (row of ratingRows; track row.key) {
+          <div class="position-matrix-row" [attr.data-row]="row.key">
+            @for (rating of row.tiles; track rating.position) {
+              <span
+                class="position-rating"
+                [class]="rating.className"
+                [style.grid-column]="rating.column"
+                [attr.data-position]="rating.position"
+              >
+                <span>{{ rating.position }}</span>
+                <strong>{{ rating.value }}</strong>
+              </span>
+            }
+          </div>
         }
       </div></mat-tab
     >

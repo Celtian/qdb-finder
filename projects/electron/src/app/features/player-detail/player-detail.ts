@@ -8,7 +8,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { scoreBadgeClass, scoreValueClass } from '../../core/attribute-value';
 import type { PlayerDetails } from '../../core/qdb-contracts';
 import { CountryFlag } from '../../core/country-flag/country-flag';
-import { positionBadgeClass, positionValueClass } from '../../core/position';
+import { positionBadgeClass, positionRatingRows } from '../../core/position';
 
 @Component({
   selector: 'app-player-detail',
@@ -34,11 +34,7 @@ export class PlayerDetail {
   protected readonly overallClass = scoreBadgeClass(this.player.overall);
   protected readonly potentialClass = scoreBadgeClass(this.player.potential);
   protected readonly bestPositionClass = positionBadgeClass(this.player.bestPosition);
-  protected readonly ratings = Object.entries(this.player.ratings).map(([key, value]) => ({
-    key,
-    value,
-    className: positionValueClass(key),
-  }));
+  protected readonly ratingRows = positionRatingRows(this.player.ratings);
   protected readonly attributes = Object.entries(this.player.attributes).map(([key, value]) => ({
     key,
     value,

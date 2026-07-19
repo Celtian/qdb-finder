@@ -1,4 +1,4 @@
-import { positionBadgeClass, positionGroup } from './position';
+import { positionBadgeClass, positionGroup, positionValueClass } from './position';
 
 describe('position styling', () => {
   it.each([
@@ -13,6 +13,9 @@ describe('position styling', () => {
     ['GK', 'goalkeeper'],
   ] as const)('classifies %s as a %s', (position, group) => {
     expect(positionGroup(position)).toBe(group);
-    expect(positionBadgeClass(position)).toBe(`position-badge position-${group}`);
+    expect(positionValueClass(position)).toBe(`position-value position-${group}`);
+    expect(positionBadgeClass(position)).toBe(
+      `data-badge position-badge position-value position-${group}`,
+    );
   });
 });

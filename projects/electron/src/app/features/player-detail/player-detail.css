@@ -41,7 +41,7 @@
   color: #5f6573;
   font-size: 0.8rem;
 }
-.metric-grid strong {
+.metric-grid strong:not(.data-badge) {
   font-size: 1.4rem;
 }
 .profile-grid,

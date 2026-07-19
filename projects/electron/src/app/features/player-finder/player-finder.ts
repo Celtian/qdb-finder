@@ -16,7 +16,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
-import { scoreValueClass } from '../../core/attribute-value';
+import { scoreBadgeClass } from '../../core/attribute-value';
 import { Qdb } from '../../core/qdb';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import {
@@ -61,8 +61,8 @@ const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
     value,
     className: positionBadgeClass(value),
   })),
-  overallClass: `score-badge ${scoreValueClass(row.overall)}`,
-  potentialClass: `score-badge ${scoreValueClass(row.potential)}`,
+  overallClass: scoreBadgeClass(row.overall),
+  potentialClass: scoreBadgeClass(row.potential),
   bestRatingClass: `rating ${positionBadgeClass(row.bestPosition)}`,
 });
 const validVersion = (value: string | null): number | undefined => {

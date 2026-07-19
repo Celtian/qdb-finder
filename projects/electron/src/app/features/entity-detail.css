@@ -60,6 +60,9 @@
 
 .metric-grid strong {
   width: fit-content;
+}
+
+.metric-grid strong:not(.data-badge) {
   font-size: 1.35rem;
 }
 

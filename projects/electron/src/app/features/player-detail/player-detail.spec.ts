@@ -56,12 +56,20 @@ describe('PlayerDetail', () => {
     expect(component).toBeTruthy();
   });
 
-  it('uses the attacker color treatment for position data', () => {
+  it('uses badge layout only for position pills, not rating tiles', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const attackerBadges = element.querySelectorAll('.position-attacker');
+    const attackerSurfaces = element.querySelectorAll('.position-attacker');
+    const attackerBadges = element.querySelectorAll('.data-badge.position-attacker');
+    const testable = component as unknown as {
+      ratings: { className: string }[];
+    };
 
+    expect(attackerSurfaces).toHaveLength(2);
     expect(attackerBadges).toHaveLength(2);
-    expect([...attackerBadges].every((badge) => badge.textContent?.includes('ST'))).toBe(true);
+    expect([...attackerSurfaces].every((surface) => surface.textContent?.includes('ST'))).toBe(
+      true,
+    );
+    expect(testable.ratings[0]?.className).toBe('position-value position-attacker');
   });
 
   it('exposes the value color band for player attributes', () => {
@@ -77,6 +85,7 @@ describe('PlayerDetail', () => {
     const scores = element.querySelectorAll('.metric-grid .score-badge');
 
     expect(scores).toHaveLength(2);
+    expect([...scores].every((score) => score.classList.contains('data-badge'))).toBe(true);
     expect(scores[0].classList.contains('score-lime')).toBe(true);
     expect(scores[1].classList.contains('score-green')).toBe(true);
   });

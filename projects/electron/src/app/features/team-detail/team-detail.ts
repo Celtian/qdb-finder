@@ -5,13 +5,12 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-import { scoreValueClass } from '../../core/attribute-value';
+import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import type { TeamDetails } from '../../core/qdb-contracts';
 import { positionBadgeClass } from '../../core/position';
 
-const scoreClass = (value: number | null): string =>
-  value === null ? '' : `score-badge ${scoreValueClass(value)}`;
+const scoreClass = (value: number | null): string => (value === null ? '' : scoreBadgeClass(value));
 
 @Component({
   selector: 'app-team-detail',
@@ -38,7 +37,7 @@ export class TeamDetail {
   ];
   protected readonly players = this.team.players.map((player) => ({
     ...player,
-    overallClass: `score-badge ${scoreValueClass(player.overall)}`,
+    overallClass: scoreBadgeClass(player.overall),
     positions: player.positions.map((value) => ({
       value,
       className: positionBadgeClass(value),

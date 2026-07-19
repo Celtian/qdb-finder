@@ -5,7 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-import { scoreValueClass } from '../../core/attribute-value';
+import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import type { StadiumDetails } from '../../core/qdb-contracts';
 
@@ -36,7 +36,7 @@ export class StadiumDetail {
       : `${this.stadium.pitchLengthMeters} × ${this.stadium.pitchWidthMeters} m`;
   protected readonly teams = this.stadium.teams.map((team) => ({
     ...team,
-    overallClass: team.overall === null ? '' : `score-badge ${scoreValueClass(team.overall)}`,
+    overallClass: team.overall === null ? '' : scoreBadgeClass(team.overall),
   }));
 
   protected async viewTeams(): Promise<void> {

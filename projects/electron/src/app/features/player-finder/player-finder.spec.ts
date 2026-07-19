@@ -178,11 +178,14 @@ describe('PlayerFinder', () => {
     );
     expect(nationalityCell?.textContent).toContain('Brazil');
     expect(nationalityCell?.querySelector('app-country-flag')).toBeTruthy();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
+    expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('td.cdk-column-overall .score-lime'),
+      element.querySelector('td.cdk-column-positions .data-badge.position-attacker'),
     ).toBeTruthy();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('td.cdk-column-potential .score-green'),
+      element.querySelector('td.cdk-column-bestRating .data-badge.position-attacker'),
     ).toBeTruthy();
 
     testable.result.set({
@@ -193,9 +196,7 @@ describe('PlayerFinder', () => {
     });
     await fixture.whenStable();
 
-    const missingFlagCell = (fixture.nativeElement as HTMLElement).querySelector(
-      'td.cdk-column-nationality',
-    );
+    const missingFlagCell = element.querySelector('td.cdk-column-nationality');
     expect(missingFlagCell?.textContent).toContain('Unknown nation');
     expect(missingFlagCell?.querySelector('app-country-flag')).toBeNull();
   });

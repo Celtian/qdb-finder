@@ -5,7 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-import { scoreValueClass } from '../../core/attribute-value';
+import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import type { LeagueDetails } from '../../core/qdb-contracts';
 
@@ -28,7 +28,7 @@ export class LeagueDetail {
   protected readonly league = inject<LeagueDetails>(MAT_DIALOG_DATA);
   protected readonly teams = this.league.teams.map((team) => ({
     ...team,
-    overallClass: team.overall === null ? '' : `score-badge ${scoreValueClass(team.overall)}`,
+    overallClass: team.overall === null ? '' : scoreBadgeClass(team.overall),
   }));
   protected readonly competition =
     this.league.isWomen === null ? 'Not specified' : this.league.isWomen ? "Women's" : "Men's";

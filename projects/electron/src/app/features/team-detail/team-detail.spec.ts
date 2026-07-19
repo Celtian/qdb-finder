@@ -89,7 +89,8 @@ describe('TeamDetail', () => {
     expect(element.textContent).toContain('Arsenal');
     expect(element.textContent).toContain('Test Player');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
-    expect(element.querySelector('.score-lime')).toBeTruthy();
+    expect(element.querySelector('.data-badge.score-lime')).toBeTruthy();
+    expect(element.querySelector('.data-badge.position-attacker')).toBeTruthy();
   });
 
   it('navigates to the exact team edition players and stadium', async () => {

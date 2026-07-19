@@ -17,7 +17,7 @@ import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
-import { scoreValueClass } from '../../core/attribute-value';
+import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { Qdb } from '../../core/qdb';
 import {
@@ -47,8 +47,7 @@ interface TeamDisplay extends TeamEditionRow {
   defenceClass: string;
 }
 
-const scoreClass = (value: number | null): string =>
-  value === null ? '' : `score-badge ${scoreValueClass(value)}`;
+const scoreClass = (value: number | null): string => (value === null ? '' : scoreBadgeClass(value));
 const teamDisplay = (row: TeamEditionRow): TeamDisplay => ({
   ...row,
   overallClass: scoreClass(row.overall),

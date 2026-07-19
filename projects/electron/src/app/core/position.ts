@@ -23,5 +23,8 @@ export const positionGroup = (position: string): PositionGroup => {
   return 'attacker';
 };
 
+export const positionValueClass = (position: string): string =>
+  `position-value position-${positionGroup(position)}`;
+
 export const positionBadgeClass = (position: string): string =>
-  `position-badge position-${positionGroup(position)}`;
+  `data-badge position-badge ${positionValueClass(position)}`;

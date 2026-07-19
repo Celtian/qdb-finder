@@ -10,3 +10,6 @@ export const scoreValueBand = (value: number): ScoreValueBand => {
 
 export const scoreValueClass = (value: number): string =>
   `score-value score-${scoreValueBand(value)}`;
+
+export const scoreBadgeClass = (value: number): string =>
+  `data-badge score-badge ${scoreValueClass(value)}`;

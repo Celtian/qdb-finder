@@ -1,4 +1,4 @@
-import { scoreValueBand, scoreValueClass } from './attribute-value';
+import { scoreBadgeClass, scoreValueBand, scoreValueClass } from './attribute-value';
 
 describe('score value styling', () => {
   it.each([
@@ -15,5 +15,6 @@ describe('score value styling', () => {
   ] as const)('classifies %i as %s', (value, band) => {
     expect(scoreValueBand(value)).toBe(band);
     expect(scoreValueClass(value)).toBe(`score-value score-${band}`);
+    expect(scoreBadgeClass(value)).toBe(`data-badge score-badge score-value score-${band}`);
   });
 });

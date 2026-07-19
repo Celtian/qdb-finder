@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type {
   FilterSuggestion,
+  PlayerDetails,
   PlayerSearchRow,
   SearchRequest,
   SearchResultPage,
@@ -21,6 +23,7 @@ describe('PlayerFinder', () => {
     pageSize: 50,
   }));
   const suggestFilters = vi.fn(async (): Promise<FilterSuggestion[]> => []);
+  const getPlayer = vi.fn(async (): Promise<PlayerDetails> => ({}) as PlayerDetails);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -32,7 +35,7 @@ describe('PlayerFinder', () => {
           useValue: {
             searchPlayers,
             suggestFilters,
-            getPlayer: vi.fn(),
+            getPlayer,
             getTeam: vi.fn(),
             getLeague: vi.fn(),
           },
@@ -43,6 +46,7 @@ describe('PlayerFinder', () => {
     searchPlayers.mockClear();
     suggestFilters.mockReset();
     suggestFilters.mockResolvedValue([]);
+    getPlayer.mockClear();
     fixture = TestBed.createComponent(PlayerFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
@@ -236,6 +240,99 @@ describe('PlayerFinder', () => {
     const missingFlagCell = element.querySelector('td.cdk-column-nationality');
     expect(missingFlagCell?.textContent).toContain('Unknown nation');
     expect(missingFlagCell?.querySelector('app-country-flag')).toBeNull();
+  });
+
+  it('supports the complete filter, paging, sorting and detail workflow', async () => {
+    const input = document.createElement('input');
+    const suggestion = { key: 'arsenal', label: 'Arsenal', count: 1 };
+    const row = {
+      key: '23:1',
+      version: 23,
+      playerId: 1,
+      name: 'Test Player',
+      nationality: 'England',
+      nationalityCode: 'gb-eng',
+      teams: ['Arsenal'],
+      leagues: ['Premier League'],
+      positions: ['ST'],
+      age: 20,
+      overall: 80,
+      potential: 85,
+      bestPosition: 'ST',
+      bestRating: 82,
+    } satisfies PlayerSearchRow;
+    const testable = component as unknown as {
+      request(): SearchRequest;
+      error(): string;
+      setVersions(versions: number[]): void;
+      setPositions(positions: string[]): void;
+      setRange(kind: 'age' | 'overall' | 'potential', boundary: 'min' | 'max', event: Event): void;
+      suggest(kind: 'nationality' | 'team' | 'league', event: Event): Promise<void>;
+      addExactFilter(
+        field: 'nationalities' | 'teams' | 'leagues',
+        option: FilterSuggestion,
+        input: HTMLInputElement,
+      ): void;
+      removeExactFilter(field: 'nationalities' | 'teams' | 'leagues', key: string): void;
+      filterLabel(field: 'teams', key: string): string;
+      nationalityCode(key: string): string;
+      page(event: { pageIndex: number; pageSize: number }): void;
+      sort(event: { active: string; direction: 'asc' | '' }): void;
+      retrySearch(): void;
+      openPlayer(row: PlayerSearchRow): Promise<void>;
+      clearFilters(): void;
+    };
+
+    suggestFilters.mockResolvedValue([suggestion]);
+    getPlayer.mockResolvedValue({
+      ...row,
+      firstName: 'Test',
+      lastName: 'Player',
+      commonName: '',
+      jerseyName: 'Player',
+      birthDate: null,
+      snapshotDate: '2022-08-01',
+      height: null,
+      weight: null,
+      preferredFoot: '1',
+      attackingWorkRate: '1',
+      defensiveWorkRate: '1',
+      attributes: {},
+      ratings: {},
+      raw: {},
+    });
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue(null as never);
+
+    testable.setVersions([23]);
+    testable.setPositions(['ST']);
+    testable.setRange('potential', 'max', { target: { value: '' } } as unknown as Event);
+    await testable.suggest('team', { target: { value: 'Ars' } } as unknown as Event);
+    testable.addExactFilter('teams', suggestion, input);
+    testable.addExactFilter('leagues', { ...suggestion, key: 'premier' }, input);
+    testable.addExactFilter('nationalities', { ...suggestion, key: 'england' }, input);
+    testable.removeExactFilter('teams', suggestion.key);
+    testable.removeExactFilter('nationalities', 'england');
+    expect(testable.filterLabel('teams', 'missing')).toBe('missing');
+    expect(testable.nationalityCode('missing')).toBe('');
+    testable.page({ pageIndex: 2, pageSize: 25 });
+    testable.sort({ active: 'name', direction: '' });
+    testable.sort({ active: 'name', direction: 'asc' });
+    testable.retrySearch();
+    await testable.openPlayer(row);
+    expect(open).toHaveBeenCalledOnce();
+
+    searchPlayers.mockRejectedValueOnce(new Error('Player unavailable'));
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Player unavailable');
+    searchPlayers.mockRejectedValueOnce('failure');
+    testable.retrySearch();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('The database could not be searched.');
+
+    testable.clearFilters();
+    await fixture.whenStable();
+    expect(testable.request()).toMatchObject({ positions: [], teams: [], leagues: [] });
   });
 });
 

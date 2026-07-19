@@ -374,4 +374,120 @@ integration('player queries', () => {
       sourceFiles: 306,
     });
   });
+
+  it('combines every player filter and clamps invalid pagination', () => {
+    const result = database.search({
+      ...request,
+      direction: 'asc',
+      pageSize: 0,
+      offset: -10,
+      versions: [23],
+      gender: 'men',
+      nationalities: ['argentina'],
+      teams: ['paris saint-germain'],
+      leagues: ['france ligue 1 (1)'],
+      positions: ['RW'],
+      age: { min: 30, max: 40 },
+      overall: { min: 80, max: 99 },
+      potential: { min: 80, max: 99 },
+    });
+
+    expect(result).toMatchObject({ total: 1, offset: 0, pageSize: 1 });
+    expect(result.rows[0]).toMatchObject({ name: 'Lionel Messi', version: 23 });
+  });
+
+  it('combines optional entity filters, ranges, sorting and pagination bounds', () => {
+    const teams = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      text: 'Arsenal',
+      versions: [23],
+      leagueKeys: ['england premier league (1)'],
+      countryIds: [14],
+      overall: { min: 70, max: 99 },
+      attack: { min: 70, max: 99 },
+      midfield: { min: 70, max: 99 },
+      defence: { min: 70, max: 99 },
+      direction: 'asc',
+      pageSize: 999,
+      offset: -1,
+    });
+    const leagues = database.searchLeagues({
+      ...defaultLeagueSearchRequest(),
+      countryIds: [14],
+      levels: [1],
+      direction: 'asc',
+      pageSize: 0,
+      offset: -1,
+    });
+    const referees = database.searchReferees({
+      ...defaultRefereeSearchRequest(),
+      nationalityIds: [14],
+      age: { min: 20, max: 80 },
+      isReal: true,
+      leagueKeys: ['england premier league (1)'],
+      direction: 'asc',
+      pageSize: 200,
+      offset: -1,
+    });
+    const stadiums = database.searchStadiums({
+      ...defaultStadiumSearchRequest(),
+      countryIds: [14],
+      capacity: { min: 1, max: 100_000 },
+      isLicensed: true,
+      teamKeys: ['manchester united'],
+      direction: 'asc',
+      pageSize: 200,
+      offset: -1,
+    });
+
+    expect(teams).toMatchObject({ offset: 0, pageSize: 200 });
+    expect(teams.rows).not.toHaveLength(0);
+    expect(leagues).toMatchObject({ offset: 0, pageSize: 1 });
+    expect(leagues.rows[0]).toMatchObject({ countryId: 14, level: 1 });
+    expect(referees.rows.every((row) => row.nationalityId === 14 && row.isReal)).toBe(true);
+    expect(stadiums.rows[0]).toMatchObject({ countryId: 14, isLicensed: true });
+  });
+
+  it('returns every entity facet variant and handles empty or unsupported requests', () => {
+    for (const [entity, facet] of [
+      ['team', 'country'],
+      ['team', 'league'],
+      ['league', 'country'],
+      ['referee', 'nationality'],
+      ['referee', 'league'],
+      ['stadium', 'country'],
+      ['stadium', 'team'],
+    ] as const) {
+      expect(
+        database.suggestEntityFacets({ entity, facet, text: '', versions: [], limit: 200 }),
+      ).not.toHaveLength(0);
+    }
+
+    expect(
+      database.suggestEntityFacets({
+        entity: 'team',
+        facet: 'unsupported',
+        text: '',
+        versions: [],
+      } as never),
+    ).toEqual([]);
+    for (const kind of ['nationality', 'team', 'league'] as const) {
+      expect(database.suggest({ kind, text: '', versions: [], limit: 100 })).not.toHaveLength(0);
+    }
+  });
+
+  it('loads complete entity details and reports missing edition keys', () => {
+    expect(database.getPlayer({ version: 23, playerId: 158_023 })).toMatchObject({
+      name: 'Lionel Messi',
+      preferredFoot: '2',
+    });
+    expect(database.getTeam({ version: 23, teamId: 11 }).stadium).toMatchObject({ stadiumId: 1 });
+    expect(database.getTeam({ version: 11, teamId: 111_592 }).stadium).toBeNull();
+
+    expect(() => database.getPlayer({ version: 23, playerId: -1 })).toThrow(/not found/i);
+    expect(() => database.getTeam({ version: 23, teamId: -1 })).toThrow(/not found/i);
+    expect(() => database.getLeague({ version: 23, leagueId: -1 })).toThrow(/not found/i);
+    expect(() => database.getReferee({ version: 23, refereeId: -1 })).toThrow(/not found/i);
+    expect(() => database.getStadium({ version: 23, stadiumId: -1 })).toThrow(/not found/i);
+  });
 });

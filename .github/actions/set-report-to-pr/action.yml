@@ -22,13 +22,13 @@ runs:
       with:
         filename: ${{ inputs.coverage-file }}
         badge: true
-        fail_below_min: false
+        fail_below_min: true
         format: markdown
         hide_branch_rate: false
         hide_complexity: true
         indicators: true
         output: both
-        thresholds: '60 80'
+        thresholds: '85 90'
 
     - name: Add Report Heading
       shell: bash

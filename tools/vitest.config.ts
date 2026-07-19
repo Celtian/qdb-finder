@@ -9,6 +9,12 @@ export default defineConfig({
       reportsDirectory: 'coverage/tools',
       reporter: ['text', 'html', 'cobertura'],
       include: ['tools/database/importer.ts', 'projects/electron/electron/database.ts'],
+      thresholds: {
+        statements: 85,
+        branches: 85,
+        functions: 85,
+        lines: 85,
+      },
     },
   },
 });

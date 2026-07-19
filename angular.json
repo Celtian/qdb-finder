@@ -87,7 +87,13 @@
           "options": {
             "coverageInclude": ["projects/electron/src/app/**/*.ts"],
             "coverageExclude": ["projects/electron/src/app/**/*.spec.ts"],
-            "coverageReporters": ["text", "html", "cobertura"]
+            "coverageReporters": ["text", "html", "cobertura"],
+            "coverageThresholds": {
+              "statements": 85,
+              "branches": 85,
+              "functions": 85,
+              "lines": 85
+            }
           }
         },
         "lint": {
@@ -173,7 +179,13 @@
           "options": {
             "coverageInclude": ["projects/docs/src/app/**/*.ts"],
             "coverageExclude": ["projects/docs/src/app/**/*.spec.ts"],
-            "coverageReporters": ["text", "html", "cobertura"]
+            "coverageReporters": ["text", "html", "cobertura"],
+            "coverageThresholds": {
+              "statements": 85,
+              "branches": 85,
+              "functions": 85,
+              "lines": 85
+            }
           }
         },
         "lint": {

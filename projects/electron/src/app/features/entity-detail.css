@@ -116,11 +116,16 @@ section {
   color: #626978;
 }
 
+.overview-tab {
+  padding-top: 1rem;
+}
+
 .raw-fields {
   display: grid;
   grid-template-columns: minmax(130px, 0.7fr) minmax(180px, 1fr);
   gap: 0.45rem 1rem;
   overflow-wrap: anywhere;
+  padding: 1rem;
 }
 
 .raw-fields dt {
@@ -144,5 +149,13 @@ section {
   .preview-row > :nth-child(2),
   .preview-row > :nth-child(3) {
     grid-column: 1 / -1;
+  }
+
+  .raw-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .raw-fields dd:not(:last-child) {
+    margin-bottom: 0.5rem;
   }
 }

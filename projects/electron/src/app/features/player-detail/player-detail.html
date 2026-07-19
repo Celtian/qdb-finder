@@ -136,16 +136,13 @@
         </section>
       </div></mat-tab
     >
-  </mat-tab-group>
-  <mat-expansion-panel
-    ><mat-expansion-panel-header
-      ><mat-panel-title>Raw player fields</mat-panel-title></mat-expansion-panel-header
+    <mat-tab label="Raw fields"
+      ><dl class="raw-fields">
+        @for (field of player.raw | keyvalue; track field.key) {
+          <dt>{{ field.key }}</dt>
+          <dd>{{ field.value }}</dd>
+        }
+      </dl></mat-tab
     >
-    <dl class="raw-fields">
-      @for (field of player.raw | keyvalue; track field.key) {
-        <dt>{{ field.key }}</dt>
-        <dd>{{ field.value }}</dd>
-      }
-    </dl>
-  </mat-expansion-panel>
+  </mat-tab-group>
 </mat-dialog-content>

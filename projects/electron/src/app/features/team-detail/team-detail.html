@@ -41,60 +41,63 @@
       <span>Founded</span><strong>{{ team.foundationYear ?? '—' }}</strong>
     </div>
   </div>
-  <section aria-labelledby="team-roster-heading">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Top rated</p>
-        <h3 id="team-roster-heading">Squad preview</h3>
-      </div>
-      <span>{{ players.length }} of {{ team.squadSize }}</span>
-    </div>
-    @if (players.length) {
-      <div class="preview-list">
-        @for (player of players; track player.key) {
-          <div class="preview-row">
-            <span class="player-name">{{ player.name }}</span>
-            <span class="country-line compact">
-              @if (player.nationalityCode) {
-                <app-country-flag decorative [code]="player.nationalityCode" />
-              }
-              <span>{{ player.nationality || '—' }}</span>
-            </span>
-            <span class="position-list">
-              @for (position of player.positions; track position.value) {
-                <span [class]="position.className">{{ position.value }}</span>
-              }
-            </span>
-            <strong [class]="player.overallClass">{{ player.overall }}</strong>
+  <mat-tab-group>
+    <mat-tab label="Overview"
+      ><div class="overview-tab">
+        <section aria-labelledby="team-roster-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Top rated</p>
+              <h3 id="team-roster-heading">Squad preview</h3>
+            </div>
+            <span>{{ players.length }} of {{ team.squadSize }}</span>
           </div>
+          @if (players.length) {
+            <div class="preview-list">
+              @for (player of players; track player.key) {
+                <div class="preview-row">
+                  <span class="player-name">{{ player.name }}</span>
+                  <span class="country-line compact">
+                    @if (player.nationalityCode) {
+                      <app-country-flag decorative [code]="player.nationalityCode" />
+                    }
+                    <span>{{ player.nationality || '—' }}</span>
+                  </span>
+                  <span class="position-list">
+                    @for (position of player.positions; track position.value) {
+                      <span [class]="position.className">{{ position.value }}</span>
+                    }
+                  </span>
+                  <strong [class]="player.overallClass">{{ player.overall }}</strong>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty-preview">No linked players are available for this team edition.</p>
+          }
+        </section>
+        @if (team.stadium; as stadium) {
+          <section aria-labelledby="team-stadium-heading">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Home ground</p>
+                <h3 id="team-stadium-heading">{{ stadium.name }}</h3>
+              </div>
+              <span>{{ stadium.capacity.toLocaleString() }} seats</span>
+            </div>
+          </section>
         }
-      </div>
-    } @else {
-      <p class="empty-preview">No linked players are available for this team edition.</p>
-    }
-  </section>
-  @if (team.stadium; as stadium) {
-    <section aria-labelledby="team-stadium-heading">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Home ground</p>
-          <h3 id="team-stadium-heading">{{ stadium.name }}</h3>
-        </div>
-        <span>{{ stadium.capacity.toLocaleString() }} seats</span>
-      </div>
-    </section>
-  }
-  <mat-expansion-panel>
-    <mat-expansion-panel-header
-      ><mat-panel-title>Raw team fields</mat-panel-title></mat-expansion-panel-header
+      </div></mat-tab
     >
-    <dl class="raw-fields">
-      @for (field of team.raw | keyvalue; track field.key) {
-        <dt>{{ field.key }}</dt>
-        <dd>{{ field.value }}</dd>
-      }
-    </dl>
-  </mat-expansion-panel>
+    <mat-tab label="Raw fields"
+      ><dl class="raw-fields">
+        @for (field of team.raw | keyvalue; track field.key) {
+          <dt>{{ field.key }}</dt>
+          <dd>{{ field.value }}</dd>
+        }
+      </dl></mat-tab
+    >
+  </mat-tab-group>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button type="button" mat-button mat-dialog-close>Close</button>

@@ -205,6 +205,12 @@
   .metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .raw-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .raw-fields dd:not(:last-child) {
+    margin-bottom: 0.5rem;
+  }
   .position-matrix {
     gap: 0.3rem;
     margin: 0.75rem 0;

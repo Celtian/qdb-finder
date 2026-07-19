@@ -2,7 +2,6 @@ import { KeyValuePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { scoreBadgeClass, scoreValueClass } from '../../core/attribute-value';
@@ -21,7 +20,6 @@ import { positionBadgeClass, positionRatingRows } from '../../core/position';
     CountryFlag,
     MatButtonModule,
     MatDialogModule,
-    MatExpansionModule,
     MatIconModule,
     MatTabsModule,
   ],

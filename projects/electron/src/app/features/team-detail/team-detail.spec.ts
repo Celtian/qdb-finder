@@ -1,5 +1,8 @@
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_TABS_CONFIG } from '@angular/material/tabs';
+import { MatTabGroupHarness } from '@angular/material/tabs/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import type { TeamDetails } from '../../core/qdb-contracts';
@@ -68,6 +71,7 @@ describe('TeamDetail', () => {
     await TestBed.configureTestingModule({
       imports: [TeamDetail],
       providers: [
+        { provide: MAT_TABS_CONFIG, useValue: { animationDuration: '0ms' } },
         provideRouter([
           { path: 'players', component: TeamDetail },
           { path: 'stadiums', component: TeamDetail },
@@ -91,6 +95,21 @@ describe('TeamDetail', () => {
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(element.querySelector('.data-badge.score-lime')).toBeTruthy();
     expect(element.querySelector('.data-badge.position-attacker')).toBeTruthy();
+  });
+
+  it('renders Overview by default and raw fields in the final tab', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const tabs = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatTabGroupHarness);
+    const labels = await Promise.all((await tabs.getTabs()).map((tab) => tab.getLabel()));
+
+    expect(labels).toEqual(['Overview', 'Raw fields']);
+    expect(await (await tabs.getSelectedTab()).getLabel()).toBe('Overview');
+    expect(element.querySelector('mat-expansion-panel')).toBeNull();
+
+    await tabs.selectTab({ label: 'Raw fields' });
+    await fixture.whenStable();
+
+    expect(await (await tabs.getSelectedTab()).getTextContent()).toContain('teamid');
   });
 
   it('navigates to the exact team edition players and stadium', async () => {

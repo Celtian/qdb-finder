@@ -2,8 +2,8 @@ import { KeyValuePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
@@ -19,8 +19,8 @@ const scoreClass = (value: number | null): string => (value === null ? '' : scor
     CountryFlag,
     MatButtonModule,
     MatDialogModule,
-    MatExpansionModule,
     MatIconModule,
+    MatTabsModule,
   ],
   templateUrl: './team-detail.html',
   styleUrl: './team-detail.css',

@@ -158,6 +158,20 @@ describe('PlayerDetail', () => {
     );
   });
 
+  it('renders raw fields as the final tab', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const tabs = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatTabGroupHarness);
+    const labels = await Promise.all((await tabs.getTabs()).map((tab) => tab.getLabel()));
+
+    expect(labels).toEqual(['Profile', 'Position matrix', 'Attributes', 'Raw fields']);
+    expect(element.querySelector('mat-expansion-panel')).toBeNull();
+
+    await tabs.selectTab({ label: 'Raw fields' });
+    await fixture.whenStable();
+
+    expect(await (await tabs.getSelectedTab()).getTextContent()).toContain('playerid');
+  });
+
   it('colors overall and potential by their value bands', () => {
     const element = fixture.nativeElement as HTMLElement;
     const scores = element.querySelectorAll('.metric-grid .score-badge');

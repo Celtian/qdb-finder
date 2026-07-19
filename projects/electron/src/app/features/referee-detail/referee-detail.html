@@ -33,43 +33,46 @@
       </div>
     }
   </div>
-  <section aria-labelledby="referee-leagues-heading">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Assignments</p>
-        <h3 id="referee-leagues-heading">League editions</h3>
-      </div>
-      <span>{{ referee.leaguesPreview.length }}</span>
-    </div>
-    @if (referee.leaguesPreview.length) {
-      <div class="preview-list">
-        @for (league of referee.leaguesPreview; track league.key) {
-          <div class="preview-row league-row">
-            <strong>{{ league.name }}</strong
-            ><span class="country-line compact">
-              @if (league.countryCode) {
-                <app-country-flag decorative [code]="league.countryCode" />
-              }
-              <span>{{ league.countryName || '—' }}</span></span
-            ><span>Tier {{ league.level ?? '—' }}</span>
+  <mat-tab-group>
+    <mat-tab label="Overview"
+      ><div class="overview-tab">
+        <section aria-labelledby="referee-leagues-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Assignments</p>
+              <h3 id="referee-leagues-heading">League editions</h3>
+            </div>
+            <span>{{ referee.leaguesPreview.length }}</span>
           </div>
-        }
-      </div>
-    } @else {
-      <p class="empty-preview">No linked league is available for this referee edition.</p>
-    }
-  </section>
-  <mat-expansion-panel
-    ><mat-expansion-panel-header
-      ><mat-panel-title>Raw referee fields</mat-panel-title></mat-expansion-panel-header
+          @if (referee.leaguesPreview.length) {
+            <div class="preview-list">
+              @for (league of referee.leaguesPreview; track league.key) {
+                <div class="preview-row league-row">
+                  <strong>{{ league.name }}</strong
+                  ><span class="country-line compact">
+                    @if (league.countryCode) {
+                      <app-country-flag decorative [code]="league.countryCode" />
+                    }
+                    <span>{{ league.countryName || '—' }}</span></span
+                  ><span>Tier {{ league.level ?? '—' }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty-preview">No linked league is available for this referee edition.</p>
+          }
+        </section>
+      </div></mat-tab
     >
-    <dl class="raw-fields">
-      @for (field of referee.raw | keyvalue; track field.key) {
-        <dt>{{ field.key }}</dt>
-        <dd>{{ field.value }}</dd>
-      }
-    </dl></mat-expansion-panel
-  >
+    <mat-tab label="Raw fields"
+      ><dl class="raw-fields">
+        @for (field of referee.raw | keyvalue; track field.key) {
+          <dt>{{ field.key }}</dt>
+          <dd>{{ field.value }}</dd>
+        }
+      </dl></mat-tab
+    >
+  </mat-tab-group>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button type="button" mat-button mat-dialog-close>Close</button>

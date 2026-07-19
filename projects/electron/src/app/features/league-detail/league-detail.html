@@ -39,66 +39,69 @@
       <span>Competition</span><strong>{{ competition }}</strong>
     </div>
   </div>
-  <section aria-labelledby="league-teams-heading">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Top rated</p>
-        <h3 id="league-teams-heading">Team preview</h3>
-      </div>
-      <span>{{ teams.length }} of {{ league.teamCount }}</span>
-    </div>
-    @if (teams.length) {
-      <div class="preview-list">
-        @for (team of teams; track team.key) {
-          <div class="preview-row team-row">
-            <strong>{{ team.name }}</strong>
-            <span>{{ team.squadSize }} players</span>
-            <span [class]="team.overallClass">{{ team.overall ?? '—' }}</span>
+  <mat-tab-group>
+    <mat-tab label="Overview"
+      ><div class="overview-tab">
+        <section aria-labelledby="league-teams-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Top rated</p>
+              <h3 id="league-teams-heading">Team preview</h3>
+            </div>
+            <span>{{ teams.length }} of {{ league.teamCount }}</span>
           </div>
-        }
-      </div>
-    } @else {
-      <p class="empty-preview">No linked teams are available for this league edition.</p>
-    }
-  </section>
-  <section aria-labelledby="league-referees-heading">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Assigned officials</p>
-        <h3 id="league-referees-heading">Referee preview</h3>
-      </div>
-      <span>{{ league.referees.length }} of {{ league.refereeCount }}</span>
-    </div>
-    @if (league.referees.length) {
-      <div class="preview-list">
-        @for (referee of league.referees; track referee.key) {
-          <div class="preview-row">
-            <strong>{{ referee.name }}</strong>
-            <span class="country-with-flag">
-              @if (referee.nationalityCode) {
-                <app-country-flag decorative [code]="referee.nationalityCode" />
+          @if (teams.length) {
+            <div class="preview-list">
+              @for (team of teams; track team.key) {
+                <div class="preview-row team-row">
+                  <strong>{{ team.name }}</strong>
+                  <span>{{ team.squadSize }} players</span>
+                  <span [class]="team.overallClass">{{ team.overall ?? '—' }}</span>
+                </div>
               }
-              <span>{{ referee.nationalityName || 'Unknown nationality' }}</span>
-            </span>
-            <span>{{ referee.age ?? '—' }} years</span>
+            </div>
+          } @else {
+            <p class="empty-preview">No linked teams are available for this league edition.</p>
+          }
+        </section>
+        <section aria-labelledby="league-referees-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Assigned officials</p>
+              <h3 id="league-referees-heading">Referee preview</h3>
+            </div>
+            <span>{{ league.referees.length }} of {{ league.refereeCount }}</span>
           </div>
-        }
-      </div>
-    } @else {
-      <p class="empty-preview">No linked referees are available for this league edition.</p>
-    }
-  </section>
-  <mat-expansion-panel>
-    <mat-expansion-panel-header
-      ><mat-panel-title>Raw league fields</mat-panel-title></mat-expansion-panel-header
+          @if (league.referees.length) {
+            <div class="preview-list">
+              @for (referee of league.referees; track referee.key) {
+                <div class="preview-row">
+                  <strong>{{ referee.name }}</strong>
+                  <span class="country-with-flag">
+                    @if (referee.nationalityCode) {
+                      <app-country-flag decorative [code]="referee.nationalityCode" />
+                    }
+                    <span>{{ referee.nationalityName || 'Unknown nationality' }}</span>
+                  </span>
+                  <span>{{ referee.age ?? '—' }} years</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty-preview">No linked referees are available for this league edition.</p>
+          }
+        </section>
+      </div></mat-tab
     >
-    <dl class="raw-fields">
-      @for (field of league.raw | keyvalue; track field.key) {
-        <dt>{{ field.key }}</dt>
-        <dd>{{ field.value }}</dd>
-      }
-    </dl>
-  </mat-expansion-panel>
+    <mat-tab label="Raw fields"
+      ><dl class="raw-fields">
+        @for (field of league.raw | keyvalue; track field.key) {
+          <dt>{{ field.key }}</dt>
+          <dd>{{ field.value }}</dd>
+        }
+      </dl></mat-tab
+    >
+  </mat-tab-group>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button type="button" mat-button mat-dialog-close>Close</button>

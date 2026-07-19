@@ -6716,6 +6716,13 @@ neo-async@^2.6.2:
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.2.tgz#b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
 
+ngx-app-version@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/ngx-app-version/-/ngx-app-version-3.0.0.tgz#0e11b0367984c9a9dbeb978c6ceeec036f0e809b"
+  integrity sha512-POAQeAFTOCRhCcpZJ75peNk9ECDsmBhwLPk3FzuyGePVkYs96/zxt9ZlcerI2MPIovz+E1NshCvs6zkMSEyfUA==
+  dependencies:
+    tslib "^2.3.0"
+
 nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
@@ -7047,6 +7054,11 @@ p-try@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/p-try/-/p-try-1.0.0.tgz#cbc79cdbaf8fd4228e13f621f2b1a237c1b207b3"
   integrity sha512-U1etNYuMJoIz3ZXSrrySFjsXQTWOx2/jdi86L+2pRvph/qMKL6sbcCYdH23fqsbm8TH2Gn0OybpT4eSFlCVHww==
+
+package-version-info@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/package-version-info/-/package-version-info-0.2.2.tgz#05cfabb79f2f3d3adb3823afcf777ac9d7ea7c20"
+  integrity sha512-l+CmpAhN5SFPmvtn6V6rUjJY+bl9K3YEYLIDLDiw9G6fDreE5+axbVjlKBHJW16insmagklNan+srTatjgzHDg==
 
 pacote@21.5.1:
   version "21.5.1"

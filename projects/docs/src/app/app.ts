@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NgxAppVersionDirective } from 'ngx-app-version';
 import { siteMetadata } from './site-metadata';
 
 @Component({
@@ -7,6 +8,7 @@ import { siteMetadata } from './site-metadata';
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
+  hostDirectives: [NgxAppVersionDirective],
 })
 export class App {
   protected readonly site = siteMetadata;

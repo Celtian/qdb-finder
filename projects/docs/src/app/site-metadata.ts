@@ -1,11 +1,12 @@
-import packageMetadata from '../../../../package.json';
+import { VERSION_INFO } from '../../../version-info';
 
 const repository = 'https://github.com/Celtian/qdb-finder';
-const version = packageMetadata.version;
+const version = VERSION_INFO.version;
 
 export const siteMetadata = {
   version,
   versionLabel: `v${version}`,
+  copyrightYear: new Date(VERSION_INFO.date).getUTCFullYear(),
   links: {
     repository,
     version: `${repository}/tree/v${version}`,

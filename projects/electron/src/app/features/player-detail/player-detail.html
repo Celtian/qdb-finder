@@ -92,12 +92,48 @@
       </div></mat-tab
     >
     <mat-tab label="Attributes"
-      ><div class="ratings">
-        @for (attribute of attributes; track attribute.key) {
-          <span [class]="attribute.className"
-            >{{ attribute.key }} <strong>{{ attribute.value }}</strong></span
-          >
+      ><div class="attribute-groups">
+        @for (group of attributeGroups; track group.key) {
+          <section class="attribute-group" [attr.data-group]="group.key">
+            <h3>{{ group.label }}</h3>
+            <dl class="attribute-list">
+              @for (attribute of group.attributes; track attribute.key) {
+                <div
+                  class="attribute-tile"
+                  [class]="attribute.className"
+                  [attr.data-attribute]="attribute.key"
+                >
+                  <dt>{{ attribute.label }}</dt>
+                  <dd>{{ attribute.value }}</dd>
+                </div>
+              }
+            </dl>
+          </section>
         }
+        <section class="attribute-group" data-group="special">
+          <h3>Special</h3>
+          <dl class="attribute-list">
+            <div
+              class="attribute-tile"
+              data-attribute="potential"
+              [class]="potentialAttribute.className"
+            >
+              <dt>Potential</dt>
+              <dd>{{ potentialAttribute.value }}</dd>
+            </div>
+            <div class="attribute-tile reputation-tile" data-attribute="internationalrep">
+              <dt>International reputation</dt>
+              <dd class="reputation-value">
+                <span class="reputation-stars" aria-hidden="true">
+                  @for (star of reputationStars; track star.value) {
+                    <mat-icon class="reputation-star" [class.filled]="star.filled">star</mat-icon>
+                  }
+                </span>
+                <strong>{{ reputationLabel }}</strong>
+              </dd>
+            </div>
+          </dl>
+        </section>
       </div></mat-tab
     >
   </mat-tab-group>

@@ -43,9 +43,17 @@ describe('PlayerDetail', () => {
             preferredFoot: 'Right',
             attackingWorkRate: 'High',
             defensiveWorkRate: 'Low',
-            attributes: { finishing: 80 },
+            attributes: {
+              finishing: 80,
+              dribbling: 65,
+              acceleration: 55,
+              shotpower: 45,
+              aggression: 70,
+              marking: 81,
+              gkdiving: 35,
+            },
             ratings: { ST: 82 },
-            raw: { playerid: 1 },
+            raw: { playerid: 1, internationalrep: 3 },
           },
         },
       ],
@@ -110,10 +118,44 @@ describe('PlayerDetail', () => {
 
   it('exposes the value color band for player attributes', () => {
     const testable = component as unknown as {
-      attributes: { className: string }[];
+      attributeGroups: { attributes: { className: string }[] }[];
     };
 
-    expect(testable.attributes[0]?.className).toBe('score-value score-lime');
+    expect(testable.attributeGroups[0]?.attributes[0]?.className).toBe('score-value score-lime');
+  });
+
+  it('renders grouped attributes and special ratings', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const tabs = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatTabGroupHarness);
+
+    await tabs.selectTab({ label: 'Attributes' });
+    await fixture.whenStable();
+
+    const headings = element.querySelectorAll<HTMLElement>('.attribute-group h3');
+    const finishing = element.querySelector<HTMLElement>('[data-attribute="finishing"]');
+    const potential = element.querySelector<HTMLElement>('[data-attribute="potential"]');
+    const reputation = element.querySelector<HTMLElement>('[data-attribute="internationalrep"]');
+    const stars = reputation?.querySelectorAll('.reputation-star');
+
+    expect([...headings].map((heading) => heading.textContent?.trim())).toEqual([
+      'Attacking',
+      'Skill',
+      'Movement',
+      'Power',
+      'Mentality',
+      'Defending',
+      'Goalkeeping',
+      'Special',
+    ]);
+    expect(finishing?.closest<HTMLElement>('[data-group]')?.dataset['group']).toBe('attacking');
+    expect(finishing?.classList.contains('score-lime')).toBe(true);
+    expect(potential?.classList.contains('score-green')).toBe(true);
+    expect(stars).toHaveLength(5);
+    expect(reputation?.querySelectorAll('.reputation-star.filled')).toHaveLength(3);
+    expect(reputation?.textContent).toContain('3 / 5');
+    expect(reputation?.querySelector('.reputation-stars')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
   });
 
   it('colors overall and potential by their value bands', () => {

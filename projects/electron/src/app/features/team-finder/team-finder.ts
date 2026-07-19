@@ -24,6 +24,7 @@ import {
   defaultTeamSearchRequest,
   type EntityFacetOption,
   type LeagueEditionRow,
+  type PlayerDetails,
   type StadiumEditionRow,
   type TeamEditionRow,
   type TeamResultPage,
@@ -104,6 +105,7 @@ export class TeamFinder {
   });
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly contextPlayer = signal<PlayerDetails | undefined>(undefined);
   protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
   protected readonly contextStadium = signal<StadiumEditionRow | undefined>(undefined);
   protected readonly columns = [
@@ -156,6 +158,7 @@ export class TeamFinder {
       request.versions.length ||
       request.leagueKeys.length ||
       request.countryIds.length ||
+      request.playerEdition ||
       request.leagueEdition ||
       request.stadiumEdition ||
       Object.keys(request.overall).length ||
@@ -174,6 +177,8 @@ export class TeamFinder {
         void this.search();
       }, 250);
     });
+    const playerContext = this.request().playerEdition;
+    if (playerContext) void this.loadContextPlayer(playerContext);
     const context = this.request().leagueEdition;
     if (context) void this.loadContextLeague(context);
     const stadiumContext = this.request().stadiumEdition;
@@ -262,6 +267,7 @@ export class TeamFinder {
     this.model.set({ text: '' });
     this.request.set(defaultTeamSearchRequest());
     this.labels.set({ league: {}, country: {} });
+    this.contextPlayer.set(undefined);
     this.contextLeague.set(undefined);
     this.contextStadium.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
@@ -307,13 +313,26 @@ export class TeamFinder {
   private initialRequest(): TeamSearchRequest {
     const request = defaultTeamSearchRequest();
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
+    const playerId = validId(this.route.snapshot.queryParamMap.get('playerId'));
     const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
     const stadiumId = validId(this.route.snapshot.queryParamMap.get('stadiumId'));
-    if (!version || Boolean(leagueId) === Boolean(stadiumId)) return request;
+    const contextCount = [playerId, leagueId, stadiumId].filter(
+      (value) => value !== undefined,
+    ).length;
+    if (!version || contextCount !== 1) return request;
+    if (playerId) return { ...request, versions: [version], playerEdition: { version, playerId } };
     if (leagueId) return { ...request, versions: [version], leagueEdition: { version, leagueId } };
     if (stadiumId)
       return { ...request, versions: [version], stadiumEdition: { version, stadiumId } };
     return request;
+  }
+
+  private async loadContextPlayer(key: { version: number; playerId: number }): Promise<void> {
+    try {
+      this.contextPlayer.set(await this.qdb.getPlayer(key));
+    } catch {
+      this.request.update((value) => ({ ...value, playerEdition: undefined }));
+    }
   }
 
   private async loadContextLeague(key: { version: number; leagueId: number }): Promise<void> {

@@ -1,9 +1,10 @@
 import { KeyValuePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { Router } from '@angular/router';
 import { scoreBadgeClass, scoreValueClass } from '../../core/attribute-value';
 import type { PlayerDetails } from '../../core/qdb-contracts';
 import { CountryFlag } from '../../core/country-flag/country-flag';
@@ -31,6 +32,8 @@ import { positionBadgeClass, positionRatingRows } from '../../core/position';
   styleUrl: './player-detail.css',
 })
 export class PlayerDetail {
+  private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialogRef<PlayerDetail>);
   protected readonly player = inject<PlayerDetails>(MAT_DIALOG_DATA);
   protected readonly teams = this.player.teams.join(', ') || 'Free agent';
   protected readonly positions = this.player.positions.map((value) => ({
@@ -58,4 +61,11 @@ export class PlayerDetail {
     value,
     filled: this.internationalReputation !== null && value <= this.internationalReputation,
   }));
+
+  protected async viewTeams(): Promise<void> {
+    const navigated = await this.router.navigate(['/teams'], {
+      queryParams: { version: this.player.version, playerId: this.player.playerId },
+    });
+    if (navigated) this.dialog.close();
+  }
 }

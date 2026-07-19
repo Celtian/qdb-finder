@@ -1,69 +1,74 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MAT_TABS_CONFIG } from '@angular/material/tabs';
 import { MatTabGroupHarness } from '@angular/material/tabs/testing';
+import { provideRouter, Router } from '@angular/router';
 
+import type { PlayerDetails } from '../../core/qdb-contracts';
 import { PlayerDetail } from './player-detail';
+
+const player: PlayerDetails = {
+  key: '23:1',
+  version: 23,
+  playerId: 1,
+  name: 'Test Player',
+  nationality: 'Testland',
+  nationalityCode: 'cz',
+  teams: ['Test Team'],
+  leagues: [],
+  positions: ['ST'],
+  age: 20,
+  overall: 80,
+  potential: 85,
+  bestPosition: 'ST',
+  bestRating: 82,
+  firstName: 'Test',
+  lastName: 'Player',
+  commonName: '',
+  jerseyName: '',
+  birthDate: '2002-01-01',
+  snapshotDate: '2022-09-01',
+  height: 180,
+  weight: 75,
+  preferredFoot: '1',
+  attackingWorkRate: 'High',
+  defensiveWorkRate: 'Low',
+  attributes: {
+    finishing: 80,
+    dribbling: 65,
+    acceleration: 55,
+    shotpower: 45,
+    aggression: 70,
+    marking: 81,
+    gkdiving: 35,
+  },
+  ratings: { ST: 82 },
+  raw: {
+    playerid: 1,
+    internationalrep: 3,
+    preferredfoot: 1,
+    birthdate: 123_456,
+  },
+};
 
 describe('PlayerDetail', () => {
   let component: PlayerDetail;
   let fixture: ComponentFixture<PlayerDetail>;
+  const close = vi.fn();
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PlayerDetail],
       providers: [
         { provide: MAT_TABS_CONFIG, useValue: { animationDuration: '0ms' } },
-        {
-          provide: MAT_DIALOG_DATA,
-          useValue: {
-            key: '23:1',
-            version: 23,
-            playerId: 1,
-            name: 'Test Player',
-            nationality: 'Testland',
-            nationalityCode: 'cz',
-            teams: [],
-            leagues: [],
-            positions: ['ST'],
-            age: 20,
-            overall: 80,
-            potential: 85,
-            bestPosition: 'ST',
-            bestRating: 82,
-            firstName: 'Test',
-            lastName: 'Player',
-            commonName: '',
-            jerseyName: '',
-            birthDate: '2002-01-01',
-            snapshotDate: '2022-09-01',
-            height: 180,
-            weight: 75,
-            preferredFoot: '1',
-            attackingWorkRate: 'High',
-            defensiveWorkRate: 'Low',
-            attributes: {
-              finishing: 80,
-              dribbling: 65,
-              acceleration: 55,
-              shotpower: 45,
-              aggression: 70,
-              marking: 81,
-              gkdiving: 35,
-            },
-            ratings: { ST: 82 },
-            raw: {
-              playerid: 1,
-              internationalrep: 3,
-              preferredfoot: 1,
-              birthdate: 123_456,
-            },
-          },
-        },
+        provideRouter([{ path: 'teams', component: PlayerDetail }]),
+        { provide: MAT_DIALOG_DATA, useValue: player },
+        { provide: MatDialogRef, useValue: { close } },
       ],
     }).compileComponents();
 
+    close.mockClear();
     fixture = TestBed.createComponent(PlayerDetail);
     component = fixture.componentInstance;
     await fixture.whenStable();
@@ -208,6 +213,30 @@ describe('PlayerDetail', () => {
     expect(rawValueFor('birthdate')).toBe('123456');
   });
 
+  it('keeps footer actions visible and opens teams for the exact player edition', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const tabs = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatTabGroupHarness);
+    const actionButtons = (): HTMLButtonElement[] => [
+      ...element.querySelectorAll<HTMLButtonElement>('mat-dialog-actions button'),
+    ];
+
+    expect(actionButtons().map((button) => button.textContent?.trim())).toEqual([
+      'Close',
+      'shieldView teams',
+    ]);
+    expect(actionButtons()[1]?.disabled).toBe(false);
+
+    await tabs.selectTab({ label: 'Raw fields' });
+    await fixture.whenStable();
+
+    expect(actionButtons()).toHaveLength(2);
+
+    await (component as unknown as { viewTeams(): Promise<void> }).viewTeams();
+
+    expect(TestBed.inject(Router).url).toBe('/teams?version=23&playerId=1');
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it('colors overall and potential by their value bands', () => {
     const element = fixture.nativeElement as HTMLElement;
     const scores = element.querySelectorAll('.metric-grid .score-badge');
@@ -239,5 +268,31 @@ describe('PlayerDetail', () => {
     expect(closeButton).toBeTruthy();
     expect(closeButton?.classList.contains('mat-mdc-icon-button')).toBe(true);
     expect(closeButton?.querySelector('mat-icon')?.textContent).toContain('close');
+  });
+});
+
+describe('PlayerDetail without linked teams', () => {
+  it('disables the View teams action', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PlayerDetail],
+      providers: [
+        { provide: MAT_TABS_CONFIG, useValue: { animationDuration: '0ms' } },
+        provideRouter([]),
+        { provide: MAT_DIALOG_DATA, useValue: { ...player, teams: [] } },
+        { provide: MatDialogRef, useValue: { close: vi.fn() } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PlayerDetail);
+
+    await fixture.whenStable();
+
+    const buttons = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        'mat-dialog-actions button',
+      ),
+    ];
+    expect(buttons.find((button) => button.textContent?.includes('View teams'))?.disabled).toBe(
+      true,
+    );
   });
 });

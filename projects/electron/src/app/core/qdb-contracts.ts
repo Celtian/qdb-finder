@@ -116,6 +116,7 @@ export interface TeamSearchRequest {
   offset: number;
   sort: TeamSortField;
   direction: SortDirection;
+  playerEdition?: PlayerEditionKey;
   leagueEdition?: LeagueEditionKey;
   stadiumEdition?: StadiumEditionKey;
 }

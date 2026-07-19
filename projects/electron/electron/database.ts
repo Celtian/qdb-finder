@@ -165,6 +165,12 @@ export class PlayerDatabase {
     this.addRange('t.attack', request.attack, where, values);
     this.addRange('t.midfield', request.midfield, where, values);
     this.addRange('t.defence', request.defence, where, values);
+    if (request.playerEdition) {
+      where.push(
+        'EXISTS (SELECT 1 FROM player_team pt WHERE pt.version = t.version AND pt.version = ? AND pt.player_id = ? AND pt.team_id = t.team_id)',
+      );
+      values.push(request.playerEdition.version, request.playerEdition.playerId);
+    }
     if (request.leagueEdition) {
       where.push('t.version = ? AND t.league_id = ?');
       values.push(request.leagueEdition.version, request.leagueEdition.leagueId);

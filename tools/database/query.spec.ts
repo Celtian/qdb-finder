@@ -281,6 +281,10 @@ integration('player queries', () => {
       ...defaultTeamSearchRequest(),
       stadiumEdition: { version: 23, stadiumId: 1 },
     });
+    const playerTeams = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      playerEdition: { version: 23, playerId: 158_023 },
+    });
 
     expect(referees.rows).toEqual(
       expect.arrayContaining([expect.objectContaining({ refereeId: 221_871, version: 23 })]),
@@ -294,6 +298,10 @@ integration('player queries', () => {
     expect(teams.rows).toEqual(
       expect.arrayContaining([expect.objectContaining({ teamId: 11, version: 23 })]),
     );
+    expect(playerTeams.rows.map((row) => row.teamId).sort((left, right) => left - right)).toEqual([
+      73, 1369, 112_190,
+    ]);
+    expect(playerTeams.rows.every((row) => row.version === 23)).toBe(true);
     expect(
       referees.rows.every(
         (row) =>

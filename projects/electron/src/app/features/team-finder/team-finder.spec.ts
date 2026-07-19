@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
@@ -96,7 +96,7 @@ describe('TeamFinder', () => {
   });
 });
 
-describe('TeamFinder stadium contextual routing', () => {
+describe('TeamFinder contextual routing', () => {
   it('applies and identifies an exact stadium edition', async () => {
     const searchTeams = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
     const getStadium = vi.fn(async () => ({ version: 23, stadiumId: 1, name: 'Old Trafford' }));
@@ -129,5 +129,94 @@ describe('TeamFinder stadium contextual routing', () => {
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('Old Trafford');
+  });
+
+  it('applies, identifies and clears an exact player edition', async () => {
+    const searchTeams = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
+    const getPlayer = vi.fn(async () => ({
+      version: 23,
+      playerId: 158_023,
+      name: 'Lionel Messi',
+    }));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'teams', component: TeamFinder }]),
+        {
+          provide: Qdb,
+          useValue: {
+            searchTeams,
+            getPlayer,
+            getTeam: vi.fn(),
+            getLeague: vi.fn(),
+            getStadium: vi.fn(),
+            suggestEntityFacets: vi.fn(async () => []),
+          },
+        },
+      ],
+    });
+    const harness = await RouterTestingHarness.create();
+
+    const component = await harness.navigateByUrl('/teams?version=23&playerId=158023', TeamFinder);
+    const testable = component as unknown as {
+      request(): TeamSearchRequest;
+      retrySearch(): void;
+      clearFilters(): void;
+    };
+    testable.retrySearch();
+    await harness.fixture.whenStable();
+
+    expect(getPlayer).toHaveBeenCalledWith({ version: 23, playerId: 158_023 });
+    expect(searchTeams).toHaveBeenCalledWith(
+      expect.objectContaining({
+        versions: [23],
+        playerEdition: { version: 23, playerId: 158_023 },
+      }),
+    );
+    expect(harness.routeNativeElement?.textContent).toContain(
+      'Showing FIFA 23 teams for Lionel Messi',
+    );
+
+    testable.clearFilters();
+    await harness.fixture.whenStable();
+
+    expect(testable.request().playerEdition).toBeUndefined();
+    expect(TestBed.inject(Router).url).toBe('/teams');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Lionel Messi');
+  });
+
+  it.each([
+    ['incomplete', '/teams?playerId=158023'],
+    ['ambiguous', '/teams?version=23&playerId=158023&leagueId=13'],
+  ])('rejects %s player context parameters', async (_kind, url) => {
+    const searchTeams = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
+    const getPlayer = vi.fn();
+    const getLeague = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'teams', component: TeamFinder }]),
+        {
+          provide: Qdb,
+          useValue: {
+            searchTeams,
+            getPlayer,
+            getTeam: vi.fn(),
+            getLeague,
+            getStadium: vi.fn(),
+            suggestEntityFacets: vi.fn(async () => []),
+          },
+        },
+      ],
+    });
+    const harness = await RouterTestingHarness.create();
+
+    const component = await harness.navigateByUrl(url, TeamFinder);
+    const request = (component as unknown as { request(): TeamSearchRequest }).request();
+    await harness.fixture.whenStable();
+
+    expect(request.versions).toEqual([]);
+    expect(request.playerEdition).toBeUndefined();
+    expect(request.leagueEdition).toBeUndefined();
+    expect(getPlayer).not.toHaveBeenCalled();
+    expect(getLeague).not.toHaveBeenCalled();
   });
 });

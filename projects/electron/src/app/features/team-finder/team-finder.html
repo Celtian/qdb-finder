@@ -140,6 +140,15 @@
       </div>
     </header>
     <main>
+      @if (contextPlayer(); as player) {
+        <div class="context-banner">
+          <mat-icon>filter_alt</mat-icon>
+          <span
+            >Showing FIFA {{ player.version }} teams for <strong>{{ player.name }}</strong></span
+          >
+          <button type="button" mat-button (click)="clearFilters()">Clear</button>
+        </div>
+      }
       @if (contextLeague(); as league) {
         <div class="context-banner">
           <mat-icon>filter_alt</mat-icon>

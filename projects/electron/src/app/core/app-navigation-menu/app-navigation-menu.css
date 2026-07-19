@@ -5,7 +5,16 @@
 }
 
 .navigation-trigger {
+  display: grid;
+  width: 48px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--mat-sys-on-surface, #1a1b20);
+  cursor: default;
   -webkit-app-region: no-drag;
 }
 
@@ -16,6 +25,14 @@
 .navigation-trigger:focus-visible {
   outline: 2px solid var(--qdb-brand);
   outline-offset: -2px;
+}
+
+.navigation-trigger mat-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
 }
 
 a.active {

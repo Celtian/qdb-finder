@@ -43,7 +43,7 @@ const pages: Record<string, DocPage> = {
     sections: [
       {
         title: 'Players',
-        body: 'Search player and alternate names, clubs, countries or leagues. Filter FIFA edition, position, age, overall and potential, or open an exact squad from a team or league.',
+        body: 'Search player and alternate names, clubs, countries or leagues. Filter FIFA edition, gender, position, age, overall and potential, or open an exact squad from a team or league. Women player data is available from FIFA 16.',
       },
       {
         title: 'Teams and leagues',
@@ -51,7 +51,7 @@ const pages: Record<string, DocPage> = {
       },
       {
         title: 'Referees and stadiums',
-        body: 'Browse referee assignments, nationalities and historical source fields, or compare stadium capacity, pitch dimensions and linked teams. Exact-edition links preserve the selected FIFA context.',
+        body: 'Browse referee assignments, nationalities, gender and historical source fields, or compare stadium capacity, pitch dimensions and linked teams. Women referee data is available from FIFA 16, and exact-edition links preserve the selected FIFA context.',
       },
     ],
   },

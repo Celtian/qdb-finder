@@ -49,6 +49,10 @@
   width: 100%;
 }
 
+.entity-filters mat-form-field.filter-with-hint {
+  margin-bottom: 0.5rem;
+}
+
 .entity-filters mat-chip-set {
   margin: -0.7rem 0 1rem;
 }

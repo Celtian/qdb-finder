@@ -5,6 +5,7 @@ import type {
   EntityFacetRequest,
   FilterSuggestion,
   FilterSuggestionRequest,
+  Gender,
   LeagueDetails,
   LeagueEditionKey,
   LeagueEditionRow,
@@ -84,6 +85,7 @@ const nullableNumber = (value: string | number | null): number | null =>
   value === null ? null : Number(value);
 const nullableBoolean = (value: string | number | null): boolean | null =>
   value === null ? null : Boolean(Number(value));
+const genderFilterValue = (gender: Gender): 0 | 1 => (gender === 'women' ? 1 : 0);
 const normalizeSearchText = (value: string): string =>
   value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase('en').trim();
 const likeValue = (value: string): string =>
@@ -106,6 +108,10 @@ export class PlayerDatabase {
     const values: SQLInputValue[] = [];
     const join = this.addTextSearch(request.text, where, values);
     this.addListFilter('p.version', request.versions, where, values);
+    if (request.gender !== undefined) {
+      where.push('p.gender = ?');
+      values.push(genderFilterValue(request.gender));
+    }
     this.addListFilter('p.nationality_key', request.nationalities, where, values);
     this.addExistsFilter('team_key', request.teams, where, values);
     this.addExistsFilter('league_key', request.leagues, where, values);
@@ -309,6 +315,10 @@ export class PlayerDatabase {
       values.push(likeValue(request.text));
     }
     this.addListFilter('r.version', request.versions, where, values);
+    if (request.gender !== undefined) {
+      where.push('r.gender = ?');
+      values.push(genderFilterValue(request.gender));
+    }
     this.addListFilter('r.nationality_id', request.nationalityIds, where, values);
     this.addRange('r.age', request.age, where, values);
     if (request.isReal !== undefined) {

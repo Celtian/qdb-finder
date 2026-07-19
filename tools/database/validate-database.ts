@@ -24,11 +24,27 @@ const refereeLeagueLinks = db.prepare('SELECT count(*) AS count FROM referee_lea
   'count'
 ];
 const stadiumTeamLinks = db.prepare('SELECT count(*) AS count FROM stadium_team').get()?.['count'];
+const legacyWomenPlayers = db
+  .prepare('SELECT count(*) AS count FROM player_edition WHERE version < 16 AND gender = 1')
+  .get()?.['count'];
+const currentWomenPlayers = db
+  .prepare('SELECT count(*) AS count FROM player_edition WHERE version >= 16 AND gender = 1')
+  .get()?.['count'];
+const legacyWomenReferees = db
+  .prepare('SELECT count(*) AS count FROM referee_edition WHERE version < 16 AND gender = 1')
+  .get()?.['count'];
+const currentWomenReferees = db
+  .prepare('SELECT count(*) AS count FROM referee_edition WHERE version >= 16 AND gender = 1')
+  .get()?.['count'];
 const fts = db
   .prepare("SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'")
   .get()?.['count'];
 db.close();
 if (integrity !== 'ok') throw new Error(`Integrity check failed: ${String(integrity)}`);
+if (Number(legacyWomenPlayers) !== 0 || Number(legacyWomenReferees) !== 0)
+  throw new Error('FIFA 11–15 unexpectedly contains women player or referee editions.');
+if (Number(currentWomenPlayers) === 0 || Number(currentWomenReferees) === 0)
+  throw new Error('FIFA 16–23 is missing women player or referee editions.');
 const counts = [
   [players, EXPECTED_EDITIONS, 'player editions'],
   [teams, EXPECTED_TEAM_EDITIONS, 'team editions'],

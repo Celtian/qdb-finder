@@ -1,5 +1,6 @@
 export type SortField = 'name' | 'version' | 'age' | 'overall' | 'potential' | 'bestRating';
 export type SortDirection = 'asc' | 'desc';
+export type Gender = 'men' | 'women';
 export type TeamSortField =
   | 'name'
   | 'version'
@@ -39,6 +40,7 @@ export interface NumberRange {
 export interface SearchRequest {
   text: string;
   versions: number[];
+  gender?: Gender;
   nationalities: string[];
   teams: string[];
   leagues: string[];
@@ -189,6 +191,7 @@ export interface LeagueResultPage {
 export interface RefereeSearchRequest {
   text: string;
   versions: number[];
+  gender?: Gender;
   nationalityIds: number[];
   leagueKeys: string[];
   age: NumberRange;

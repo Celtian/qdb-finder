@@ -22,6 +22,7 @@ import { Qdb } from '../../core/qdb';
 import {
   defaultRefereeSearchRequest,
   type EntityFacetOption,
+  type Gender,
   type LeagueEditionRow,
   type RefereeEditionRow,
   type RefereeResultPage,
@@ -32,6 +33,7 @@ import { RefereeDetail } from '../referee-detail/referee-detail';
 
 type RefereeFacet = 'nationality' | 'league';
 type AvailabilityFilter = 'all' | 'real' | 'generic';
+type GenderFilter = 'all' | Gender;
 
 interface FilterDisplay {
   key: string;
@@ -135,6 +137,7 @@ export class RefereeFinder {
     return Boolean(
       request.text ||
       request.versions.length ||
+      request.gender !== undefined ||
       request.nationalityIds.length ||
       request.leagueKeys.length ||
       request.leagueEdition ||
@@ -158,6 +161,15 @@ export class RefereeFinder {
 
   protected setVersions(versions: number[]): void {
     this.request.update((value) => ({ ...value, versions, offset: 0 }));
+    void this.search();
+  }
+
+  protected setGender(gender: GenderFilter): void {
+    this.request.update((value) => ({
+      ...value,
+      gender: gender === 'all' ? undefined : gender,
+      offset: 0,
+    }));
     void this.search();
   }
 

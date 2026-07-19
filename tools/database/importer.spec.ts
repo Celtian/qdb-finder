@@ -6,6 +6,7 @@ import { Datatype, type Field } from 'fifatables';
 import {
   collectNationalityCodes,
   decodeFifaText,
+  normalizeGender,
   parseTsvLine,
   readTable,
   resolveNationalityCode,
@@ -82,5 +83,14 @@ describe('FIFA text importer', () => {
   it('does not render a flag for nation zero or a missing code', () => {
     expect(resolveNationalityCode(0, 'XX', new Map([[0, 'xx']]))).toBe('');
     expect(resolveNationalityCode(999, '', new Map())).toBe('');
+  });
+
+  it('normalizes source gender and treats missing legacy values as men', () => {
+    expect(normalizeGender(undefined)).toBe(0);
+    expect(normalizeGender(null)).toBe(0);
+    expect(normalizeGender(0)).toBe(0);
+    expect(normalizeGender('0')).toBe(0);
+    expect(normalizeGender(1)).toBe(1);
+    expect(normalizeGender('1')).toBe(1);
   });
 });

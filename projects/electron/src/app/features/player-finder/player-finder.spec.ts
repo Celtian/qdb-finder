@@ -60,6 +60,34 @@ describe('PlayerFinder', () => {
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
   });
 
+  it('filters gender immediately and resets pagination without changing editions', async () => {
+    const testable = component as unknown as {
+      request: {
+        (): SearchRequest;
+        update(update: (value: SearchRequest) => SearchRequest): void;
+      };
+      setGender(value: 'all' | 'men' | 'women'): void;
+    };
+    testable.request.update((value) => ({ ...value, versions: [15], offset: 50 }));
+    searchPlayers.mockClear();
+
+    testable.setGender('women');
+    await fixture.whenStable();
+
+    expect(searchPlayers).toHaveBeenCalledWith(
+      expect.objectContaining({ versions: [15], gender: 'women', offset: 0 }),
+    );
+    const element = fixture.nativeElement as HTMLElement;
+    const hint = element.querySelector('mat-hint');
+    expect(element.textContent).toContain('Women available from FIFA 16');
+    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+
+    testable.setGender('all');
+    await fixture.whenStable();
+
+    expect(testable.request().gender).toBeUndefined();
+  });
+
   it('searches immediately when a number range changes', async () => {
     const element = fixture.nativeElement as HTMLElement;
     const ageMin = element.querySelector<HTMLInputElement>('fieldset input');

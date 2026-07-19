@@ -143,6 +143,9 @@ const optionalPositiveNumber = (value: string | number | null | undefined): numb
   return number && number > 0 ? number : null;
 };
 
+export const normalizeGender = (value: string | number | null | undefined): 0 | 1 =>
+  asNumber(value) === 1 ? 1 : 0;
+
 const nationalityCodeOverrides = new Map<number, string>([
   [14, 'gb-eng'],
   [35, 'gb-nir'],
@@ -206,7 +209,8 @@ const createSchema = (db: DatabaseSync): void =>
     common_name TEXT NOT NULL, jersey_name TEXT NOT NULL, aliases TEXT NOT NULL,
     nationality_id INTEGER NOT NULL, nationality_code TEXT NOT NULL,
     nationality_key TEXT NOT NULL, nationality_name TEXT NOT NULL, birth_date TEXT, snapshot_date TEXT NOT NULL,
-    age INTEGER, positions TEXT NOT NULL, overall INTEGER NOT NULL, potential INTEGER NOT NULL,
+    age INTEGER, gender INTEGER NOT NULL CHECK (gender IN (0, 1)), positions TEXT NOT NULL,
+    overall INTEGER NOT NULL, potential INTEGER NOT NULL,
     best_position TEXT NOT NULL, best_rating INTEGER NOT NULL, height INTEGER, weight INTEGER,
     preferred_foot TEXT NOT NULL, attacking_work_rate TEXT NOT NULL, defensive_work_rate TEXT NOT NULL,
     attributes_json TEXT NOT NULL, ratings_json TEXT NOT NULL, raw_json TEXT NOT NULL,
@@ -240,7 +244,8 @@ const createSchema = (db: DatabaseSync): void =>
     referee_key TEXT NOT NULL, referee_name TEXT NOT NULL, first_name TEXT NOT NULL,
     last_name TEXT NOT NULL, nationality_id INTEGER NOT NULL,
     nationality_key TEXT NOT NULL, nationality_name TEXT NOT NULL, nationality_code TEXT NOT NULL,
-    birth_date TEXT, snapshot_date TEXT NOT NULL, age INTEGER, height INTEGER, weight INTEGER,
+    birth_date TEXT, snapshot_date TEXT NOT NULL, age INTEGER,
+    gender INTEGER NOT NULL CHECK (gender IN (0, 1)), height INTEGER, weight INTEGER,
     foul_strictness INTEGER, card_strictness INTEGER, is_real INTEGER,
     league_count INTEGER NOT NULL DEFAULT 0, raw_json TEXT NOT NULL,
     UNIQUE(version, referee_id)
@@ -382,7 +387,7 @@ const buildCanonical = (
   stadiumTeamLinks: number;
 } => {
   const playerInsert = db.prepare(
-    `INSERT INTO player_edition VALUES (${Array.from({ length: 29 }, () => '?').join(',')})`,
+    `INSERT INTO player_edition VALUES (${Array.from({ length: 30 }, () => '?').join(',')})`,
   );
   const linkInsert = db.prepare(
     'INSERT OR IGNORE INTO player_team VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -394,7 +399,7 @@ const buildCanonical = (
     `INSERT INTO league_edition VALUES (${Array.from({ length: 13 }, () => '?').join(',')})`,
   );
   const refereeInsert = db.prepare(
-    `INSERT INTO referee_edition VALUES (${Array.from({ length: 21 }, () => '?').join(',')})`,
+    `INSERT INTO referee_edition VALUES (${Array.from({ length: 22 }, () => '?').join(',')})`,
   );
   const stadiumInsert = db.prepare(
     `INSERT INTO stadium_edition VALUES (${Array.from({ length: 16 }, () => '?').join(',')})`,
@@ -530,6 +535,7 @@ const buildCanonical = (
           birthDate,
           snapshot,
           ageAt(birthDate, snapshot),
+          normalizeGender(referee['gender']),
           optionalPositiveNumber(referee['height']),
           optionalPositiveNumber(referee['weight']),
           optionalNumber(referee['foulstrictness']),
@@ -647,6 +653,7 @@ const buildCanonical = (
           birthDate,
           snapshot,
           ageAt(birthDate, snapshot),
+          normalizeGender(player['gender']),
           positions.join('|'),
           overall,
           potential,
@@ -719,6 +726,7 @@ const buildCanonical = (
         p.nationality_name, coalesce(group_concat(DISTINCT pt.league_name), '')
       FROM player_edition p LEFT JOIN player_team pt ON pt.player_key = p.key GROUP BY p.key;
     CREATE INDEX idx_player_version ON player_edition(version);
+    CREATE INDEX idx_player_gender ON player_edition(gender);
     CREATE INDEX idx_player_nation ON player_edition(nationality_key);
     CREATE INDEX idx_player_age ON player_edition(age);
     CREATE INDEX idx_player_overall ON player_edition(overall);
@@ -736,6 +744,7 @@ const buildCanonical = (
     CREATE INDEX idx_league_edition_name ON league_edition(league_key);
     CREATE INDEX idx_league_edition_country ON league_edition(country_id);
     CREATE INDEX idx_referee_edition_version ON referee_edition(version);
+    CREATE INDEX idx_referee_edition_gender ON referee_edition(gender);
     CREATE INDEX idx_referee_edition_name ON referee_edition(referee_key);
     CREATE INDEX idx_referee_edition_nation ON referee_edition(nationality_id);
     CREATE INDEX idx_referee_edition_age ON referee_edition(age);

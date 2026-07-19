@@ -57,9 +57,37 @@ describe('RefereeFinder', () => {
     testable.setAvailability('real');
     testable.setAge('min', { target: { value: '30' } } as unknown as Event);
 
-    expect(searchReferees).toHaveBeenLastCalledWith(
+    expect(searchReferees).toHaveBeenCalledWith(
       expect.objectContaining({ isReal: true, age: { min: 30 } }),
     );
+  });
+
+  it('filters gender immediately and resets pagination without changing editions', async () => {
+    const testable = component as unknown as {
+      request: {
+        (): RefereeSearchRequest;
+        update(update: (value: RefereeSearchRequest) => RefereeSearchRequest): void;
+      };
+      setGender(value: 'all' | 'men' | 'women'): void;
+    };
+    testable.request.update((value) => ({ ...value, versions: [15], offset: 50 }));
+    searchReferees.mockClear();
+
+    testable.setGender('women');
+    await fixture.whenStable();
+
+    expect(searchReferees).toHaveBeenCalledWith(
+      expect.objectContaining({ versions: [15], gender: 'women', offset: 0 }),
+    );
+    const element = fixture.nativeElement as HTMLElement;
+    const hint = element.querySelector('mat-hint');
+    expect(element.textContent).toContain('Women available from FIFA 16');
+    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+
+    testable.setGender('all');
+    await fixture.whenStable();
+
+    expect(testable.request().gender).toBeUndefined();
   });
 });
 

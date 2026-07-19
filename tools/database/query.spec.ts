@@ -43,6 +43,12 @@ integration('player queries', () => {
     ).toBe(true);
   });
 
+  it('filters player gender and treats pre-FIFA-16 editions as men', () => {
+    expect(database.search({ ...request, versions: [15], gender: 'men' }).total).toBe(16_128);
+    expect(database.search({ ...request, versions: [15], gender: 'women' }).total).toBe(0);
+    expect(database.search({ ...request, versions: [16], gender: 'women' }).total).toBe(276);
+  });
+
   it('returns Nations-table codes for current and pre-FIFA-16 editions', () => {
     const current = database.search({
       ...request,
@@ -210,6 +216,30 @@ integration('player queries', () => {
       leagueId: 7,
       name: 'Brazil Campeonato Brasileiro (1)',
     });
+  });
+
+  it('filters referee gender and treats pre-FIFA-16 editions as men', () => {
+    expect(
+      database.searchReferees({
+        ...defaultRefereeSearchRequest(),
+        versions: [15],
+        gender: 'men',
+      }).total,
+    ).toBe(158);
+    expect(
+      database.searchReferees({
+        ...defaultRefereeSearchRequest(),
+        versions: [15],
+        gender: 'women',
+      }).total,
+    ).toBe(0);
+    expect(
+      database.searchReferees({
+        ...defaultRefereeSearchRequest(),
+        versions: [16],
+        gender: 'women',
+      }).total,
+    ).toBe(4);
   });
 
   it('keeps stadium countries source-faithful and historical status nullable', () => {

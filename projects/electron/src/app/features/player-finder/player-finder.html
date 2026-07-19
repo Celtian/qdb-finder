@@ -23,6 +23,15 @@
           }
         </mat-select></mat-form-field
       >
+      <mat-form-field class="filter-with-hint" appearance="outline">
+        <mat-label>Gender</mat-label>
+        <mat-select [value]="request().gender ?? 'all'" (valueChange)="setGender($event)">
+          <mat-option value="all">All</mat-option>
+          <mat-option value="men">Men</mat-option>
+          <mat-option value="women">Women</mat-option>
+        </mat-select>
+        <mat-hint>Women available from FIFA 16</mat-hint>
+      </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Nationality</mat-label>
         <input

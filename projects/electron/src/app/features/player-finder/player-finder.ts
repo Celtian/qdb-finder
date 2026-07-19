@@ -23,6 +23,7 @@ import {
   defaultSearchRequest,
   type FilterKind,
   type FilterSuggestion,
+  type Gender,
   type LeagueDetails,
   type PlayerSearchRow,
   type SearchResultPage,
@@ -34,6 +35,7 @@ import { map } from 'rxjs';
 import { positionBadgeClass } from '../../core/position';
 
 type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
+type GenderFilter = 'all' | Gender;
 
 interface FilterDisplay {
   key: string;
@@ -195,6 +197,7 @@ export class PlayerFinder {
     return Boolean(
       value.text ||
       value.versions.length ||
+      value.gender !== undefined ||
       value.nationalities.length ||
       value.teams.length ||
       value.leagues.length ||
@@ -221,6 +224,14 @@ export class PlayerFinder {
 
   protected setVersions(versions: number[]): void {
     this.request.update((value) => ({ ...value, versions, offset: 0 }));
+    void this.search();
+  }
+  protected setGender(gender: GenderFilter): void {
+    this.request.update((value) => ({
+      ...value,
+      gender: gender === 'all' ? undefined : gender,
+      offset: 0,
+    }));
     void this.search();
   }
   protected setPositions(positions: string[]): void {

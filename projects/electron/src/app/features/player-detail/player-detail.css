@@ -13,6 +13,9 @@
 .detail-header p {
   margin: 0.15rem 0;
 }
+.detail-header h2 {
+  padding: 0;
+}
 .nationality {
   display: flex;
   align-items: center;

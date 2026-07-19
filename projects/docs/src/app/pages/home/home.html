@@ -5,9 +5,32 @@
   @for (section of page().sections; track section.title) {
     <section>
       <h2>{{ section.title }}</h2>
-      <p>{{ section.body }}</p>
+      @for (paragraph of section.paragraphs; track $index) {
+        <p>{{ paragraph }}</p>
+      }
+      @if (section.items) {
+        <ul>
+          @for (item of section.items; track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      }
+      @if (section.note) {
+        <p class="note" role="note"><strong>Note:</strong> {{ section.note }}</p>
+      }
       @if (section.code) {
         <pre><code>{{ section.code }}</code></pre>
+      }
+      @if (section.links) {
+        <div class="section-links">
+          @for (link of section.links; track link.href) {
+            @if (link.external) {
+              <a [href]="link.href">{{ link.label }}</a>
+            } @else {
+              <a [routerLink]="link.href">{{ link.label }}</a>
+            }
+          }
+        </div>
       }
     </section>
   }

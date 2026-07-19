@@ -26,6 +26,7 @@
   "scripts": {
     "ng": "ng",
     "start": "yarn build:electron-main && concurrently -k -n renderer,desktop \"ng serve electron\" \"wait-on http://localhost:4200 .electron/electron/main/index.js && electron .\"",
+    "serve:docs": "ng serve docs",
     "build": "yarn build:renderer && yarn build:docs && yarn build:electron-main",
     "build:renderer": "ng build electron --configuration production",
     "build:docs": "ng build docs --configuration production --base-href /qdb-finder/",

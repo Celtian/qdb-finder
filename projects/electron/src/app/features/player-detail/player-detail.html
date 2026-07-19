@@ -61,13 +61,13 @@
         <dt>Common / jersey</dt>
         <dd>{{ player.commonName || '—' }} / {{ player.jerseyName || '—' }}</dd>
         <dt>Birth date</dt>
-        <dd>{{ player.birthDate || '—' }}</dd>
+        <dd>{{ birthDateLabel }}</dd>
         <dt>Snapshot</dt>
-        <dd>{{ player.snapshotDate }}</dd>
+        <dd>{{ snapshotDateLabel }}</dd>
         <dt>Height / weight</dt>
         <dd>{{ player.height ?? '—' }} cm / {{ player.weight ?? '—' }} kg</dd>
         <dt>Preferred foot</dt>
-        <dd>{{ player.preferredFoot }}</dd>
+        <dd>{{ preferredFootLabel }}</dd>
         <dt>Work rates</dt>
         <dd>{{ player.attackingWorkRate }} / {{ player.defensiveWorkRate }}</dd>
       </dl></mat-tab

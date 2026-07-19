@@ -11,6 +11,10 @@ import {
   normalizeInternationalReputation,
   playerAttributeGroups,
 } from '../../core/player-attribute';
+import {
+  formatDateOnly,
+  preferredFootLabel as formatPreferredFoot,
+} from '../../core/player-profile-value';
 import { positionBadgeClass, positionRatingRows } from '../../core/position';
 
 @Component({
@@ -36,6 +40,9 @@ export class PlayerDetail {
   protected readonly overallClass = scoreBadgeClass(this.player.overall);
   protected readonly potentialClass = scoreBadgeClass(this.player.potential);
   protected readonly bestPositionClass = positionBadgeClass(this.player.bestPosition);
+  protected readonly birthDateLabel = formatDateOnly(this.player.birthDate);
+  protected readonly snapshotDateLabel = formatDateOnly(this.player.snapshotDate);
+  protected readonly preferredFootLabel = formatPreferredFoot(this.player.preferredFoot);
   protected readonly ratingRows = positionRatingRows(this.player.ratings);
   protected readonly attributeGroups = playerAttributeGroups(this.player.attributes);
   protected readonly potentialAttribute = {

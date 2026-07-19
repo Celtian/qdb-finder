@@ -40,7 +40,7 @@ describe('PlayerDetail', () => {
             snapshotDate: '2022-09-01',
             height: 180,
             weight: 75,
-            preferredFoot: 'Right',
+            preferredFoot: '1',
             attackingWorkRate: 'High',
             defensiveWorkRate: 'Low',
             attributes: {
@@ -53,7 +53,12 @@ describe('PlayerDetail', () => {
               gkdiving: 35,
             },
             ratings: { ST: 82 },
-            raw: { playerid: 1, internationalrep: 3 },
+            raw: {
+              playerid: 1,
+              internationalrep: 3,
+              preferredfoot: 1,
+              birthdate: 123_456,
+            },
           },
         },
       ],
@@ -66,6 +71,19 @@ describe('PlayerDetail', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('renders readable profile dates and preferred foot', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const terms = [...element.querySelectorAll<HTMLElement>('.profile-grid dt')];
+    const valueFor = (label: string): string | undefined =>
+      terms
+        .find((term) => term.textContent?.trim() === label)
+        ?.nextElementSibling?.textContent?.trim();
+
+    expect(valueFor('Birth date')).toBe('1 Jan 2002');
+    expect(valueFor('Snapshot')).toBe('1 Sep 2022');
+    expect(valueFor('Preferred foot')).toBe('Right');
   });
 
   it('uses badge layout only for position pills, not rating tiles', () => {
@@ -169,7 +187,16 @@ describe('PlayerDetail', () => {
     await tabs.selectTab({ label: 'Raw fields' });
     await fixture.whenStable();
 
-    expect(await (await tabs.getSelectedTab()).getTextContent()).toContain('playerid');
+    const rawText = await (await tabs.getSelectedTab()).getTextContent();
+    const rawTerms = [...element.querySelectorAll<HTMLElement>('.raw-fields dt')];
+    const rawValueFor = (label: string): string | undefined =>
+      rawTerms
+        .find((term) => term.textContent?.trim() === label)
+        ?.nextElementSibling?.textContent?.trim();
+
+    expect(rawText).toContain('playerid');
+    expect(rawValueFor('preferredfoot')).toBe('1');
+    expect(rawValueFor('birthdate')).toBe('123456');
   });
 
   it('colors overall and potential by their value bands', () => {

@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Datatype, fifaTableConfig, sortByOrder, Table, type Field } from 'fifatables';
+import { Datatype, Table, type Field } from 'fifatables';
 import {
   buildDatabase,
   collectNationalityCodes,
@@ -201,14 +201,29 @@ describe('FIFA text importer', () => {
     expect(report.omittedIssueGroups).toBe(1);
   });
 
-  it('identifies the duplicate FIFA 16 v9 referee without exposing SQLite details', () => {
-    const fifa = fifaForVersion(16);
-    const fields = [...fifaTableConfig(fifa, Table.Referee)].sort(sortByOrder);
-    const report = validateTableData(
-      join(process.cwd(), 'fip-16 v9', 'DBFFDSExported', 'referee.txt'),
-      Table.Referee,
-      fields,
+  it('reports duplicate referee identifiers with both source lines', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-referee-duplicate-'));
+    directories.push(directory);
+    const path = join(directory, 'referee.txt');
+    const fields: Field[] = [
+      {
+        name: 'refereeid',
+        order: 0,
+        type: Datatype.Int,
+        default: 1,
+        range: { min: 1, max: 512 },
+        unique: true,
+      },
+    ];
+    const refereeIds = [...Array.from({ length: 56 }, (_, index) => index + 1), 56];
+    writeFileSync(
+      path,
+      Buffer.concat([
+        Buffer.from([0xff, 0xfe]),
+        Buffer.from(`refereeid\r\n${refereeIds.join('\r\n')}`, 'utf16le'),
+      ]),
     );
+    const report = validateTableData(path, Table.Referee, fields);
 
     expect(report).toMatchObject({ valid: false, errorCount: 2 });
     expect(report.issues).toContainEqual(

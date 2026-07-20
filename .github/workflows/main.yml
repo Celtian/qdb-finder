@@ -67,10 +67,23 @@ jobs:
           mono --version
           wine --version
 
-      - name: 🚀 Publish draft GitHub Release
+      - name: 📤 Upload artifacts to draft GitHub Release
         run: yarn electron-forge publish --arch=x64 --platform=win32
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🚀 Publish GitHub Release
+        shell: bash
+        run: |
+          {
+            cat .github/release-intro.md
+            printf '\n\n'
+            gh api --method POST "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+              -f tag_name="$GITHUB_REF_NAME" \
+              --jq .body
+          } | gh release edit "$GITHUB_REF_NAME" --notes-file - --draft=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🛠️ Copy index.html to 404.html
         if: contains(github.ref, 'beta') == false

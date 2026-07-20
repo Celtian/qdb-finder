@@ -127,7 +127,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Edition records and original IDs',
         paragraphs: [
           'A real-world player, team or venue can occur once in every supported game. QDB Finder therefore treats FIFA version and Original ID together as the stable identity of a result.',
-          'The main search box finds entity names and the additional text documented by each finder. Selecting a row opens the exact edition represented by that result.',
+          'Enter a numeric Original ID by itself for an exact ID lookup, or use the main search box to find entity names and the additional text documented by each finder. Selecting a row opens the exact edition represented by that result.',
         ],
       },
       {
@@ -168,7 +168,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Find and filter players',
         paragraphs: [
-          'The player search box covers player and alternate names as well as linked teams, leagues and countries. Exact filters can be combined freely.',
+          'The player search box accepts an exact numeric Original ID, or covers player and alternate names as well as linked teams, leagues and countries. Exact filters can be combined freely.',
         ],
         items: [
           'FIFA editions, gender, nationalities, teams, leagues and playable positions.',
@@ -216,7 +216,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Team finder',
         paragraphs: [
-          'Search team names, then filter by FIFA edition, exact league, country and overall, attack, midfield or defence rating ranges.',
+          'Search team names or an exact numeric Original ID, then filter by FIFA edition, exact league, country and overall, attack, midfield or defence rating ranges.',
           'Results show Original ID, edition, country, league, squad size and the four sortable rating measures.',
         ],
       },
@@ -234,7 +234,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'League finder',
         paragraphs: [
-          'Search league names and filter by FIFA edition, country and competition tier. Results include Original ID, edition, country, tier, team count and player count.',
+          'Search league names or an exact numeric Original ID and filter by FIFA edition, country and competition tier. Results include Original ID, edition, country, tier, team count and player count.',
           'League details identify men’s or women’s competition data and preview both top-rated teams and assigned referees before the Raw fields tab.',
         ],
       },
@@ -258,7 +258,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Referee finder',
         paragraphs: [
-          'Search referee names and filter by FIFA edition, gender, nationality, assigned league, age range and real or generic referee type.',
+          'Search referee names or an exact numeric Original ID and filter by FIFA edition, gender, nationality, assigned league, age range and real or generic referee type.',
           'Results show Original ID, edition, nationality, league assignments, age, height and whether the official represents a real person.',
         ],
         note: 'Women referee data is available from FIFA 16. FIFA 11–15 records are treated as Men because those source tables have no gender field.',
@@ -272,7 +272,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Stadium finder',
         paragraphs: [
-          'Search stadium names and filter by FIFA edition, country, exact linked team, capacity range and licensed or generic stadium type.',
+          'Search stadium names or an exact numeric Original ID and filter by FIFA edition, country, exact linked team, capacity range and licensed or generic stadium type.',
           'Results show Original ID, edition, country, linked-team count, capacity, construction year, pitch dimensions and licensing status.',
         ],
       },

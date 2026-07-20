@@ -90,6 +90,10 @@ const normalizeSearchText = (value: string): string =>
   value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase('en').trim();
 const likeValue = (value: string): string =>
   `%${normalizeSearchText(value).replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`;
+const originalIdValue = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  return /^[0-9]+$/.test(trimmed) ? trimmed : undefined;
+};
 
 export class PlayerDatabase {
   private readonly database: DatabaseSync;
@@ -106,7 +110,7 @@ export class PlayerDatabase {
   search(request: SearchRequest): SearchResultPage {
     const where: string[] = [];
     const values: SQLInputValue[] = [];
-    const join = this.addTextSearch(request.text, where, values);
+    const join = this.addPlayerTextSearch(request.text, where, values);
     this.addListFilter('p.version', request.versions, where, values);
     if (request.gender !== undefined) {
       where.push('p.gender = ?');
@@ -154,10 +158,7 @@ export class PlayerDatabase {
   searchTeams(request: TeamSearchRequest): TeamResultPage {
     const where: string[] = [];
     const values: SQLInputValue[] = [];
-    if (request.text.trim()) {
-      where.push("t.team_key LIKE ? ESCAPE '\\'");
-      values.push(likeValue(request.text));
-    }
+    this.addEntityTextSearch(request.text, 't.team_key', 't.team_id', where, values);
     this.addListFilter('t.version', request.versions, where, values);
     this.addListFilter('t.league_key', request.leagueKeys, where, values);
     this.addListFilter('t.country_id', request.countryIds, where, values);
@@ -239,10 +240,7 @@ export class PlayerDatabase {
   searchLeagues(request: LeagueSearchRequest): LeagueResultPage {
     const where: string[] = [];
     const values: SQLInputValue[] = [];
-    if (request.text.trim()) {
-      where.push("l.league_key LIKE ? ESCAPE '\\'");
-      values.push(likeValue(request.text));
-    }
+    this.addEntityTextSearch(request.text, 'l.league_key', 'l.league_id', where, values);
     this.addListFilter('l.version', request.versions, where, values);
     this.addListFilter('l.country_id', request.countryIds, where, values);
     this.addListFilter('l.level', request.levels, where, values);
@@ -316,10 +314,7 @@ export class PlayerDatabase {
   searchReferees(request: RefereeSearchRequest): RefereeResultPage {
     const where: string[] = [];
     const values: SQLInputValue[] = [];
-    if (request.text.trim()) {
-      where.push("r.referee_key LIKE ? ESCAPE '\\'");
-      values.push(likeValue(request.text));
-    }
+    this.addEntityTextSearch(request.text, 'r.referee_key', 'r.referee_id', where, values);
     this.addListFilter('r.version', request.versions, where, values);
     if (request.gender !== undefined) {
       where.push('r.gender = ?');
@@ -392,10 +387,7 @@ export class PlayerDatabase {
   searchStadiums(request: StadiumSearchRequest): StadiumResultPage {
     const where: string[] = [];
     const values: SQLInputValue[] = [];
-    if (request.text.trim()) {
-      where.push("s.stadium_key LIKE ? ESCAPE '\\'");
-      values.push(likeValue(request.text));
-    }
+    this.addEntityTextSearch(request.text, 's.stadium_key', 's.stadium_id', where, values);
     this.addListFilter('s.version', request.versions, where, values);
     this.addListFilter('s.country_id', request.countryIds, where, values);
     this.addRange('s.capacity', request.capacity, where, values);
@@ -720,7 +712,13 @@ export class PlayerDatabase {
     };
   }
 
-  private addTextSearch(text: string, where: string[], values: SQLInputValue[]): string {
+  private addPlayerTextSearch(text: string, where: string[], values: SQLInputValue[]): string {
+    const originalId = originalIdValue(text);
+    if (originalId !== undefined) {
+      where.push('p.player_id = ?');
+      values.push(originalId);
+      return '';
+    }
     const tokens =
       text
         .normalize('NFKD')
@@ -731,6 +729,24 @@ export class PlayerDatabase {
     where.push('player_search MATCH ?');
     values.push(tokens.map((token) => `"${token.replaceAll('"', '""')}"*`).join(' AND '));
     return 'JOIN player_search ON player_search.player_key = p.key';
+  }
+
+  private addEntityTextSearch(
+    text: string,
+    searchColumn: string,
+    originalIdColumn: string,
+    where: string[],
+    values: SQLInputValue[],
+  ): void {
+    const originalId = originalIdValue(text);
+    if (originalId !== undefined) {
+      where.push(`${originalIdColumn} = ?`);
+      values.push(originalId);
+      return;
+    }
+    if (!text.trim()) return;
+    where.push(`${searchColumn} LIKE ? ESCAPE '\\'`);
+    values.push(likeValue(text));
   }
 
   private addListFilter(

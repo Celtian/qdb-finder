@@ -49,6 +49,9 @@ describe('LeagueFinder', () => {
 
     expect(component).toBeTruthy();
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
+    ).toContain('Search leagues or Original ID');
   });
 
   it('searches immediately when league tiers change', async () => {

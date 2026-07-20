@@ -49,6 +49,9 @@ describe('TeamFinder', () => {
 
     expect(component).toBeTruthy();
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
+    ).toContain('Search teams or Original ID');
   });
 
   it('searches immediately when a rating range changes', async () => {

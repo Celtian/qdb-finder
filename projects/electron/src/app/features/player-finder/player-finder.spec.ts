@@ -54,6 +54,9 @@ describe('PlayerFinder', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.search')?.textContent).toContain(
+      'Search players, teams, leagues, countries or Original ID',
+    );
   });
 
   it('sorts the newest FIFA editions first by default', () => {

@@ -52,6 +52,9 @@ describe('StadiumFinder', () => {
 
   it('renders the empty state after loading', async () => {
     expect(component).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
+    ).toContain('Search stadiums or Original ID');
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect((fixture.nativeElement as HTMLElement).textContent).toContain(

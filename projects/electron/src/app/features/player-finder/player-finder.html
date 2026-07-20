@@ -220,7 +220,7 @@
         </div>
       }
       <mat-form-field class="search" appearance="outline"
-        ><mat-label>Search players, teams, leagues or countries</mat-label
+        ><mat-label>Search players, teams, leagues, countries or Original ID</mat-label
         ><mat-icon matPrefix>search</mat-icon
         ><input matInput autocomplete="off" [formField]="searchForm.text" /><button
           type="button"
@@ -249,9 +249,16 @@
         <div class="state">
           <mat-icon>person_search</mat-icon>
           <h2>
-            {{ hasFilters() ? 'No players match these filters' : 'Start with a player name' }}
+            {{
+              hasFilters()
+                ? 'No players match these filters'
+                : 'Start with a player name or Original ID'
+            }}
           </h2>
-          <p>Try Messi, Argentina, Arsenal, or a combination of edition and rating filters.</p>
+          <p>
+            Try Messi, Original ID 158023, Argentina, Arsenal, or a combination of edition and
+            rating filters.
+          </p>
         </div>
       } @else {
         <section class="results" aria-live="polite">

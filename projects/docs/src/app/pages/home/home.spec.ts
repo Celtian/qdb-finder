@@ -34,6 +34,7 @@ describe('Home', () => {
     expect(element.querySelector('[role="note"]')?.textContent).toContain('FIFA 11–15');
     expect(element.querySelector('a[href="/players"]')?.textContent).toContain('Player guide');
     expect(element.textContent).toContain('Contextual finders');
+    expect(element.textContent).toContain('numeric Original ID');
   });
 
   it('documents women data cutoffs for players and referees', async () => {

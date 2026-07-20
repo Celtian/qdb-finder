@@ -27,6 +27,55 @@ integration('player queries', () => {
     expect(database.search({ ...request, text: 'Mess' }).total).toBeGreaterThan(0);
   });
 
+  it('finds every entity type by exact Original ID', () => {
+    const player = database.search({ ...request, text: ' 158023 ', versions: [23] });
+    const allPlayerEditions = database.search({ ...request, text: '158023', pageSize: 200 });
+    const team = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      text: '1',
+      versions: [23],
+    });
+    const league = database.searchLeagues({
+      ...defaultLeagueSearchRequest(),
+      text: '13',
+      versions: [23],
+    });
+    const referee = database.searchReferees({
+      ...defaultRefereeSearchRequest(),
+      text: '221871',
+      versions: [23],
+    });
+    const stadium = database.searchStadiums({
+      ...defaultStadiumSearchRequest(),
+      text: '1',
+      versions: [23],
+    });
+
+    expect(player).toMatchObject({
+      total: 1,
+      rows: [{ playerId: 158_023, version: 23, name: 'Lionel Messi' }],
+    });
+    expect(allPlayerEditions.total).toBeGreaterThan(1);
+    expect(allPlayerEditions.rows.every((row) => row.playerId === 158_023)).toBe(true);
+    expect(team).toMatchObject({
+      total: 1,
+      rows: [{ teamId: 1, version: 23, name: 'Arsenal' }],
+    });
+    expect(league).toMatchObject({
+      total: 1,
+      rows: [{ leagueId: 13, version: 23, name: 'England Premier League (1)' }],
+    });
+    expect(referee).toMatchObject({
+      total: 1,
+      rows: [{ refereeId: 221_871, version: 23, name: 'Michael Oliver' }],
+    });
+    expect(stadium).toMatchObject({
+      total: 1,
+      rows: [{ stadiumId: 1, version: 23, name: 'Old Trafford' }],
+    });
+    expect(database.search({ ...request, text: '15802', versions: [23] }).total).toBe(0);
+  });
+
   it('combines exact team, country, edition and rating filters', () => {
     expect(database.search({ ...request, nationalities: ['argentina'] }).total).toBeGreaterThan(
       1_000,

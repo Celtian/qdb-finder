@@ -1,11 +1,14 @@
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { documentationPages } from './documentation';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

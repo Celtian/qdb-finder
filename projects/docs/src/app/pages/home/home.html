@@ -16,18 +16,33 @@
         </ul>
       }
       @if (section.note) {
-        <p class="note" role="note"><strong>Note:</strong> {{ section.note }}</p>
+        <mat-card class="note" appearance="outlined" role="note">
+          <mat-card-content>
+            <mat-icon>info</mat-icon>
+            <p><strong>Note:</strong> {{ section.note }}</p>
+          </mat-card-content>
+        </mat-card>
       }
       @if (section.code) {
-        <pre><code>{{ section.code }}</code></pre>
+        <mat-card class="code-card" appearance="outlined">
+          <mat-card-content>
+            <pre><code>{{ section.code }}</code></pre>
+          </mat-card-content>
+        </mat-card>
       }
       @if (section.links) {
         <div class="section-links">
           @for (link of section.links; track link.href) {
             @if (link.external) {
-              <a [href]="link.href">{{ link.label }}</a>
+              <a mat-stroked-button [href]="link.href">
+                {{ link.label }}
+                <mat-icon>open_in_new</mat-icon>
+              </a>
             } @else {
-              <a [routerLink]="link.href">{{ link.label }}</a>
+              <a mat-stroked-button [routerLink]="link.href">
+                {{ link.label }}
+                <mat-icon>arrow_forward</mat-icon>
+              </a>
             }
           }
         </div>

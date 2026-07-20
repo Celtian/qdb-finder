@@ -1,4 +1,7 @@
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
+import { MatButtonHarness } from '@angular/material/button/testing';
+import { MatCardHarness } from '@angular/material/card/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
@@ -54,15 +57,24 @@ describe('Home', () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/installation', Home);
     const installation = harness.routeNativeElement!;
+    const loader = TestbedHarnessEnvironment.loader(harness.fixture);
+    const note = await loader.getHarness(MatCardHarness.with({ selector: '.note' }));
+    const release = await loader.getHarness(
+      MatButtonHarness.with({ text: /Open the latest release/ }),
+    );
 
     expect(installation.querySelector('ul')).toBeTruthy();
     expect(installation.querySelector('[role="note"]')).toBeTruthy();
     expect(installation.querySelector('a[href*="releases/latest"]')).toBeTruthy();
+    expect(await note.getText()).toContain('offline-first');
+    expect(await release.getAppearance()).toBe('outlined');
 
     await harness.navigateByUrl('/development', Home);
+    const commandCard = await loader.getHarness(MatCardHarness.with({ selector: '.code-card' }));
     expect(harness.routeNativeElement?.querySelector('pre code')?.textContent).toContain(
       'yarn db:build',
     );
+    expect(await commandCard.getText()).toContain('yarn build');
   });
 
   it('introduces all five connected entity finders', async () => {

@@ -18,7 +18,7 @@
       <mat-form-field appearance="outline"
         ><mat-label>FIFA versions</mat-label
         ><mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
-          @for (version of versions; track version) {
+          @for (version of versions(); track version) {
             <mat-option [value]="version">FIFA {{ version }}</mat-option>
           }
         </mat-select></mat-form-field

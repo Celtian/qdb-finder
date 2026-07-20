@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { form, FormField } from '@angular/forms/signals';
@@ -19,6 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { Qdb } from '../../core/qdb';
 import { CountryFlag } from '../../core/country-flag/country-flag';
+import { DatabaseContext } from '../../core/database-context';
 import {
   defaultSearchRequest,
   type FilterKind,
@@ -99,6 +100,7 @@ const validId = (value: string | null): number | undefined => {
 })
 export class PlayerFinder {
   private readonly qdb = inject(Qdb);
+  private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
@@ -130,7 +132,12 @@ export class PlayerFinder {
     'potential',
     'bestRating',
   ];
-  protected readonly versions = Array.from({ length: 13 }, (_, index) => 23 - index);
+  protected readonly versions = computed(() =>
+    [
+      ...(this.databaseContext.info()?.versions ??
+        Array.from({ length: 13 }, (_, index) => 23 - index)),
+    ].sort((left, right) => right - left),
+  );
   protected readonly positions = [
     'GK',
     'RB',
@@ -219,6 +226,13 @@ export class PlayerFinder {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+    });
+    effect(() => {
+      if (!this.databaseContext.revision()) return;
+      untracked(() => {
+        void this.loadContext();
+        void this.search();
+      });
     });
     void this.loadContext();
   }

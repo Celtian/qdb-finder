@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { DatabaseContext } from './database-context';
 import { Qdb } from './qdb';
 
 describe('Qdb', () => {
@@ -18,6 +19,13 @@ describe('Qdb', () => {
     suggestEntityFacets: vi.fn(),
     suggestFilters: vi.fn(),
     getDatabaseInfo: vi.fn(),
+    listDatabases: vi.fn(),
+    selectDatabaseSource: vi.fn(),
+    importDatabase: vi.fn(),
+    cancelDatabaseImport: vi.fn(),
+    activateDatabase: vi.fn(),
+    removeDatabase: vi.fn(),
+    onDatabaseImportProgress: vi.fn(),
   };
 
   beforeEach(() => {
@@ -102,5 +110,31 @@ describe('Qdb', () => {
     expect(api.searchStadiums).toHaveBeenCalledWith(stadiumRequest);
     expect(api.getStadium).toHaveBeenCalledWith({ version: 23, stadiumId: 1 });
     expect(api.suggestEntityFacets).toHaveBeenCalledOnce();
+  });
+
+  it('publishes active database changes to database-backed screens', async () => {
+    const info = {
+      id: 'custom-id',
+      name: 'Custom FIFA 23',
+      kind: 'custom' as const,
+      schemaVersion: 1,
+      editions: 1,
+      teamEditions: 1,
+      leagueEditions: 1,
+      refereeEditions: 1,
+      stadiumEditions: 1,
+      teamLinks: 1,
+      sourceFiles: 11,
+      versions: [23],
+      generatedAt: '2026-07-20T00:00:00.000Z',
+      sqliteVersion: '3.50.0',
+    };
+    api.activateDatabase.mockResolvedValueOnce(info);
+
+    await service.activateDatabase('custom-id');
+
+    const context = TestBed.inject(DatabaseContext);
+    expect(context.info()).toEqual(info);
+    expect(context.revision()).toBe(1);
   });
 });

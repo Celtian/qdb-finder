@@ -17,6 +17,10 @@ describe('Home', () => {
           provide: Qdb,
           useValue: {
             getDatabaseInfo: vi.fn(async () => ({
+              id: 'built-in',
+              name: 'Built-in FIFA 11–23',
+              kind: 'built-in' as const,
+              schemaVersion: 1,
               editions: 227_572,
               teamEditions: 8_907,
               leagueEditions: 560,

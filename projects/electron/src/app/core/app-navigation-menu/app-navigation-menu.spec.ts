@@ -39,7 +39,7 @@ describe('AppNavigationMenu', () => {
 
   afterEach(() => TestBed.inject(MatDialog).closeAll());
 
-  it('renders an accessible trigger, six destinations and a separated About action', async () => {
+  it('renders an accessible trigger, seven destinations and a separated About action', async () => {
     const element = fixture.nativeElement as HTMLElement;
     const menu = await loader.getHarness(MatMenuHarness.with({ triggerIconName: 'menu' }));
 
@@ -51,13 +51,14 @@ describe('AppNavigationMenu', () => {
       icon.textContent?.trim(),
     );
 
-    expect(items).toHaveLength(7);
+    expect(items).toHaveLength(8);
     expect(await menu.getItems({ text: /Home/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Players/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Teams/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Leagues/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Referees/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /Stadiums/ })).toHaveLength(1);
+    expect(await menu.getItems({ text: /Databases/ })).toHaveLength(1);
     expect(await menu.getItems({ text: /About/ })).toHaveLength(1);
     expect(document.querySelector('.mat-mdc-menu-panel mat-divider')).toBeTruthy();
     expect(icons).toEqual([
@@ -67,6 +68,7 @@ describe('AppNavigationMenu', () => {
       'emoji_events',
       'sports',
       'stadium',
+      'storage',
       'info',
     ]);
   });

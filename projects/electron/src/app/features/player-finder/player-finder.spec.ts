@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
+import { DatabaseContext } from '../../core/database-context';
 import type {
   FilterSuggestion,
   PlayerDetails,
@@ -65,6 +66,42 @@ describe('PlayerFinder', () => {
     };
 
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
+  });
+
+  it('refreshes against a newly active database without clearing filters', async () => {
+    const testable = component as unknown as {
+      request: {
+        (): SearchRequest;
+        update(update: (value: SearchRequest) => SearchRequest): void;
+      };
+      versions(): number[];
+    };
+    testable.request.update((value) => ({ ...value, positions: ['ST'] }));
+    searchPlayers.mockClear();
+
+    TestBed.inject(DatabaseContext).set(
+      {
+        id: 'custom-id',
+        name: 'Custom FIFA 23',
+        kind: 'custom',
+        schemaVersion: 1,
+        editions: 1,
+        teamEditions: 1,
+        leagueEditions: 1,
+        refereeEditions: 1,
+        stadiumEditions: 1,
+        teamLinks: 1,
+        sourceFiles: 11,
+        versions: [23],
+        generatedAt: '2026-07-20T00:00:00.000Z',
+        sqliteVersion: '3.50.0',
+      },
+      true,
+    );
+    await fixture.whenStable();
+
+    expect(testable.versions()).toEqual([23]);
+    expect(searchPlayers).toHaveBeenCalledWith(expect.objectContaining({ positions: ['ST'] }));
   });
 
   it('filters gender immediately and resets pagination without changing editions', async () => {

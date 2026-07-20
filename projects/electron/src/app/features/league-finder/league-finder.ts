@@ -1,5 +1,5 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -18,6 +18,7 @@ import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { CountryFlag } from '../../core/country-flag/country-flag';
+import { DatabaseContext } from '../../core/database-context';
 import { Qdb } from '../../core/qdb';
 import {
   defaultLeagueSearchRequest,
@@ -68,6 +69,7 @@ const validId = (value: string | null): number | undefined => {
 })
 export class LeagueFinder {
   private readonly qdb = inject(Qdb);
+  private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
@@ -95,7 +97,12 @@ export class LeagueFinder {
     'teamCount',
     'playerCount',
   ];
-  protected readonly versions = Array.from({ length: 13 }, (_, index) => 23 - index);
+  protected readonly versions = computed(() =>
+    [
+      ...(this.databaseContext.info()?.versions ??
+        Array.from({ length: 13 }, (_, index) => 23 - index)),
+    ].sort((left, right) => right - left),
+  );
   protected readonly levels = Array.from({ length: 7 }, (_, index) => index + 1);
   protected readonly countrySuggestions = signal<EntityFacetOption[]>([]);
   protected readonly countryLabels = signal<Record<string, CountryDisplay>>({});
@@ -129,6 +136,10 @@ export class LeagueFinder {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+    });
+    effect(() => {
+      if (!this.databaseContext.revision()) return;
+      untracked(() => void this.search());
     });
   }
 

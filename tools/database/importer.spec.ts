@@ -1,6 +1,14 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Datatype, type Field } from 'fifatables';
 import {
@@ -19,10 +27,29 @@ import {
   parseTsvLine,
   readTable,
   resolveNationalityCode,
+  FIFAS,
+  fifaForVersion,
+  ImportSourceValidationError,
+  inspectSourceHeaders,
 } from './importer';
 
 describe('FIFA text importer', () => {
   const directories: string[] = [];
+  const fifa23HeaderFiles = [
+    'players.txt',
+    'playernames.txt',
+    'nations.txt',
+    'teams.txt',
+    'leagues.txt',
+    'referee.txt',
+    'stadiums.txt',
+    'leagueteamlinks.txt',
+    'teamplayerlinks.txt',
+    'teamstadiumlinks.txt',
+    'leaguerefereelinks.txt',
+    'version.txt',
+    'competition.txt',
+  ];
   afterEach(() =>
     directories.splice(0).forEach((directory) => rmSync(directory, { recursive: true })),
   );
@@ -123,7 +150,7 @@ describe('FIFA text importer', () => {
     const progress: string[] = [];
 
     const summary = buildDatabase({
-      examplesPath: join(process.cwd(), 'examples'),
+      sources: FIFAS.map((fifa) => ({ fifa, path: join(process.cwd(), 'examples', fifa) })),
       outputPath: join(directory, 'qdb.sqlite'),
       verifyExpectedCounts: true,
       progress: (message) => progress.push(message),
@@ -141,7 +168,7 @@ describe('FIFA text importer', () => {
       stadiumTeamLinks: EXPECTED_STADIUM_TEAM_LINKS,
     });
     expect(summary.rawRows).toBeGreaterThan(summary.playerEditions);
-    expect(progress.at(0)).toContain('Creating schema');
+    expect(progress.at(0)).toContain('Validating source folders');
     expect(progress.at(-1)).toContain('completed');
   }, 120_000);
 
@@ -152,12 +179,138 @@ describe('FIFA text importer', () => {
 
     expect(() =>
       buildDatabase({
-        examplesPath: directory,
+        sources: [{ fifa: FIFAS[0], path: directory }],
         outputPath: join(directory, 'qdb.sqlite'),
         verifyExpectedCounts: false,
         progress: (message) => progress.push(message),
       }),
     ).toThrow();
     expect(progress.some((message) => message.includes('failed after'))).toBe(true);
+  });
+
+  it('builds a named single-edition custom database with the shared schema', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-custom-'));
+    directories.push(directory);
+    const path = join(directory, 'custom.sqlite');
+
+    const summary = buildDatabase({
+      sources: [{ fifa: fifaForVersion(23), path: join(process.cwd(), 'examples', 'fifa23') }],
+      outputPath: path,
+      databaseId: '11111111-1111-4111-8111-111111111111',
+      databaseName: 'My FIFA 23',
+      databaseKind: 'custom',
+      verifyExpectedCounts: false,
+    });
+
+    const database = new DatabaseSync(path, { readOnly: true });
+    const metadata = Object.fromEntries(
+      (
+        database.prepare('SELECT key, value FROM metadata').all() as {
+          key: string;
+          value: string;
+        }[]
+      ).map(({ key, value }) => [key, value]),
+    );
+    expect(database.prepare('PRAGMA user_version').get()?.['user_version']).toBe(1);
+    expect(metadata).toMatchObject({
+      database_name: 'My FIFA 23',
+      database_kind: 'custom',
+      versions: '23',
+    });
+    expect(summary.playerEditions).toBeGreaterThan(1_000);
+    expect(
+      database
+        .prepare("SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'")
+        .get()?.['count'],
+    ).toBeGreaterThan(0);
+    database.close();
+  }, 60_000);
+
+  it('rejects unsupported FIFA versions', () => {
+    expect(() => fifaForVersion(24)).toThrow(/not supported/);
+  });
+
+  it.each(FIFAS)('detects the edition from required %s headers', (fifa) => {
+    const inspection = inspectSourceHeaders(join(process.cwd(), 'examples', fifa));
+
+    expect(inspection).toMatchObject({
+      detection: 'detected',
+      detectedVersion: Number(fifa.slice(4)),
+      matchingVersions: [Number(fifa.slice(4))],
+    });
+  });
+
+  it('returns a concise wrong-version issue without exposing headers or paths', () => {
+    const inspection = inspectSourceHeaders(join(process.cwd(), 'examples', 'fifa16'), 23);
+
+    expect(inspection.issue).toMatchObject({
+      code: 'version-mismatch',
+      message: 'This folder appears to be FIFA 16, but FIFA 23 is selected.',
+      detectedVersion: 16,
+    });
+    expect(inspection.issue?.message).not.toContain(process.cwd());
+    expect(inspection.issue?.message).not.toContain('Expected:');
+    expect(inspection.diagnostics.join('\n')).toContain('Expected:');
+  });
+
+  it('reports all required files before creating database output', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-preflight-'));
+    directories.push(directory);
+    const outputPath = join(directory, 'should-not-exist.sqlite');
+
+    expect(() =>
+      buildDatabase({
+        sources: [{ fifa: fifaForVersion(23), path: directory }],
+        outputPath,
+        verifyExpectedCounts: false,
+      }),
+    ).toThrow(ImportSourceValidationError);
+    const inspection = inspectSourceHeaders(directory, 23);
+    expect(inspection.issue).toMatchObject({ code: 'missing-files' });
+    expect(inspection.issue?.files).toContain('players.txt');
+    expect(inspection.detection).toBe('unknown');
+    expect(existsSync(outputPath)).toBe(false);
+  });
+
+  it('reports an empty recognized table without exposing its raw header', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-empty-header-'));
+    directories.push(directory);
+    for (const file of fifa23HeaderFiles)
+      copyFileSync(join(process.cwd(), 'examples', 'fifa23', file), join(directory, file));
+    writeFileSync(join(directory, 'competition.txt'), Buffer.alloc(0));
+
+    const inspection = inspectSourceHeaders(directory, 23);
+
+    expect(inspection.issue).toMatchObject({
+      code: 'invalid-source',
+      files: ['competition.txt'],
+    });
+    expect(inspection.issue?.message).toBe(
+      'Some table files are empty or unreadable: competition.txt.',
+    );
+  });
+
+  it('reports reordered columns as a concise header mismatch', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-reordered-header-'));
+    directories.push(directory);
+    for (const file of fifa23HeaderFiles)
+      copyFileSync(join(process.cwd(), 'examples', 'fifa23', file), join(directory, file));
+    const competitionPath = join(directory, 'competition.txt');
+    const [header] = decodeFifaText(readFileSync(competitionPath)).split(/\r?\n/);
+    const columns = parseTsvLine(header);
+    [columns[0], columns[1]] = [columns[1], columns[0]];
+    writeFileSync(
+      competitionPath,
+      Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(columns.join('\t'), 'utf16le')]),
+    );
+
+    const inspection = inspectSourceHeaders(directory, 23);
+
+    expect(inspection.issue).toMatchObject({
+      code: 'header-mismatch',
+      message: 'Some table headers do not match FIFA 23: competition.txt.',
+      files: ['competition.txt'],
+    });
+    expect(inspection.issue?.message).not.toContain('Expected:');
   });
 });

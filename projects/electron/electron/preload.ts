@@ -15,6 +15,18 @@ const api: QdbApi = {
   suggestEntityFacets: (request) => ipcRenderer.invoke('qdb:entity-facets', request),
   suggestFilters: (request) => ipcRenderer.invoke('qdb:suggest', request),
   getDatabaseInfo: () => ipcRenderer.invoke('qdb:info'),
+  listDatabases: () => ipcRenderer.invoke('qdb:databases:list'),
+  selectDatabaseSource: () => ipcRenderer.invoke('qdb:databases:select-source'),
+  importDatabase: (request) => ipcRenderer.invoke('qdb:databases:import', request),
+  cancelDatabaseImport: (requestId) => ipcRenderer.invoke('qdb:databases:cancel-import', requestId),
+  activateDatabase: (id) => ipcRenderer.invoke('qdb:databases:activate', id),
+  removeDatabase: (id) => ipcRenderer.invoke('qdb:databases:remove', id),
+  onDatabaseImportProgress: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof listener>[0]) =>
+      listener(progress);
+    ipcRenderer.on('qdb:databases:import-progress', handler);
+    return () => ipcRenderer.removeListener('qdb:databases:import-progress', handler);
+  },
 };
 
 const windowApi: QdbWindowApi = {

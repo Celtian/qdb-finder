@@ -1,4 +1,5 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { DATABASE_SCHEMA_VERSION } from './importer';
 import type {
   DatabaseInfo,
   EntityFacetOption,
@@ -101,6 +102,23 @@ export class PlayerDatabase {
   constructor(path: string) {
     this.database = new DatabaseSync(path, { readOnly: true });
     this.database.exec('PRAGMA query_only = ON; PRAGMA foreign_keys = ON;');
+    const schemaVersion = Number(
+      this.database.prepare('PRAGMA user_version').get()?.['user_version'] ?? 0,
+    );
+    const metadataSchemaVersion = Number(
+      this.database.prepare("SELECT value FROM metadata WHERE key = 'schema_version'").get()?.[
+        'value'
+      ] ?? 0,
+    );
+    if (
+      schemaVersion !== DATABASE_SCHEMA_VERSION ||
+      metadataSchemaVersion !== DATABASE_SCHEMA_VERSION
+    ) {
+      this.database.close();
+      throw new Error(
+        `Database schema ${schemaVersion}/${metadataSchemaVersion} is incompatible with required schema ${DATABASE_SCHEMA_VERSION}. Re-import this database.`,
+      );
+    }
   }
 
   close(): void {
@@ -588,6 +606,12 @@ export class PlayerDatabase {
       ]),
     );
     return {
+      id: String(metadata['database_id'] ?? 'unknown'),
+      name: String(metadata['database_name'] ?? 'Unnamed database'),
+      kind: metadata['database_kind'] === 'custom' ? 'custom' : 'built-in',
+      schemaVersion: Number(
+        this.database.prepare('PRAGMA user_version').get()?.['user_version'] ?? 0,
+      ),
       editions: Number(metadata['player_editions'] ?? 0),
       teamEditions: Number(metadata['team_editions'] ?? 0),
       leagueEditions: Number(metadata['league_editions'] ?? 0),

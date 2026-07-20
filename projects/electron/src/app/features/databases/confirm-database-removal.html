@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Remove database?</h2>
+<mat-dialog-content>
+  <p>
+    “{{ data.name }}” and its generated SQLite file will be permanently removed. The original text
+    files will not be changed.
+  </p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button type="button" mat-button mat-dialog-close>Cancel</button>
+  <button type="button" mat-flat-button color="warn" [mat-dialog-close]="true">Remove</button>
+</mat-dialog-actions>

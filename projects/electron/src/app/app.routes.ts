@@ -7,6 +7,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/home/home').then((module) => module.Home),
   },
   {
+    path: 'databases',
+    title: 'Databases · QDB Finder',
+    loadComponent: () =>
+      import('./features/databases/databases').then((module) => module.Databases),
+  },
+  {
     path: 'players',
     title: 'Players · QDB Finder',
     loadComponent: () =>

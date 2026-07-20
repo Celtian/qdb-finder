@@ -1,6 +1,12 @@
-import { Service } from '@angular/core';
+import { inject, Service } from '@angular/core';
+import { DatabaseContext } from './database-context';
 import type {
+  DatabaseDescriptor,
+  DatabaseImportProgress,
+  DatabaseImportRequest,
+  DatabaseImportResult,
   DatabaseInfo,
+  DatabaseSourceSelection,
   EntityFacetOption,
   EntityFacetRequest,
   FilterSuggestion,
@@ -29,6 +35,12 @@ import type {
 
 @Service()
 export class Qdb {
+  private readonly context = inject(DatabaseContext);
+
+  constructor() {
+    void this.refreshDatabaseInfo();
+  }
+
   private get api() {
     if (!globalThis.window?.qdb)
       throw new Error('The QDB desktop bridge is unavailable. Start the Electron application.');
@@ -71,7 +83,48 @@ export class Qdb {
   suggestFilters(request: FilterSuggestionRequest): Promise<FilterSuggestion[]> {
     return this.api.suggestFilters(request);
   }
-  getDatabaseInfo(): Promise<DatabaseInfo> {
-    return this.api.getDatabaseInfo();
+  async getDatabaseInfo(): Promise<DatabaseInfo> {
+    const info = await this.api.getDatabaseInfo();
+    this.context.set(info);
+    return info;
+  }
+  listDatabases(): Promise<DatabaseDescriptor[]> {
+    return this.api.listDatabases();
+  }
+  selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined> {
+    return this.api.selectDatabaseSource();
+  }
+  async importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult> {
+    const result = await this.api.importDatabase(request);
+    if (result.status === 'completed') this.databaseChanged(result.database);
+    return result;
+  }
+  cancelDatabaseImport(requestId: string): Promise<boolean> {
+    return this.api.cancelDatabaseImport(requestId);
+  }
+  async activateDatabase(id: string): Promise<DatabaseInfo> {
+    const info = await this.api.activateDatabase(id);
+    this.databaseChanged(info);
+    return info;
+  }
+  async removeDatabase(id: string): Promise<DatabaseInfo> {
+    const info = await this.api.removeDatabase(id);
+    if (this.context.info()?.id !== info.id) this.databaseChanged(info);
+    return info;
+  }
+  onDatabaseImportProgress(listener: (progress: DatabaseImportProgress) => void): () => void {
+    return this.api.onDatabaseImportProgress(listener);
+  }
+
+  private async refreshDatabaseInfo(): Promise<void> {
+    try {
+      this.context.set(await this.api.getDatabaseInfo());
+    } catch {
+      // Feature screens already expose database connection errors.
+    }
+  }
+
+  private databaseChanged(info: DatabaseInfo): void {
+    this.context.set(info, true);
   }
 }

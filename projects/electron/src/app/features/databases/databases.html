@@ -1,0 +1,161 @@
+<main>
+  <header>
+    <p class="eyebrow">Database library</p>
+    <h1>Manage FIFA databases</h1>
+    <p class="lead">
+      Import a folder containing one FIFA edition. QDB Finder creates a private searchable copy;
+      your source text files remain unchanged.
+    </p>
+  </header>
+
+  <mat-card class="import-card">
+    <mat-card-header>
+      <mat-card-title>Import custom database</mat-card-title>
+      <mat-card-subtitle
+        >Folders must match the exported FIFA 11–23 table format.</mat-card-subtitle
+      >
+    </mat-card-header>
+    <mat-card-content>
+      <form (submit)="$event.preventDefault(); import()">
+        <div class="folder-field">
+          <mat-form-field appearance="outline">
+            <mat-label>Source folder</mat-label>
+            <input matInput [formField]="importForm.folder" />
+            @if (importForm.folder().touched() && importForm.folder().invalid()) {
+              <mat-error>Select a FIFA text folder.</mat-error>
+            }
+          </mat-form-field>
+          <button
+            type="button"
+            mat-stroked-button
+            [disabled]="importing()"
+            (click)="selectFolder()"
+          >
+            <mat-icon>folder_open</mat-icon>
+            Browse
+          </button>
+        </div>
+
+        @if (sourceSelected()) {
+          <mat-form-field appearance="outline">
+            <mat-label>Database name</mat-label>
+            <input matInput autocomplete="off" [formField]="importForm.name" />
+            @if (importForm.name().touched() && importForm.name().invalid()) {
+              <mat-error>{{ importForm.name().errors()[0]?.message }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>FIFA version</mat-label>
+            <mat-select [formField]="importForm.version">
+              @for (version of supportedVersions; track version) {
+                <mat-option [value]="version">FIFA {{ version }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (sourceStatus()) {
+            <p class="source-status" role="status">
+              <mat-icon>info</mat-icon>
+              <span>{{ sourceStatus() }}</span>
+            </p>
+          }
+
+          @if (importing()) {
+            <div class="import-progress" aria-live="polite">
+              <mat-progress-bar mode="indeterminate" />
+              <p>{{ progress() }}</p>
+            </div>
+          }
+
+          <div class="form-actions">
+            @if (importing()) {
+              <button type="button" mat-stroked-button (click)="cancelImport()">
+                Cancel import
+              </button>
+            } @else {
+              <button type="submit" mat-flat-button>
+                <mat-icon>storage</mat-icon>
+                Import and activate
+              </button>
+            }
+          </div>
+        }
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  @if (error()) {
+    <div class="message error" role="alert">
+      <mat-icon>error</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+  @if (success()) {
+    <div class="message success" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ success() }}</span>
+    </div>
+  }
+
+  <section aria-labelledby="installed-heading">
+    <h2 id="installed-heading">Installed databases</h2>
+    @if (loading()) {
+      <p class="loading" aria-live="polite">Loading database library…</p>
+    } @else {
+      <div class="database-grid">
+        @for (database of databases(); track database.id) {
+          <mat-card
+            [class.active]="database.active"
+            [class.incompatible]="database.status === 'incompatible'"
+          >
+            <mat-card-header>
+              <div mat-card-avatar class="database-icon"><mat-icon>storage</mat-icon></div>
+              <mat-card-title>{{ database.name }}</mat-card-title>
+              <mat-card-subtitle>
+                {{ database.kind === 'built-in' ? 'Built-in' : 'Custom' }} ·
+                @for (version of database.versions; track version; let last = $last) {
+                  FIFA {{ version }}{{ last ? '' : ', ' }}
+                }
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (database.status === 'incompatible') {
+                <p class="compatibility-error">{{ database.error }}</p>
+              } @else {
+                <dl>
+                  <div>
+                    <dt>Players</dt>
+                    <dd>{{ database.editions.toLocaleString() }}</dd>
+                  </div>
+                  <div>
+                    <dt>Teams</dt>
+                    <dd>{{ database.teamEditions.toLocaleString() }}</dd>
+                  </div>
+                  <div>
+                    <dt>Leagues</dt>
+                    <dd>{{ database.leagueEditions.toLocaleString() }}</dd>
+                  </div>
+                  <div>
+                    <dt>Imported</dt>
+                    <dd>{{ database.generatedAt | date: 'medium' }}</dd>
+                  </div>
+                </dl>
+              }
+            </mat-card-content>
+            <mat-card-actions align="end">
+              @if (database.active) {
+                <span class="active-label"><mat-icon>check</mat-icon>Active</span>
+              } @else if (database.status === 'available') {
+                <button type="button" mat-button (click)="activate(database)">Activate</button>
+              }
+              @if (database.kind === 'custom') {
+                <button type="button" mat-button (click)="remove(database)">Remove</button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+  </section>
+</main>

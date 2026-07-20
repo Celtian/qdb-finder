@@ -38,6 +38,15 @@
   border-radius: 5px;
 }
 
+.database-name {
+  overflow: hidden;
+  max-width: min(32vw, 24rem);
+  color: #686f7d;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .window-actions {
   display: flex;
   flex: 0 0 auto;

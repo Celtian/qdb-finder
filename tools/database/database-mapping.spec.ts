@@ -168,11 +168,18 @@ describe('database metadata fallbacks', () => {
     const directory = mkdtempSync(join(tmpdir(), 'qdb-metadata-'));
     const path = join(directory, 'empty.sqlite');
     const writable = new DatabaseSync(path);
-    writable.exec('CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+    writable.exec(
+      'PRAGMA user_version = 1; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+    );
+    writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '1');
     writable.close();
 
     const database = new PlayerDatabase(path);
     expect(database.info()).toMatchObject({
+      id: 'unknown',
+      name: 'Unnamed database',
+      kind: 'built-in',
+      schemaVersion: 1,
       editions: 0,
       teamEditions: 0,
       leagueEditions: 0,

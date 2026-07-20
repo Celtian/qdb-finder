@@ -1,8 +1,21 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, type IpcMainInvokeEvent } from 'electron';
-import { join } from 'node:path';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  shell,
+  type IpcMainInvokeEvent,
+} from 'electron';
+import { randomUUID } from 'node:crypto';
+import { basename, join } from 'node:path';
+import { Worker } from 'node:worker_threads';
 import { updateElectronApp } from 'update-electron-app';
 import type {
   EntityFacetRequest,
+  DatabaseImportRequest,
+  DatabaseImportResult,
+  DatabaseImportError,
   FilterSuggestionRequest,
   LeagueEditionKey,
   LeagueSearchRequest,
@@ -16,8 +29,13 @@ import type {
   TeamSearchRequest,
 } from '../../src/app/core/qdb-contracts';
 import { PlayerDatabase } from '../database';
+import { DatabaseLibrary } from '../database-library';
+import { inspectSourceHeaders, SUPPORTED_FIFA_VERSIONS } from '../importer';
 
 let database: PlayerDatabase;
+let databaseLibrary: DatabaseLibrary;
+const sourceSelections = new Map<string, string>();
+const imports = new Map<string, { worker: Worker; cancel: () => void }>();
 
 const useWslWindowControls =
   process.platform === 'linux' &&
@@ -41,6 +59,131 @@ const databasePath = (): string =>
   (app.isPackaged
     ? join(process.resourcesPath, 'database', 'qdb.sqlite')
     : join(app.getAppPath(), 'resources', 'database', 'qdb.sqlite'));
+
+const switchDatabase = (id: string): ReturnType<DatabaseLibrary['activeInfo']> => {
+  const next = new PlayerDatabase(databaseLibrary.pathFor(id));
+  try {
+    const info = databaseLibrary.activate(id);
+    database.close();
+    database = next;
+    return info;
+  } catch (error) {
+    next.close();
+    throw error;
+  }
+};
+
+const validateImportRequest = (request: DatabaseImportRequest): string => {
+  const name = request.name.trim();
+  if (name.length < 1 || name.length > 80)
+    throw new Error('Database name must contain between 1 and 80 characters.');
+  if (!SUPPORTED_FIFA_VERSIONS.includes(request.version))
+    throw new Error('Unsupported FIFA version. Choose FIFA 11–23.');
+  if (!/^[0-9a-f-]{36}$/i.test(request.requestId))
+    throw new Error('Invalid import request identifier.');
+  databaseLibrary.ensureUniqueName(name);
+  return name;
+};
+
+const importDatabase = (
+  event: IpcMainInvokeEvent,
+  request: DatabaseImportRequest,
+): Promise<DatabaseImportResult> => {
+  const name = validateImportRequest(request);
+  const sourcePath = sourceSelections.get(request.selectionId);
+  if (!sourcePath) throw new Error('Select the source folder again before importing.');
+  if (imports.has(request.requestId)) throw new Error('This import is already running.');
+  if (imports.size) throw new Error('Another database import is already running.');
+  const databaseId = randomUUID();
+  const outputPath = databaseLibrary.temporaryPath(databaseId);
+  databaseLibrary.discardTemporary(databaseId);
+  const worker = new Worker(join(__dirname, '..', 'database-import-worker.js'), {
+    workerData: {
+      databaseId,
+      databaseName: name,
+      outputPath,
+      sourcePath,
+      version: request.version,
+    },
+  });
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let cancelled = false;
+    const finish = (): void => {
+      imports.delete(request.requestId);
+      databaseLibrary.discardTemporary(databaseId);
+    };
+    const cancel = (): void => {
+      if (settled) return;
+      cancelled = true;
+      void worker.terminate();
+    };
+    imports.set(request.requestId, { worker, cancel });
+    worker.on(
+      'message',
+      (message: {
+        type?: unknown;
+        message?: unknown;
+        error?: DatabaseImportError;
+        diagnostics?: unknown;
+      }) => {
+        if (settled) return;
+        if (message.type === 'progress' && typeof message.message === 'string') {
+          event.sender.send('qdb:databases:import-progress', {
+            requestId: request.requestId,
+            message: message.message,
+          });
+          return;
+        }
+        if (message.type === 'failed') {
+          settled = true;
+          finish();
+          if (Array.isArray(message.diagnostics))
+            console.error('[qdb:import] Source validation failed:', ...message.diagnostics);
+          resolve({
+            status: 'failed',
+            error: message.error ?? {
+              code: 'import-failed',
+              message: 'Database import failed. Check the selected folder and try again.',
+              files: [],
+            },
+          });
+          return;
+        }
+        if (message.type === 'completed') {
+          try {
+            databaseLibrary.ensureUniqueName(name);
+            databaseLibrary.install(databaseId);
+            switchDatabase(databaseId);
+            const descriptor = databaseLibrary.list().find(({ id }) => id === databaseId);
+            if (!descriptor) throw new Error('Imported database could not be registered.');
+            settled = true;
+            finish();
+            sourceSelections.delete(request.selectionId);
+            resolve({ status: 'completed', database: descriptor });
+          } catch (error) {
+            settled = true;
+            finish();
+            reject(error);
+          }
+        }
+      },
+    );
+    worker.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      finish();
+      reject(error);
+    });
+    worker.on('exit', (code) => {
+      if (settled) return;
+      settled = true;
+      finish();
+      if (cancelled) resolve({ status: 'cancelled' });
+      else reject(new Error(`Database import worker exited with code ${code}.`));
+    });
+  });
+};
 
 const createWindow = async (): Promise<void> => {
   const window = new BrowserWindow({
@@ -85,7 +228,8 @@ const createWindow = async (): Promise<void> => {
 
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
-  database = new PlayerDatabase(databasePath());
+  databaseLibrary = new DatabaseLibrary(databasePath(), app.getPath('userData'));
+  database = new PlayerDatabase(databaseLibrary.activePath());
   ipcMain.handle('qdb:search', (_event, request: SearchRequest) => database.search(request));
   ipcMain.handle('qdb:player', (_event, key: PlayerEditionKey) => database.getPlayer(key));
   ipcMain.handle('qdb:teams:search', (_event, request: TeamSearchRequest) =>
@@ -111,6 +255,62 @@ app.whenReady().then(async () => {
     database.suggest(request),
   );
   ipcMain.handle('qdb:info', () => database.info());
+  ipcMain.handle('qdb:databases:list', () => databaseLibrary.list());
+  ipcMain.handle('qdb:databases:select-source', async (event) => {
+    const window = senderWindow(event);
+    const result = window
+      ? await dialog.showOpenDialog(window, { properties: ['openDirectory'] })
+      : await dialog.showOpenDialog({ properties: ['openDirectory'] });
+    if (result.canceled || !result.filePaths[0]) return undefined;
+    const id = randomUUID();
+    sourceSelections.set(id, result.filePaths[0]);
+    const inspection = inspectSourceHeaders(result.filePaths[0]);
+    return {
+      id,
+      displayPath: result.filePaths[0],
+      folderName: basename(result.filePaths[0]),
+      detection: inspection.detection,
+      detectedVersion: inspection.detectedVersion,
+    };
+  });
+  ipcMain.handle('qdb:databases:import', async (event, request: DatabaseImportRequest) => {
+    try {
+      return await importDatabase(event, request);
+    } catch (error) {
+      const technicalMessage = error instanceof Error ? error.message : String(error);
+      const message =
+        /^(Database name|A database|Select the source|This import|Another database import|Unsupported FIFA)/.test(
+          technicalMessage,
+        )
+          ? technicalMessage
+          : 'Database import failed. Check the selected folder and try again.';
+      console.error('[qdb:import] Import request failed:', error);
+      return {
+        status: 'failed',
+        error: {
+          code: 'import-failed',
+          message,
+          files: [],
+        },
+      } satisfies DatabaseImportResult;
+    }
+  });
+  ipcMain.handle('qdb:databases:cancel-import', (_event, requestId: string) => {
+    const running = imports.get(requestId);
+    if (!running) return false;
+    running.cancel();
+    return true;
+  });
+  ipcMain.handle('qdb:databases:activate', (_event, id: string) => switchDatabase(id));
+  ipcMain.handle('qdb:databases:remove', (_event, id: string) => {
+    if (database.info().id === id) {
+      const builtIn = new PlayerDatabase(databaseLibrary.pathFor('built-in'));
+      database.close();
+      database = builtIn;
+    }
+    databaseLibrary.remove(id);
+    return database.info();
+  });
   ipcMain.handle('qdb:window:minimize', (event) => senderWindow(event)?.minimize());
   ipcMain.handle('qdb:window:toggle-maximize', (event) => {
     const window = senderWindow(event);
@@ -132,4 +332,7 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
-app.on('will-quit', () => database?.close());
+app.on('will-quit', () => {
+  for (const running of imports.values()) running.cancel();
+  database?.close();
+});

@@ -328,6 +328,10 @@ export interface EntityFacetOption {
 }
 
 export interface DatabaseInfo {
+  id: string;
+  name: string;
+  kind: DatabaseKind;
+  schemaVersion: number;
   editions: number;
   teamEditions: number;
   leagueEditions: number;
@@ -338,6 +342,54 @@ export interface DatabaseInfo {
   versions: number[];
   generatedAt: string;
   sqliteVersion: string;
+}
+
+export type DatabaseKind = 'built-in' | 'custom';
+export type DatabaseStatus = 'available' | 'incompatible';
+
+export interface DatabaseDescriptor extends DatabaseInfo {
+  active: boolean;
+  status: DatabaseStatus;
+  error?: string;
+}
+
+export interface DatabaseSourceSelection {
+  id: string;
+  displayPath: string;
+  folderName: string;
+  detection: 'detected' | 'ambiguous' | 'unknown';
+  detectedVersion?: number;
+}
+
+export interface DatabaseImportRequest {
+  requestId: string;
+  selectionId: string;
+  name: string;
+  version: number;
+}
+
+export type DatabaseImportErrorCode =
+  | 'version-mismatch'
+  | 'missing-files'
+  | 'header-mismatch'
+  | 'invalid-source'
+  | 'import-failed';
+
+export interface DatabaseImportError {
+  code: DatabaseImportErrorCode;
+  message: string;
+  files: string[];
+  detectedVersion?: number;
+}
+
+export type DatabaseImportResult =
+  | { status: 'completed'; database: DatabaseDescriptor }
+  | { status: 'cancelled' }
+  | { status: 'failed'; error: DatabaseImportError };
+
+export interface DatabaseImportProgress {
+  requestId: string;
+  message: string;
 }
 
 export interface QdbApi {
@@ -354,6 +406,13 @@ export interface QdbApi {
   suggestEntityFacets(request: EntityFacetRequest): Promise<EntityFacetOption[]>;
   suggestFilters(request: FilterSuggestionRequest): Promise<FilterSuggestion[]>;
   getDatabaseInfo(): Promise<DatabaseInfo>;
+  listDatabases(): Promise<DatabaseDescriptor[]>;
+  selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined>;
+  importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult>;
+  cancelDatabaseImport(requestId: string): Promise<boolean>;
+  activateDatabase(id: string): Promise<DatabaseInfo>;
+  removeDatabase(id: string): Promise<DatabaseInfo>;
+  onDatabaseImportProgress(listener: (progress: DatabaseImportProgress) => void): () => void;
 }
 
 export interface QdbWindowApi {

@@ -1,0 +1,178 @@
+:host {
+  display: block;
+  height: 100%;
+  overflow: auto;
+  background: #f7f8fc;
+}
+
+main {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+header {
+  max-width: 760px;
+  margin-bottom: 2rem;
+}
+h1,
+p {
+  margin-top: 0;
+}
+h1 {
+  margin-bottom: 0.75rem;
+}
+.eyebrow {
+  color: var(--qdb-brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.lead {
+  color: #5e6472;
+  line-height: 1.6;
+}
+
+.import-card {
+  margin-bottom: 1.5rem;
+}
+.import-card mat-card-content {
+  padding-top: 1.5rem;
+}
+form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr);
+  gap: 1rem;
+}
+.folder-field {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: start;
+  gap: 0.75rem;
+}
+.folder-field mat-form-field {
+  flex: 1;
+}
+.folder-field button {
+  margin-top: 0.25rem;
+}
+.source-status,
+.import-progress,
+.form-actions {
+  grid-column: 1 / -1;
+}
+.source-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.25rem 0 0;
+  color: #46556f;
+}
+.source-status mat-icon {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+.import-progress p {
+  margin: 0.65rem 0 0;
+  color: #565d6b;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+}
+.message.error {
+  background: #ffdad6;
+  color: #93000a;
+}
+.message.success {
+  background: #d7f5df;
+  color: #145c2b;
+}
+
+section {
+  margin-top: 2rem;
+}
+.database-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.database-grid mat-card {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  border: 1px solid #e0e4ed;
+}
+.database-grid mat-card.active {
+  border-color: var(--qdb-brand);
+}
+.database-grid mat-card.incompatible {
+  border-color: #ba1a1a;
+}
+.database-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #e8efff;
+  color: var(--qdb-brand);
+}
+dl {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem 1rem;
+  margin-bottom: 0;
+}
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+dt {
+  color: #646b78;
+}
+dd {
+  margin: 0;
+  font-weight: 600;
+}
+.active-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: auto;
+  color: var(--qdb-brand);
+  font-weight: 700;
+}
+.active-label mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.compatibility-error {
+  color: #93000a;
+}
+
+@media (max-width: 720px) {
+  form,
+  .database-grid {
+    grid-template-columns: 1fr;
+  }
+  .folder-field {
+    flex-direction: column;
+  }
+  .folder-field button {
+    margin-top: -0.5rem;
+  }
+}

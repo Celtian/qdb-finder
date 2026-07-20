@@ -1,5 +1,5 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -19,6 +19,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
+import { DatabaseContext } from '../../core/database-context';
 import { Qdb } from '../../core/qdb';
 import {
   defaultTeamSearchRequest,
@@ -88,6 +89,7 @@ const validId = (value: string | null): number | undefined => {
 })
 export class TeamFinder {
   private readonly qdb = inject(Qdb);
+  private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
@@ -120,7 +122,12 @@ export class TeamFinder {
     'midfield',
     'defence',
   ];
-  protected readonly versions = Array.from({ length: 13 }, (_, index) => 23 - index);
+  protected readonly versions = computed(() =>
+    [
+      ...(this.databaseContext.info()?.versions ??
+        Array.from({ length: 13 }, (_, index) => 23 - index)),
+    ].sort((left, right) => right - left),
+  );
   protected readonly ratingFilters = [
     { key: 'overall', label: 'Overall' },
     { key: 'attack', label: 'Attack' },
@@ -176,6 +183,10 @@ export class TeamFinder {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+    });
+    effect(() => {
+      if (!this.databaseContext.revision()) return;
+      untracked(() => void this.search());
     });
     const playerContext = this.request().playerEdition;
     if (playerContext) void this.loadContextPlayer(playerContext);

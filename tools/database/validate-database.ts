@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import {
+  DATABASE_SCHEMA_VERSION,
   EXPECTED_EDITIONS,
   EXPECTED_LEAGUE_EDITIONS,
   EXPECTED_REFEREE_EDITIONS,
@@ -14,6 +15,10 @@ import {
 const path = process.argv[2] ?? resolve(process.cwd(), 'resources', 'database', 'qdb.sqlite');
 const db = new DatabaseSync(path, { readOnly: true });
 const integrity = db.prepare('PRAGMA integrity_check').get()?.['integrity_check'];
+const schemaVersion = db.prepare('PRAGMA user_version').get()?.['user_version'];
+const metadataSchemaVersion = db
+  .prepare("SELECT value FROM metadata WHERE key = 'schema_version'")
+  .get()?.['value'];
 const players = db.prepare('SELECT count(*) AS count FROM player_edition').get()?.['count'];
 const links = db.prepare('SELECT count(*) AS count FROM player_team').get()?.['count'];
 const teams = db.prepare('SELECT count(*) AS count FROM team_edition').get()?.['count'];
@@ -41,6 +46,13 @@ const fts = db
   .get()?.['count'];
 db.close();
 if (integrity !== 'ok') throw new Error(`Integrity check failed: ${String(integrity)}`);
+if (
+  Number(schemaVersion) !== DATABASE_SCHEMA_VERSION ||
+  Number(metadataSchemaVersion) !== DATABASE_SCHEMA_VERSION
+)
+  throw new Error(
+    `Expected database schema ${DATABASE_SCHEMA_VERSION}, found PRAGMA ${String(schemaVersion)} and metadata ${String(metadataSchemaVersion)}.`,
+  );
 if (Number(legacyWomenPlayers) !== 0 || Number(legacyWomenReferees) !== 0)
   throw new Error('FIFA 11–15 unexpectedly contains women player or referee editions.');
 if (Number(currentWomenPlayers) === 0 || Number(currentWomenReferees) === 0)

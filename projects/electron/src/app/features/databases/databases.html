@@ -25,12 +25,7 @@
               <mat-error>Select a FIFA text folder.</mat-error>
             }
           </mat-form-field>
-          <button
-            type="button"
-            mat-stroked-button
-            [disabled]="importing()"
-            (click)="selectFolder()"
-          >
+          <button type="button" mat-stroked-button [disabled]="busy()" (click)="selectFolder()">
             <mat-icon>folder_open</mat-icon>
             Browse
           </button>
@@ -61,6 +56,17 @@
             </p>
           }
 
+          @if (validationReport(); as report) {
+            <app-source-validation-report [report]="report" />
+          }
+
+          @if (validating()) {
+            <div class="import-progress" aria-live="polite">
+              <mat-progress-bar mode="indeterminate" />
+              <p>{{ validationProgress() }}</p>
+            </div>
+          }
+
           @if (importing()) {
             <div class="import-progress" aria-live="polite">
               <mat-progress-bar mode="indeterminate" />
@@ -69,15 +75,25 @@
           }
 
           <div class="form-actions">
-            @if (importing()) {
+            @if (validating()) {
+              <button type="button" mat-stroked-button (click)="cancelValidation()">
+                Cancel validation
+              </button>
+            } @else if (importing()) {
               <button type="button" mat-stroked-button (click)="cancelImport()">
                 Cancel import
               </button>
             } @else {
-              <button type="submit" mat-flat-button>
-                <mat-icon>storage</mat-icon>
-                Import and activate
+              <button type="button" mat-stroked-button (click)="validateSource()">
+                <mat-icon>fact_check</mat-icon>
+                {{ validationReport() ? 'Validate again' : 'Validate source' }}
               </button>
+              @if (sourceValidated()) {
+                <button type="submit" mat-flat-button>
+                  <mat-icon>storage</mat-icon>
+                  Import and activate
+                </button>
+              }
             }
           </div>
         }

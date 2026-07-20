@@ -368,11 +368,65 @@ export interface DatabaseImportRequest {
   version: number;
 }
 
+export interface DatabaseSourceValidationRequest {
+  requestId: string;
+  selectionId: string;
+  version: number;
+}
+
+export type DatabaseSourceValidationSeverity = 'error' | 'warning';
+
+export type DatabaseSourceValidationIssueCode =
+  | 'version-mismatch'
+  | 'missing-files'
+  | 'header-mismatch'
+  | 'invalid-source'
+  | 'malformed-row'
+  | 'invalid-number'
+  | 'unsafe-integer'
+  | 'out-of-range'
+  | 'duplicate-value'
+  | 'missing-reference';
+
+export interface DatabaseSourceValidationSample {
+  line: number;
+  value?: string;
+}
+
+export interface DatabaseSourceValidationIssue {
+  severity: DatabaseSourceValidationSeverity;
+  code: DatabaseSourceValidationIssueCode;
+  file: string;
+  field?: string;
+  message: string;
+  count: number;
+  samples: DatabaseSourceValidationSample[];
+}
+
+export interface DatabaseSourceValidationReport {
+  valid: boolean;
+  errorCount: number;
+  warningCount: number;
+  issues: DatabaseSourceValidationIssue[];
+  omittedIssueGroups: number;
+}
+
+export type DatabaseSourceValidationResult =
+  | { status: 'completed'; report: DatabaseSourceValidationReport }
+  | { status: 'cancelled' }
+  | { status: 'failed'; message: string };
+
+export interface DatabaseSourceValidationProgress {
+  requestId: string;
+  message: string;
+}
+
 export type DatabaseImportErrorCode =
   | 'version-mismatch'
   | 'missing-files'
   | 'header-mismatch'
   | 'invalid-source'
+  | 'source-corrupted'
   | 'import-failed';
 
 export interface DatabaseImportError {
@@ -380,6 +434,7 @@ export interface DatabaseImportError {
   message: string;
   files: string[];
   detectedVersion?: number;
+  validation?: DatabaseSourceValidationReport;
 }
 
 export type DatabaseImportResult =
@@ -408,10 +463,17 @@ export interface QdbApi {
   getDatabaseInfo(): Promise<DatabaseInfo>;
   listDatabases(): Promise<DatabaseDescriptor[]>;
   selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined>;
+  validateDatabaseSource(
+    request: DatabaseSourceValidationRequest,
+  ): Promise<DatabaseSourceValidationResult>;
+  cancelDatabaseSourceValidation(requestId: string): Promise<boolean>;
   importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult>;
   cancelDatabaseImport(requestId: string): Promise<boolean>;
   activateDatabase(id: string): Promise<DatabaseInfo>;
   removeDatabase(id: string): Promise<DatabaseInfo>;
+  onDatabaseSourceValidationProgress(
+    listener: (progress: DatabaseSourceValidationProgress) => void,
+  ): () => void;
   onDatabaseImportProgress(listener: (progress: DatabaseImportProgress) => void): () => void;
 }
 

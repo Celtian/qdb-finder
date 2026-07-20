@@ -16,6 +16,9 @@ import type {
   DatabaseImportRequest,
   DatabaseImportResult,
   DatabaseImportError,
+  DatabaseSourceValidationReport,
+  DatabaseSourceValidationRequest,
+  DatabaseSourceValidationResult,
   FilterSuggestionRequest,
   LeagueEditionKey,
   LeagueSearchRequest,
@@ -36,6 +39,7 @@ let database: PlayerDatabase;
 let databaseLibrary: DatabaseLibrary;
 const sourceSelections = new Map<string, string>();
 const imports = new Map<string, { worker: Worker; cancel: () => void }>();
+const validations = new Map<string, { worker: Worker; cancel: () => void }>();
 
 const useWslWindowControls =
   process.platform === 'linux' &&
@@ -85,6 +89,92 @@ const validateImportRequest = (request: DatabaseImportRequest): string => {
   return name;
 };
 
+const validateSourceRequest = (request: DatabaseSourceValidationRequest): string => {
+  if (!SUPPORTED_FIFA_VERSIONS.includes(request.version))
+    throw new Error('Unsupported FIFA version. Choose FIFA 11–23.');
+  if (!/^[0-9a-f-]{36}$/i.test(request.requestId))
+    throw new Error('Invalid validation request identifier.');
+  const sourcePath = sourceSelections.get(request.selectionId);
+  if (!sourcePath) throw new Error('Select the source folder again before validating.');
+  if (validations.has(request.requestId)) throw new Error('This validation is already running.');
+  if (validations.size || imports.size)
+    throw new Error('Another database task is already running.');
+  return sourcePath;
+};
+
+const validateDatabaseSource = (
+  event: IpcMainInvokeEvent,
+  request: DatabaseSourceValidationRequest,
+): Promise<DatabaseSourceValidationResult> => {
+  const sourcePath = validateSourceRequest(request);
+  const worker = new Worker(join(__dirname, '..', 'database-source-validation-worker.js'), {
+    workerData: { sourcePath, version: request.version },
+  });
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let cancelled = false;
+    const finish = (): void => {
+      validations.delete(request.requestId);
+    };
+    const cancel = (): void => {
+      if (settled) return;
+      cancelled = true;
+      void worker.terminate();
+    };
+    validations.set(request.requestId, { worker, cancel });
+    worker.on(
+      'message',
+      (message: {
+        type?: unknown;
+        message?: unknown;
+        report?: DatabaseSourceValidationReport;
+        diagnostics?: unknown;
+      }) => {
+        if (settled) return;
+        if (message.type === 'progress' && typeof message.message === 'string') {
+          event.sender.send('qdb:databases:validation-progress', {
+            requestId: request.requestId,
+            message: message.message,
+          });
+          return;
+        }
+        if (message.type === 'completed' && message.report) {
+          settled = true;
+          finish();
+          resolve({ status: 'completed', report: message.report });
+          return;
+        }
+        if (message.type === 'failed') {
+          settled = true;
+          finish();
+          if (Array.isArray(message.diagnostics))
+            console.error('[qdb:validate] Source validation failed:', ...message.diagnostics);
+          resolve({
+            status: 'failed',
+            message:
+              typeof message.message === 'string'
+                ? message.message
+                : 'The source folder could not be validated.',
+          });
+        }
+      },
+    );
+    worker.on('error', (error) => {
+      if (settled) return;
+      settled = true;
+      finish();
+      reject(error);
+    });
+    worker.on('exit', (code) => {
+      if (settled) return;
+      settled = true;
+      finish();
+      if (cancelled) resolve({ status: 'cancelled' });
+      else reject(new Error(`Source validation worker exited with code ${code}.`));
+    });
+  });
+};
+
 const importDatabase = (
   event: IpcMainInvokeEvent,
   request: DatabaseImportRequest,
@@ -93,7 +183,8 @@ const importDatabase = (
   const sourcePath = sourceSelections.get(request.selectionId);
   if (!sourcePath) throw new Error('Select the source folder again before importing.');
   if (imports.has(request.requestId)) throw new Error('This import is already running.');
-  if (imports.size) throw new Error('Another database import is already running.');
+  if (imports.size || validations.size)
+    throw new Error('Another database task is already running.');
   const databaseId = randomUUID();
   const outputPath = databaseLibrary.temporaryPath(databaseId);
   databaseLibrary.discardTemporary(databaseId);
@@ -273,13 +364,37 @@ app.whenReady().then(async () => {
       detectedVersion: inspection.detectedVersion,
     };
   });
+  ipcMain.handle(
+    'qdb:databases:validate-source',
+    async (event, request: DatabaseSourceValidationRequest) => {
+      try {
+        return await validateDatabaseSource(event, request);
+      } catch (error) {
+        console.error('[qdb:validate] Validation request failed:', error);
+        const technicalMessage = error instanceof Error ? error.message : String(error);
+        const message =
+          /^(Select the source|This validation|Another database task|Unsupported FIFA)/.test(
+            technicalMessage,
+          )
+            ? technicalMessage
+            : 'The source folder could not be validated. Check the folder and try again.';
+        return { status: 'failed', message } satisfies DatabaseSourceValidationResult;
+      }
+    },
+  );
+  ipcMain.handle('qdb:databases:cancel-validation', (_event, requestId: string) => {
+    const running = validations.get(requestId);
+    if (!running) return false;
+    running.cancel();
+    return true;
+  });
   ipcMain.handle('qdb:databases:import', async (event, request: DatabaseImportRequest) => {
     try {
       return await importDatabase(event, request);
     } catch (error) {
       const technicalMessage = error instanceof Error ? error.message : String(error);
       const message =
-        /^(Database name|A database|Select the source|This import|Another database import|Unsupported FIFA)/.test(
+        /^(Database name|A database|Select the source|This import|Another database task|Unsupported FIFA)/.test(
           technicalMessage,
         )
           ? technicalMessage
@@ -333,6 +448,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 app.on('will-quit', () => {
+  for (const running of validations.values()) running.cancel();
   for (const running of imports.values()) running.cancel();
   database?.close();
 });

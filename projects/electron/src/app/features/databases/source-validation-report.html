@@ -1,0 +1,93 @@
+<section
+  class="validation-report"
+  aria-labelledby="source-validation-heading"
+  [class.invalid]="!report().valid"
+  [attr.role]="report().valid ? 'status' : 'alert'"
+>
+  <div class="summary">
+    <mat-icon>{{ report().valid ? 'verified' : 'error' }}</mat-icon>
+    <div>
+      <h3 id="source-validation-heading">
+        {{
+          report().valid
+            ? 'Source validation completed'
+            : 'Source data is corrupted and cannot be imported'
+        }}
+      </h3>
+      <p>
+        {{ report().errorCount }} blocking {{ report().errorCount === 1 ? 'error' : 'errors' }} and
+        {{ report().warningCount }}
+        {{ report().warningCount === 1 ? 'warning' : 'warnings' }} found.
+      </p>
+    </div>
+  </div>
+
+  @if (errors().length) {
+    <div class="issue-section">
+      <h4>Blocking errors</h4>
+      <ul>
+        @for (issue of errors(); track issue.key) {
+          <li>
+            <details open>
+              <summary>
+                <strong>{{ issue.file }}{{ issue.field ? ' · ' + issue.field : '' }}</strong>
+                — {{ issue.message }} ({{ issue.count }}
+                {{ issue.count === 1 ? 'occurrence' : 'occurrences' }})
+              </summary>
+              @if (issue.samples.length) {
+                <ul class="samples">
+                  @for (sample of issue.samples; track sample.line + ':' + (sample.value ?? '')) {
+                    <li>
+                      Line {{ sample.line }}
+                      @if (sample.value !== undefined) {
+                        — <code>{{ sample.value }}</code>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </details>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (warnings().length) {
+    <div class="issue-section warnings">
+      <h4>Warnings</h4>
+      <p>Modified databases may intentionally exceed the published FIFA table metadata.</p>
+      <ul>
+        @for (issue of warnings(); track issue.key) {
+          <li>
+            <details>
+              <summary>
+                <strong>{{ issue.file }}{{ issue.field ? ' · ' + issue.field : '' }}</strong>
+                — {{ issue.message }} ({{ issue.count }}
+                {{ issue.count === 1 ? 'occurrence' : 'occurrences' }})
+              </summary>
+              @if (issue.samples.length) {
+                <ul class="samples">
+                  @for (sample of issue.samples; track sample.line + ':' + (sample.value ?? '')) {
+                    <li>
+                      Line {{ sample.line }}
+                      @if (sample.value !== undefined) {
+                        — <code>{{ sample.value }}</code>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </details>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (report().omittedIssueGroups) {
+    <p class="omitted">
+      {{ report().omittedIssueGroups }} additional issue groups were omitted from this display.
+    </p>
+  }
+</section>

@@ -6,6 +6,8 @@ import type {
   DatabaseDescriptor,
   DatabaseImportProgress,
   DatabaseSourceSelection,
+  DatabaseSourceValidationProgress,
+  DatabaseSourceValidationReport,
 } from '../../core/qdb-contracts';
 import { Databases } from './databases';
 
@@ -28,9 +30,39 @@ const builtIn: DatabaseDescriptor = {
   status: 'available',
 };
 
+const validReport: DatabaseSourceValidationReport = {
+  valid: true,
+  errorCount: 0,
+  warningCount: 0,
+  issues: [],
+  omittedIssueGroups: 0,
+};
+
+const corruptedReport: DatabaseSourceValidationReport = {
+  valid: false,
+  errorCount: 2,
+  warningCount: 14_366,
+  issues: [
+    {
+      severity: 'error',
+      code: 'duplicate-value',
+      file: 'referee.txt',
+      field: 'refereeid',
+      message: 'Canonical identifier 56 occurs more than once.',
+      count: 2,
+      samples: [
+        { line: 57, value: '56' },
+        { line: 58, value: '56' },
+      ],
+    },
+  ],
+  omittedIssueGroups: 0,
+};
+
 describe('Databases', () => {
   let fixture: ComponentFixture<Databases>;
   let progressListener: (progress: DatabaseImportProgress) => void;
+  let validationProgressListener: (progress: DatabaseSourceValidationProgress) => void;
   const listDatabases = vi.fn(async () => [builtIn]);
   const selectDatabaseSource = vi.fn<() => Promise<DatabaseSourceSelection | undefined>>(
     async () => ({
@@ -45,9 +77,14 @@ describe('Databases', () => {
     status: 'completed' as const,
     database: { ...builtIn, id: 'custom-id', name: request.name, kind: 'custom' as const },
   }));
+  const validateDatabaseSource = vi.fn(async () => ({
+    status: 'completed' as const,
+    report: validReport,
+  }));
   const activateDatabase = vi.fn(async () => builtIn);
   const removeDatabase = vi.fn(async () => builtIn);
   const cancelDatabaseImport = vi.fn(async () => true);
+  const cancelDatabaseSourceValidation = vi.fn(async () => true);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -58,10 +95,16 @@ describe('Databases', () => {
           useValue: {
             listDatabases,
             selectDatabaseSource,
+            validateDatabaseSource,
+            cancelDatabaseSourceValidation,
             importDatabase,
             activateDatabase,
             removeDatabase,
             cancelDatabaseImport,
+            onDatabaseSourceValidationProgress: (listener: typeof validationProgressListener) => {
+              validationProgressListener = listener;
+              return vi.fn();
+            },
             onDatabaseImportProgress: (listener: typeof progressListener) => {
               progressListener = listener;
               return vi.fn();
@@ -72,6 +115,7 @@ describe('Databases', () => {
     }).compileComponents();
     listDatabases.mockClear();
     selectDatabaseSource.mockClear();
+    validateDatabaseSource.mockClear();
     importDatabase.mockClear();
     activateDatabase.mockClear();
     fixture = TestBed.createComponent(Databases);
@@ -89,12 +133,14 @@ describe('Databases', () => {
     expect(element.textContent).not.toContain('Database name');
     expect(element.textContent).not.toContain('FIFA version');
     expect(element.textContent).not.toContain('Import and activate');
+    expect(validationProgressListener).toBeTypeOf('function');
   });
 
-  it('fills the name and detected version from the folder before importing', async () => {
+  it('requires successful source validation before importing', async () => {
     const testable = fixture.componentInstance as unknown as {
       model: WritableSignal<{ name: string; version: number; folder: string }>;
       selectFolder(): Promise<void>;
+      validateSource(): Promise<void>;
       import(): void;
     };
     await testable.selectFolder();
@@ -104,11 +150,22 @@ describe('Databases', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Database name');
     expect(element.textContent).toContain('FIFA version');
-    expect(element.textContent).toContain('Import and activate');
+    expect(element.textContent).toContain('Validate source');
+    expect(element.textContent).not.toContain('Import and activate');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'Detected FIFA 16 from the folder headers',
     );
-    testable.model.update((value) => ({ ...value, name: ' Custom FIFA 23 ' }));
+    await testable.validateSource();
+    await fixture.whenStable();
+    expect(validateDatabaseSource).toHaveBeenCalledWith(
+      expect.objectContaining({ selectionId: 'selection-id', version: 16 }),
+    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Source validation completed',
+    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Import and activate');
+
+    testable.model.update((value) => ({ ...value, name: ' Custom FIFA 16 ' }));
     testable.import();
     progressListener({ requestId: '', message: 'Building canonical data…' });
     await fixture.whenStable();
@@ -117,7 +174,7 @@ describe('Databases', () => {
     expect(importDatabase).toHaveBeenCalledWith(
       expect.objectContaining({
         selectionId: 'selection-id',
-        name: 'Custom FIFA 23',
+        name: 'Custom FIFA 16',
         version: 16,
       }),
     );
@@ -151,35 +208,100 @@ describe('Databases', () => {
     );
   });
 
-  it('shows a friendly validation failure and retains the selected form values', async () => {
-    importDatabase.mockResolvedValueOnce({
-      status: 'failed',
-      error: {
-        code: 'version-mismatch',
-        message: 'This folder appears to be FIFA 16, but FIFA 23 is selected.',
-        files: ['competition.txt'],
-        detectedVersion: 16,
-      },
-    } as never);
+  it('shows blocking corruption details and does not enable import', async () => {
+    validateDatabaseSource.mockResolvedValueOnce({
+      status: 'completed',
+      report: corruptedReport,
+    });
     const testable = fixture.componentInstance as unknown as {
       model: WritableSignal<{ name: string; version: number; folder: string }>;
       selectFolder(): Promise<void>;
-      import(): void;
+      validateSource(): Promise<void>;
     };
     await testable.selectFolder();
-    testable.model.set({ name: 'Custom database', version: 23, folder: '/examples/fifa16' });
+    testable.model.set({ name: 'Custom database', version: 16, folder: '/examples/fifa16' });
 
-    testable.import();
+    await testable.validateSource();
     await fixture.whenStable();
 
     expect(testable.model()).toEqual({
       name: 'Custom database',
-      version: 23,
+      version: 16,
       folder: '/examples/fifa16',
     });
     const alert = (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]');
-    expect(alert?.textContent).toContain('appears to be FIFA 16');
-    expect(alert?.textContent).not.toContain('Error invoking remote method');
+    expect(alert?.textContent).toContain('Source data is corrupted');
+    expect(alert?.textContent).toContain('referee.txt · refereeid');
+    expect(alert?.textContent).toContain('Line 57');
+    expect(alert?.textContent).toContain('14366 warnings');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Import and activate');
+    expect(importDatabase).not.toHaveBeenCalled();
+  });
+
+  it('allows import with advisory warnings', async () => {
+    validateDatabaseSource.mockResolvedValueOnce({
+      status: 'completed',
+      report: {
+        ...validReport,
+        warningCount: 1,
+        issues: [
+          {
+            severity: 'warning',
+            code: 'out-of-range',
+            file: 'players.txt',
+            field: 'nameid',
+            message: 'Value is outside the published range 1–32767.',
+            count: 1,
+            samples: [{ line: 20, value: '32768' }],
+          },
+        ],
+      },
+    });
+    const testable = fixture.componentInstance as unknown as {
+      selectFolder(): Promise<void>;
+      validateSource(): Promise<void>;
+    };
+
+    await testable.selectFolder();
+    await testable.validateSource();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('1 warning found');
+    expect(element.textContent).toContain('Import and activate');
+    expect(element.querySelector('app-source-validation-report [role="status"]')).not.toBeNull();
+  });
+
+  it('invalidates a successful report when the FIFA version changes', async () => {
+    const testable = fixture.componentInstance as unknown as {
+      model: WritableSignal<{ name: string; version: number; folder: string }>;
+      selectFolder(): Promise<void>;
+      validateSource(): Promise<void>;
+    };
+    await testable.selectFolder();
+    await testable.validateSource();
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Import and activate');
+
+    testable.model.update((value) => ({ ...value, version: 17 }));
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).not.toContain('Source validation completed');
+    expect(element.textContent).not.toContain('Import and activate');
+    expect(element.textContent).toContain('Validate source');
+  });
+
+  it('forwards validation cancellation for the active request', async () => {
+    const testable = fixture.componentInstance as unknown as {
+      validationRequestId: string;
+      cancelValidation(): Promise<void>;
+    };
+    testable.validationRequestId = 'validation-request';
+
+    await testable.cancelValidation();
+
+    expect(cancelDatabaseSourceValidation).toHaveBeenCalledWith('validation-request');
   });
 
   it('activates an available custom database', async () => {

@@ -23,6 +23,8 @@ import { firstValueFrom } from 'rxjs';
 import { Qdb } from '../../core/qdb';
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 import { ConfirmDatabaseRemoval } from './confirm-database-removal';
+import { SourceValidationReport } from './source-validation-report';
+import type { DatabaseSourceValidationReport } from '../../core/qdb-contracts';
 
 @Component({
   selector: 'app-databases',
@@ -36,6 +38,7 @@ import { ConfirmDatabaseRemoval } from './confirm-database-removal';
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
+    SourceValidationReport,
   ],
   templateUrl: './databases.html',
   styleUrl: './databases.css',
@@ -46,6 +49,7 @@ export class Databases {
   private readonly destroyRef = inject(DestroyRef);
   private selectionId = '';
   private requestId = '';
+  private validationRequestId = '';
 
   protected readonly supportedVersions = Array.from({ length: 13 }, (_, index) => 23 - index);
   protected readonly model = signal({ name: '', version: 23, folder: '' });
@@ -61,9 +65,27 @@ export class Databases {
   protected readonly databases = signal<DatabaseDescriptor[]>([]);
   protected readonly loading = signal(true);
   protected readonly importing = signal(false);
+  protected readonly validating = signal(false);
   protected readonly progress = signal('');
+  protected readonly validationProgress = signal('');
   protected readonly sourceStatus = signal('');
   protected readonly sourceSelected = computed(() => this.model().folder.length > 0);
+  private readonly validationSnapshot = signal<
+    | {
+        selectionId: string;
+        version: number;
+        report: DatabaseSourceValidationReport;
+      }
+    | undefined
+  >(undefined);
+  protected readonly validationReport = computed(() => {
+    const snapshot = this.validationSnapshot();
+    return snapshot?.selectionId === this.selectionId && snapshot.version === this.model().version
+      ? snapshot.report
+      : undefined;
+  });
+  protected readonly sourceValidated = computed(() => this.validationReport()?.valid === true);
+  protected readonly busy = computed(() => this.validating() || this.importing());
   protected readonly error = signal('');
   protected readonly success = signal('');
 
@@ -71,7 +93,14 @@ export class Databases {
     const unsubscribe = this.qdb.onDatabaseImportProgress((progress) => {
       if (progress.requestId === this.requestId) this.progress.set(progress.message);
     });
-    this.destroyRef.onDestroy(unsubscribe);
+    const unsubscribeValidation = this.qdb.onDatabaseSourceValidationProgress((progress) => {
+      if (progress.requestId === this.validationRequestId)
+        this.validationProgress.set(progress.message);
+    });
+    this.destroyRef.onDestroy(() => {
+      unsubscribe();
+      unsubscribeValidation();
+    });
     void this.load();
   }
 
@@ -79,6 +108,7 @@ export class Databases {
     const selection = await this.qdb.selectDatabaseSource();
     if (!selection) return;
     this.selectionId = selection.id;
+    this.validationSnapshot.set(undefined);
     this.error.set('');
     this.sourceStatus.set(
       selection.detectedVersion === undefined
@@ -93,7 +123,46 @@ export class Databases {
     }));
   }
 
+  protected async validateSource(): Promise<void> {
+    if (!this.selectionId || this.validating() || this.importing()) return;
+    const selectionId = this.selectionId;
+    const version = this.model().version;
+    this.error.set('');
+    this.success.set('');
+    this.validationSnapshot.set(undefined);
+    this.validating.set(true);
+    this.validationProgress.set('Starting source validation…');
+    this.validationRequestId = crypto.randomUUID();
+    try {
+      const result = await this.qdb.validateDatabaseSource({
+        requestId: this.validationRequestId,
+        selectionId,
+        version,
+      });
+      if (result.status === 'completed') {
+        if (selectionId === this.selectionId && version === this.model().version)
+          this.validationSnapshot.set({ selectionId, version, report: result.report });
+      } else if (result.status === 'cancelled') this.success.set('Source validation cancelled.');
+      else this.error.set(result.message);
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'Source validation failed.');
+    } finally {
+      this.validating.set(false);
+      this.validationProgress.set('');
+      this.validationRequestId = '';
+    }
+  }
+
+  protected async cancelValidation(): Promise<void> {
+    if (this.validationRequestId)
+      await this.qdb.cancelDatabaseSourceValidation(this.validationRequestId);
+  }
+
   protected import(): void {
+    if (!this.sourceValidated()) {
+      this.error.set('Validate the selected source before importing.');
+      return;
+    }
     void submit(this.importForm, async () => {
       this.error.set('');
       this.success.set('');
@@ -110,13 +179,22 @@ export class Databases {
         if (result.status === 'completed') {
           this.success.set(`“${result.database.name}” was imported and activated.`);
           this.selectionId = '';
+          this.validationSnapshot.set(undefined);
           this.sourceStatus.set('');
           this.model.set({ name: '', version: this.model().version, folder: '' });
           this.importForm().reset();
           await this.load();
         } else if (result.status === 'cancelled')
           this.success.set('Import cancelled. No database was added.');
-        else this.error.set(result.error.message);
+        else {
+          if (result.error.validation) {
+            this.validationSnapshot.set({
+              selectionId: this.selectionId,
+              version: this.model().version,
+              report: result.error.validation,
+            });
+          } else this.error.set(result.error.message);
+        }
       } catch (error) {
         this.error.set(error instanceof Error ? error.message : 'Database import failed.');
       } finally {

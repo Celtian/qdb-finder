@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Datatype, type Field } from 'fifatables';
+import { Datatype, fifaTableConfig, sortByOrder, Table, type Field } from 'fifatables';
 import {
   buildDatabase,
   collectNationalityCodes,
@@ -31,6 +31,8 @@ import {
   fifaForVersion,
   ImportSourceValidationError,
   inspectSourceHeaders,
+  validateSourceData,
+  validateTableData,
 } from './importer';
 
 describe('FIFA text importer', () => {
@@ -102,6 +104,136 @@ describe('FIFA text importer', () => {
     );
     expect(() => readTable(path, fields)).toThrow(/Column mismatch/);
   });
+
+  it('reports invalid numbers, unsafe integers, advisory ranges and numeric duplicates', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-row-validation-'));
+    directories.push(directory);
+    const path = join(directory, 'players.txt');
+    const fields: Field[] = [
+      {
+        name: 'playerid',
+        order: 0,
+        type: Datatype.Int,
+        default: 1,
+        range: { min: 1, max: 100 },
+        unique: true,
+      },
+      { name: 'rating', order: 1, type: Datatype.Float, default: 0, range: { min: 0, max: 99 } },
+    ];
+    writeFileSync(
+      path,
+      Buffer.concat([
+        Buffer.from([0xff, 0xfe]),
+        Buffer.from(
+          'playerid\trating\r\n1\t81,5\r\n01\t120\r\nnope\t80\r\n9007199254740992\t80',
+          'utf16le',
+        ),
+      ]),
+    );
+
+    const report = validateTableData(path, Table.Players, fields);
+
+    expect(report.valid).toBe(false);
+    expect(report.errorCount).toBe(4);
+    expect(report.warningCount).toBe(1);
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'duplicate-value',
+          field: 'playerid',
+          count: 2,
+          samples: [
+            { line: 2, value: '1' },
+            { line: 3, value: '01' },
+          ],
+        }),
+        expect.objectContaining({ code: 'invalid-number', field: 'playerid' }),
+        expect.objectContaining({ code: 'unsafe-integer', field: 'playerid' }),
+        expect.objectContaining({ code: 'out-of-range', field: 'rating' }),
+      ]),
+    );
+  });
+
+  it('reports malformed quoted rows with their real file line', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-malformed-row-'));
+    directories.push(directory);
+    const path = join(directory, 'players.txt');
+    const fields: Field[] = [
+      { name: 'playerid', order: 0, type: Datatype.Int, default: 1, unique: true },
+      { name: 'name', order: 1, type: Datatype.String, default: '' },
+    ];
+    writeFileSync(
+      path,
+      Buffer.concat([
+        Buffer.from([0xff, 0xfe]),
+        Buffer.from('playerid\tname\r\n1\t"Unclosed', 'utf16le'),
+      ]),
+    );
+
+    const report = validateTableData(path, Table.Players, fields);
+
+    expect(report).toMatchObject({ valid: false, errorCount: 1 });
+    expect(report.issues[0]).toMatchObject({
+      code: 'malformed-row',
+      samples: [{ line: 2 }],
+    });
+  });
+
+  it('caps displayed issue groups while retaining totals', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-validation-cap-'));
+    directories.push(directory);
+    const path = join(directory, 'players.txt');
+    const fields: Field[] = [
+      { name: 'playerid', order: 0, type: Datatype.Int, default: 1, unique: true },
+    ];
+    const values = Array.from({ length: 101 }, (_, index) => `${index + 1}\r\n${index + 1}`).join(
+      '\r\n',
+    );
+    writeFileSync(
+      path,
+      Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(`playerid\r\n${values}`, 'utf16le')]),
+    );
+
+    const report = validateTableData(path, Table.Players, fields);
+
+    expect(report.errorCount).toBe(202);
+    expect(report.issues).toHaveLength(100);
+    expect(report.omittedIssueGroups).toBe(1);
+  });
+
+  it('identifies the duplicate FIFA 16 v9 referee without exposing SQLite details', () => {
+    const fifa = fifaForVersion(16);
+    const fields = [...fifaTableConfig(fifa, Table.Referee)].sort(sortByOrder);
+    const report = validateTableData(
+      join(process.cwd(), 'fip-16 v9', 'DBFFDSExported', 'referee.txt'),
+      Table.Referee,
+      fields,
+    );
+
+    expect(report).toMatchObject({ valid: false, errorCount: 2 });
+    expect(report.issues).toContainEqual(
+      expect.objectContaining({
+        code: 'duplicate-value',
+        file: 'referee.txt',
+        field: 'refereeid',
+        count: 2,
+        samples: [
+          { line: 57, value: '56' },
+          { line: 58, value: '56' },
+        ],
+      }),
+    );
+    expect(JSON.stringify(report)).not.toContain('UNIQUE constraint failed');
+  });
+
+  it('accepts all bundled editions while retaining advisory metadata warnings', () => {
+    const reports = FIFAS.map((fifa) =>
+      validateSourceData({ fifa, path: join(process.cwd(), 'examples', fifa) }),
+    );
+
+    expect(reports.every((report) => report.valid && report.errorCount === 0)).toBe(true);
+    expect(reports.some((report) => report.warningCount > 0)).toBe(true);
+  }, 30_000);
 
   it('extracts lowercase Nations-table codes for stable nation IDs', () => {
     expect(

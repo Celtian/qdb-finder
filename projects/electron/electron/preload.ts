@@ -17,10 +17,19 @@ const api: QdbApi = {
   getDatabaseInfo: () => ipcRenderer.invoke('qdb:info'),
   listDatabases: () => ipcRenderer.invoke('qdb:databases:list'),
   selectDatabaseSource: () => ipcRenderer.invoke('qdb:databases:select-source'),
+  validateDatabaseSource: (request) => ipcRenderer.invoke('qdb:databases:validate-source', request),
+  cancelDatabaseSourceValidation: (requestId) =>
+    ipcRenderer.invoke('qdb:databases:cancel-validation', requestId),
   importDatabase: (request) => ipcRenderer.invoke('qdb:databases:import', request),
   cancelDatabaseImport: (requestId) => ipcRenderer.invoke('qdb:databases:cancel-import', requestId),
   activateDatabase: (id) => ipcRenderer.invoke('qdb:databases:activate', id),
   removeDatabase: (id) => ipcRenderer.invoke('qdb:databases:remove', id),
+  onDatabaseSourceValidationProgress: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof listener>[0]) =>
+      listener(progress);
+    ipcRenderer.on('qdb:databases:validation-progress', handler);
+    return () => ipcRenderer.removeListener('qdb:databases:validation-progress', handler);
+  },
   onDatabaseImportProgress: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof listener>[0]) =>
       listener(progress);

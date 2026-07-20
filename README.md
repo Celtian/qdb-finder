@@ -52,7 +52,7 @@ Database generation processes 306 available supported-name files, preserves veri
 
 ### Importing a custom database
 
-Open **Databases** in the desktop navigation, enter a unique database name, and choose the folder that directly contains files such as `players.txt`, `teams.txt`, and `nations.txt`. QDB Finder compares the table headers with the FIFA 11–23 definitions and automatically selects a uniquely detected edition; missing or incompatible headers are reported before database generation starts.
+Open **Databases** in the desktop navigation, enter a unique database name, and choose the folder that directly contains files such as `players.txt`, `teams.txt`, and `nations.txt`. QDB Finder compares the table headers with the FIFA 11–23 definitions and automatically selects a uniquely detected edition. Use **Validate source** before importing to scan table structure, numeric values, canonical identifiers, published ranges, and relationship references without creating database output. Corrupted data blocks import with file, field, and line details; advisory metadata warnings remain importable for modified databases.
 
 Each successful import is stored as a separate SQLite file in Electron's application-data directory and becomes active immediately. The bundled database remains immutable, imports can be cancelled safely, and removing a custom database never changes its original text files. Databases created with an incompatible future schema remain visible but must be re-imported.
 

@@ -1,0 +1,78 @@
+:host {
+  display: block;
+  grid-column: 1 / -1;
+}
+
+.validation-report {
+  padding: 1rem;
+  border: 1px solid #a8c7ae;
+  border-radius: 8px;
+  background: #e8f5ea;
+  color: #17451f;
+}
+
+.validation-report.invalid {
+  border-color: #ffb4ab;
+  background: #ffdad6;
+  color: #690005;
+}
+
+.summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.summary mat-icon {
+  flex: 0 0 auto;
+}
+
+h3,
+h4,
+p,
+ul {
+  margin-top: 0;
+}
+
+h3 {
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+}
+
+.summary p,
+.warnings > p,
+.omitted {
+  margin-bottom: 0;
+}
+
+.issue-section {
+  margin-top: 1rem;
+}
+
+.issue-section > ul {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+}
+
+.issue-section > ul > li + li {
+  margin-top: 0.5rem;
+}
+
+summary {
+  cursor: pointer;
+  line-height: 1.45;
+}
+
+.samples {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+.omitted {
+  margin-top: 1rem;
+  font-weight: 600;
+}

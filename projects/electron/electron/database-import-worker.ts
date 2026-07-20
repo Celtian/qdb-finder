@@ -26,7 +26,13 @@ try {
   if (error instanceof ImportSourceValidationError) {
     parentPort?.postMessage({
       type: 'failed',
-      error: error.issue,
+      error: error.report
+        ? {
+            ...error.issue,
+            code: 'source-corrupted',
+            validation: error.report,
+          }
+        : error.issue,
       diagnostics: error.diagnostics,
     });
   } else {

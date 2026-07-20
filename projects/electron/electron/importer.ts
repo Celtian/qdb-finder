@@ -11,15 +11,14 @@ import { dirname, join } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { Attribute, CalculateUtils, Fifa as RatingFifa, Position } from 'fifarating';
 import { registerFifaDatePrototype } from 'fifadate';
-import {
-  Datatype,
-  Fifa,
-  Table,
-  fifaTableConfig,
-  formatRawValue,
-  sortByOrder,
-  type Field,
-} from 'fifatables';
+import { Datatype, Fifa, Table, fifaTableConfig, sortByOrder, type Field } from 'fifatables';
+import type {
+  DatabaseSourceValidationIssue,
+  DatabaseSourceValidationIssueCode,
+  DatabaseSourceValidationReport,
+  DatabaseSourceValidationSample,
+  DatabaseSourceValidationSeverity,
+} from '../src/app/core/qdb-contracts';
 
 declare global {
   interface DateConstructor {
@@ -85,10 +84,32 @@ export class ImportSourceValidationError extends Error {
   constructor(
     readonly issue: ImportSourceIssue,
     readonly diagnostics: string[],
+    readonly report?: DatabaseSourceValidationReport,
   ) {
     super(issue.message);
     this.name = 'ImportSourceValidationError';
   }
+}
+
+interface ValidationOccurrence {
+  severity: DatabaseSourceValidationSeverity;
+  code: DatabaseSourceValidationIssueCode;
+  file: string;
+  field?: string;
+  message: string;
+  group: string;
+  samples: DatabaseSourceValidationSample[];
+  count?: number;
+}
+
+interface MutableValidationIssue extends DatabaseSourceValidationIssue {
+  key: string;
+}
+
+interface TableReadOptions {
+  table: Table;
+  accumulator: SourceValidationAccumulator;
+  throwOnErrors?: boolean;
 }
 
 export interface ImportOptions {
@@ -137,7 +158,94 @@ const runPhase = <T>(label: string, progress: ImportOptions['progress'], action:
   }
 };
 
+const VALIDATION_SAMPLE_LIMIT = 5;
+const VALIDATION_GROUP_LIMIT_PER_SEVERITY = 100;
+const SAMPLE_VALUE_LIMIT = 120;
+const canonicalIdentityFields = new Map<Table, string>([
+  [Table.Players, 'playerid'],
+  [Table.PlayerNames, 'nameid'],
+  [Table.Nations, 'nationid'],
+  [Table.Teams, 'teamid'],
+  [Table.Leagues, 'leagueid'],
+  [Table.Referee, 'refereeid'],
+  [Table.Stadiums, 'stadiumid'],
+]);
+
+const sampleValue = (value: string): string =>
+  value.length <= SAMPLE_VALUE_LIMIT ? value : `${value.slice(0, SAMPLE_VALUE_LIMIT - 1)}…`;
+
+class SourceValidationAccumulator {
+  private readonly issues = new Map<string, MutableValidationIssue>();
+  private errors = 0;
+  private warnings = 0;
+
+  add(occurrence: ValidationOccurrence): void {
+    const key = [
+      occurrence.severity,
+      occurrence.code,
+      occurrence.file,
+      occurrence.field ?? '',
+      occurrence.group,
+    ].join('\u0000');
+    const increment = occurrence.count ?? 1;
+    if (occurrence.severity === 'error') this.errors += increment;
+    else this.warnings += increment;
+    const current = this.issues.get(key);
+    if (current) {
+      current.count += increment;
+      for (const sample of occurrence.samples)
+        if (
+          current.samples.length < VALIDATION_SAMPLE_LIMIT &&
+          !current.samples.some(
+            (candidate) => candidate.line === sample.line && candidate.value === sample.value,
+          )
+        )
+          current.samples.push(sample);
+      return;
+    }
+    this.issues.set(key, {
+      key,
+      severity: occurrence.severity,
+      code: occurrence.code,
+      file: occurrence.file,
+      field: occurrence.field,
+      message: occurrence.message,
+      count: increment,
+      samples: occurrence.samples.slice(0, VALIDATION_SAMPLE_LIMIT),
+    });
+  }
+
+  get errorCount(): number {
+    return this.errors;
+  }
+
+  report(): DatabaseSourceValidationReport {
+    const all = [...this.issues.values()];
+    const visible = (severity: DatabaseSourceValidationSeverity): MutableValidationIssue[] =>
+      all
+        .filter((issue) => issue.severity === severity)
+        .slice(0, VALIDATION_GROUP_LIMIT_PER_SEVERITY);
+    const selected = [...visible('error'), ...visible('warning')];
+    return {
+      valid: this.errors === 0,
+      errorCount: this.errors,
+      warningCount: this.warnings,
+      issues: selected.map((issue) => ({
+        severity: issue.severity,
+        code: issue.code,
+        file: issue.file,
+        field: issue.field,
+        message: issue.message,
+        count: issue.count,
+        samples: issue.samples,
+      })),
+      omittedIssueGroups: all.length - selected.length,
+    };
+  }
+}
+
 export const decodeFifaText = (buffer: Buffer): string => {
+  if (buffer.length % 2 !== 0) throw new Error('UTF-16LE file has an incomplete code unit.');
   if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe)
     return buffer.subarray(2).toString('utf16le');
   if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff)
@@ -161,30 +269,218 @@ export const parseTsvLine = (line: string): string[] => {
       value = '';
     } else value += character;
   }
+  if (quoted) throw new Error('Unclosed quoted field.');
   result.push(value);
   return result;
 };
 
-export const readTable = (path: string, fields: Field[]): RawRow[] => {
+const numericValue = (
+  field: Field,
+  raw: string,
+): { value?: number; code?: 'invalid-number' | 'unsafe-integer' } => {
+  const normalized = field.type === Datatype.Float ? raw.replace(',', '.') : raw;
+  const syntax =
+    field.type === Datatype.Int
+      ? /^[+-]?\d+$/.test(normalized)
+      : /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(normalized);
+  if (!syntax) return { code: 'invalid-number' };
+  const value = Number(normalized);
+  if (!Number.isFinite(value)) return { code: 'invalid-number' };
+  if (field.type === Datatype.Int && !Number.isSafeInteger(value))
+    return { code: 'unsafe-integer' };
+  return { value };
+};
+
+const validationError = (
+  file: string,
+  accumulator: SourceValidationAccumulator,
+): ImportSourceValidationError => {
+  const report = accumulator.report();
+  return new ImportSourceValidationError(
+    {
+      code: 'invalid-source',
+      message: 'Source data is corrupted and cannot be imported.',
+      files: [file],
+    },
+    report.issues.map(
+      (issue) =>
+        `${issue.file}${issue.field ? `:${issue.field}` : ''}: ${issue.message} (${issue.count})`,
+    ),
+    report,
+  );
+};
+
+const addMalformedFileIssue = (
+  accumulator: SourceValidationAccumulator,
+  file: string,
+  message: string,
+  line = 1,
+): void =>
+  accumulator.add({
+    severity: 'error',
+    code: 'malformed-row',
+    file,
+    message,
+    group: message,
+    samples: [{ line }],
+  });
+
+export const readTable = (path: string, fields: Field[], options?: TableReadOptions): RawRow[] => {
   const lines = decodeFifaText(readFileSync(path)).split(/\r?\n/);
   while (lines.at(-1) === '') lines.pop();
   if (!lines.length) return [];
   const ordered = [...fields].sort(sortByOrder);
-  const header = parseTsvLine(lines[0]);
+  let header: string[];
+  try {
+    header = parseTsvLine(lines[0]);
+  } catch (error) {
+    if (!options) throw error;
+    addMalformedFileIssue(
+      options.accumulator,
+      `${options.table}.txt`,
+      error instanceof Error ? error.message : 'The table header is malformed.',
+    );
+    if (options.throwOnErrors) throw validationError(`${options.table}.txt`, options.accumulator);
+    return [];
+  }
   const expected = ordered.map((field) => field.name);
   if (header.length !== expected.length || header.some((name, index) => name !== expected[index])) {
+    if (options) {
+      addMalformedFileIssue(
+        options.accumulator,
+        `${options.table}.txt`,
+        'The table header is invalid.',
+      );
+      if (options.throwOnErrors) throw validationError(`${options.table}.txt`, options.accumulator);
+      return [];
+    }
     throw new Error(
       `Header mismatch in ${path}.\nExpected: ${expected.join('\t')}\nActual: ${header.join('\t')}`,
     );
   }
-  return lines.slice(1).map((line, rowIndex) => {
-    const values = parseTsvLine(line);
-    if (values.length !== ordered.length)
-      throw new Error(`Column mismatch in ${path} at data row ${rowIndex + 1}.`);
-    return Object.fromEntries(
-      ordered.map((field, index) => [field.name, formatRawValue(field, values[index])]),
+  const seen = new Map<string, Map<string, { line: number; value: string; reported: boolean }>>(
+    ordered.filter((field) => field.unique).map((field) => [field.name, new Map()]),
+  );
+  const rows: RawRow[] = [];
+  for (const [rowIndex, line] of lines.slice(1).entries()) {
+    const lineNumber = rowIndex + 2;
+    let values: string[];
+    try {
+      values = parseTsvLine(line);
+    } catch (error) {
+      if (!options) throw error;
+      addMalformedFileIssue(
+        options.accumulator,
+        `${options.table}.txt`,
+        error instanceof Error ? error.message : 'The row is malformed.',
+        lineNumber,
+      );
+      continue;
+    }
+    if (values.length !== ordered.length) {
+      if (!options) throw new Error(`Column mismatch in ${path} at data row ${rowIndex + 1}.`);
+      addMalformedFileIssue(
+        options.accumulator,
+        `${options.table}.txt`,
+        `Expected ${ordered.length} columns but found ${values.length}.`,
+        lineNumber,
+      );
+      continue;
+    }
+    let valid = true;
+    const entries: [string, string | number][] = [];
+    for (const [index, field] of ordered.entries()) {
+      const raw = values[index];
+      let formatted: string | number = raw;
+      if (field.type !== Datatype.String) {
+        const numeric = numericValue(field, raw);
+        if (numeric.code) {
+          valid = false;
+          if (!options)
+            throw new Error(
+              `Invalid ${field.type === Datatype.Int ? 'integer' : 'number'} in ${path} at data row ${rowIndex + 1}, field ${field.name}.`,
+            );
+          options.accumulator.add({
+            severity: 'error',
+            code: numeric.code,
+            file: `${options.table}.txt`,
+            field: field.name,
+            message:
+              numeric.code === 'unsafe-integer'
+                ? 'Integer cannot be represented safely.'
+                : `Expected a valid ${field.type === Datatype.Int ? 'integer' : 'number'}.`,
+            group: numeric.code,
+            samples: [{ line: lineNumber, value: sampleValue(raw) }],
+          });
+          continue;
+        }
+        formatted = numeric.value as number;
+        if (options && field.range && (formatted < field.range.min || formatted > field.range.max))
+          options.accumulator.add({
+            severity: 'warning',
+            code: 'out-of-range',
+            file: `${options.table}.txt`,
+            field: field.name,
+            message: `Value is outside the published range ${field.range.min}–${field.range.max}.`,
+            group: `${field.range.min}:${field.range.max}`,
+            samples: [{ line: lineNumber, value: sampleValue(raw) }],
+          });
+      }
+      entries.push([field.name, formatted]);
+      if (options && field.unique) {
+        const key = String(formatted);
+        const valuesSeen = seen.get(field.name) as Map<
+          string,
+          { line: number; value: string; reported: boolean }
+        >;
+        const previous = valuesSeen.get(key);
+        if (!previous) valuesSeen.set(key, { line: lineNumber, value: raw, reported: false });
+        else {
+          const critical = canonicalIdentityFields.get(options.table) === field.name;
+          options.accumulator.add({
+            severity: critical ? 'error' : 'warning',
+            code: 'duplicate-value',
+            file: `${options.table}.txt`,
+            field: field.name,
+            message: critical
+              ? `Canonical identifier ${sampleValue(key)} occurs more than once.`
+              : `Value ${sampleValue(key)} occurs more than once in a field declared unique.`,
+            group: key,
+            count: previous.reported ? 1 : 2,
+            samples: [
+              ...(previous.reported
+                ? []
+                : [{ line: previous.line, value: sampleValue(previous.value) }]),
+              { line: lineNumber, value: sampleValue(raw) },
+            ],
+          });
+          previous.reported = true;
+        }
+      }
+    }
+    if (valid) rows.push(Object.fromEntries(entries));
+  }
+  if (options?.throwOnErrors && options.accumulator.errorCount)
+    throw validationError(`${options.table}.txt`, options.accumulator);
+  return rows;
+};
+
+export const validateTableData = (
+  path: string,
+  table: Table,
+  fields: Field[],
+): DatabaseSourceValidationReport => {
+  const accumulator = new SourceValidationAccumulator();
+  try {
+    readTable(path, fields, { table, accumulator });
+  } catch (error) {
+    addMalformedFileIssue(
+      accumulator,
+      `${table}.txt`,
+      error instanceof Error ? error.message : 'The table could not be read.',
     );
-  });
+  }
+  return accumulator.report();
 };
 
 const quote = (value: string): string => `"${value.replaceAll('"', '""')}"`;
@@ -713,6 +1009,146 @@ const validateSources = (sources: readonly ImportSource[]): void => {
   }
 };
 
+const addHeaderInspectionIssue = (
+  accumulator: SourceValidationAccumulator,
+  issue: ImportSourceIssue,
+): void => {
+  const files = issue.files.length ? issue.files : ['Source folder'];
+  for (const file of files)
+    accumulator.add({
+      severity: 'error',
+      code: issue.code,
+      file,
+      message: issue.message,
+      group: issue.code,
+      samples: [],
+    });
+};
+
+const addRelationshipWarnings = (
+  rowsByTable: ReadonlyMap<Table, RawRow[]>,
+  accumulator: SourceValidationAccumulator,
+): void => {
+  const referenceIds = new Map<string, Set<string>>();
+  const target = (table: Table, field: string): Set<string> => {
+    const key = `${table}:${field}`;
+    const cached = referenceIds.get(key);
+    if (cached) return cached;
+    const values = new Set((rowsByTable.get(table) ?? []).map((row) => String(row[field])));
+    referenceIds.set(key, values);
+    return values;
+  };
+  const checks: {
+    table: Table;
+    field: string;
+    targetTable: Table;
+    targetField: string;
+  }[] = [
+    {
+      table: Table.LeagueTeamLinks,
+      field: 'leagueid',
+      targetTable: Table.Leagues,
+      targetField: 'leagueid',
+    },
+    {
+      table: Table.LeagueTeamLinks,
+      field: 'teamid',
+      targetTable: Table.Teams,
+      targetField: 'teamid',
+    },
+    {
+      table: Table.TeamPlayerLinks,
+      field: 'teamid',
+      targetTable: Table.Teams,
+      targetField: 'teamid',
+    },
+    {
+      table: Table.TeamPlayerLinks,
+      field: 'playerid',
+      targetTable: Table.Players,
+      targetField: 'playerid',
+    },
+    {
+      table: Table.TeamStadiumLinks,
+      field: 'teamid',
+      targetTable: Table.Teams,
+      targetField: 'teamid',
+    },
+    {
+      table: Table.TeamStadiumLinks,
+      field: 'stadiumid',
+      targetTable: Table.Stadiums,
+      targetField: 'stadiumid',
+    },
+    {
+      table: Table.LeagueRefereeLinks,
+      field: 'leagueid',
+      targetTable: Table.Leagues,
+      targetField: 'leagueid',
+    },
+    {
+      table: Table.LeagueRefereeLinks,
+      field: 'refereeid',
+      targetTable: Table.Referee,
+      targetField: 'refereeid',
+    },
+  ];
+  for (const check of checks) {
+    const rows = rowsByTable.get(check.table);
+    const targets = rowsByTable.get(check.targetTable);
+    if (!rows || !targets) continue;
+    const known = target(check.targetTable, check.targetField);
+    for (const [rowIndex, row] of rows.entries()) {
+      const value = String(row[check.field]);
+      if (known.has(value)) continue;
+      accumulator.add({
+        severity: 'warning',
+        code: 'missing-reference',
+        file: `${check.table}.txt`,
+        field: check.field,
+        message: `Referenced ${check.targetTable}.${check.targetField} value does not exist.`,
+        group: `${check.targetTable}:${check.targetField}`,
+        samples: [{ line: rowIndex + 2, value: sampleValue(value) }],
+      });
+    }
+  }
+};
+
+export const validateSourceData = (
+  source: ImportSource,
+  progress?: (message: string) => void,
+): DatabaseSourceValidationReport => {
+  const accumulator = new SourceValidationAccumulator();
+  const version = Number(source.fifa.slice(4));
+  const inspection = inspectSourceHeaders(source.path, version);
+  if (inspection.issue) {
+    addHeaderInspectionIssue(accumulator, inspection.issue);
+    return accumulator.report();
+  }
+  const configuredTables = TABLES.filter((table) => {
+    const path = join(source.path, `${table}.txt`);
+    return fifaTableConfig(source.fifa, table).length > 0 && isFile(path);
+  });
+  const rowsByTable = new Map<Table, RawRow[]>();
+  for (const [index, table] of configuredTables.entries()) {
+    const file = `${table}.txt`;
+    progress?.(`Validating ${file} (${index + 1}/${configuredTables.length})…`);
+    const path = join(source.path, file);
+    const fields = [...fifaTableConfig(source.fifa, table)].sort(sortByOrder);
+    try {
+      rowsByTable.set(table, readTable(path, fields, { table, accumulator }));
+    } catch (error) {
+      addMalformedFileIssue(
+        accumulator,
+        file,
+        error instanceof Error ? error.message : 'The table could not be read.',
+      );
+    }
+  }
+  addRelationshipWarnings(rowsByTable, accumulator);
+  return accumulator.report();
+};
+
 const importRawTables = (
   db: DatabaseSync,
   sources: readonly ImportSource[],
@@ -749,7 +1185,19 @@ const importRawTables = (
         missing.run(version, table, 'Source file is missing');
         continue;
       }
-      const data = readTable(path, fields);
+      const accumulator = new SourceValidationAccumulator();
+      let data: RawRow[];
+      try {
+        data = readTable(path, fields, { table, accumulator, throwOnErrors: true });
+      } catch (error) {
+        if (error instanceof ImportSourceValidationError) throw error;
+        addMalformedFileIssue(
+          accumulator,
+          `${table}.txt`,
+          error instanceof Error ? error.message : 'The table could not be read.',
+        );
+        throw validationError(`${table}.txt`, accumulator);
+      }
       const columns = fields.map(
         (field) =>
           `${quote(field.name)} ${field.type === Datatype.String ? 'TEXT' : field.type === Datatype.Float ? 'REAL' : 'INTEGER'}`,

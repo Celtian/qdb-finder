@@ -7,6 +7,9 @@ import type {
   DatabaseImportResult,
   DatabaseInfo,
   DatabaseSourceSelection,
+  DatabaseSourceValidationProgress,
+  DatabaseSourceValidationRequest,
+  DatabaseSourceValidationResult,
   EntityFacetOption,
   EntityFacetRequest,
   FilterSuggestion,
@@ -94,6 +97,14 @@ export class Qdb {
   selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined> {
     return this.api.selectDatabaseSource();
   }
+  validateDatabaseSource(
+    request: DatabaseSourceValidationRequest,
+  ): Promise<DatabaseSourceValidationResult> {
+    return this.api.validateDatabaseSource(request);
+  }
+  cancelDatabaseSourceValidation(requestId: string): Promise<boolean> {
+    return this.api.cancelDatabaseSourceValidation(requestId);
+  }
   async importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult> {
     const result = await this.api.importDatabase(request);
     if (result.status === 'completed') this.databaseChanged(result.database);
@@ -111,6 +122,11 @@ export class Qdb {
     const info = await this.api.removeDatabase(id);
     if (this.context.info()?.id !== info.id) this.databaseChanged(info);
     return info;
+  }
+  onDatabaseSourceValidationProgress(
+    listener: (progress: DatabaseSourceValidationProgress) => void,
+  ): () => void {
+    return this.api.onDatabaseSourceValidationProgress(listener);
   }
   onDatabaseImportProgress(listener: (progress: DatabaseImportProgress) => void): () => void {
     return this.api.onDatabaseImportProgress(listener);

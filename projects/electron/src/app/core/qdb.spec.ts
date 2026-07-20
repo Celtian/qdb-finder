@@ -21,10 +21,13 @@ describe('Qdb', () => {
     getDatabaseInfo: vi.fn(),
     listDatabases: vi.fn(),
     selectDatabaseSource: vi.fn(),
+    validateDatabaseSource: vi.fn(),
+    cancelDatabaseSourceValidation: vi.fn(),
     importDatabase: vi.fn(),
     cancelDatabaseImport: vi.fn(),
     activateDatabase: vi.fn(),
     removeDatabase: vi.fn(),
+    onDatabaseSourceValidationProgress: vi.fn(),
     onDatabaseImportProgress: vi.fn(),
   };
 

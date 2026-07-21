@@ -6,52 +6,41 @@
 
 .shell {
   height: 100%;
+  overflow: auto;
   background: #f7f8fc;
-}
-.filters {
-  width: 310px;
-  background: #fff;
-  border-right: 1px solid #e2e5ef;
 }
 .filter-content {
   width: 100%;
   min-width: 0;
-  padding: 1.25rem;
+  padding: 0;
   overflow-x: hidden;
 }
-.filter-heading,
 .topbar {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-.filter-heading {
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-}
-.filter-heading p,
-.filter-heading h2,
 .topbar p,
 .topbar h1 {
   margin: 0;
 }
-.filters mat-form-field {
+.filter-content mat-form-field {
   display: block;
   width: 100%;
 }
-.filters mat-form-field.filter-with-hint {
+.filter-content mat-form-field.filter-with-hint {
   margin-bottom: 0.5rem;
 }
-.filters mat-chip-set {
+.filter-content mat-chip-set {
   display: block;
   margin: -0.7rem 0 1rem;
 }
-.filters fieldset {
+.filter-content fieldset {
   border: 0;
   padding: 0;
   margin: 0 0 1rem;
 }
-.filters legend {
+.filter-content legend {
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -75,11 +64,6 @@
   border-radius: 8px;
   font: inherit;
   min-width: 0;
-}
-.filter-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
 }
 .filter-note {
   font-size: 0.8rem;
@@ -135,10 +119,17 @@ main {
   padding: 1rem 1.25rem;
   border-bottom: 1px solid #e2e5ef;
 }
-.column-button {
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.column-button,
+.filter-button {
   flex: 0 0 auto;
 }
-.column-count {
+.column-count,
+.filter-count {
   display: inline-flex;
   min-width: 1.25rem;
   height: 1.25rem;
@@ -203,19 +194,20 @@ table {
   color: #b3261e;
 }
 @media (max-width: 900px) {
-  .filters {
-    width: min(340px, 88vw);
-  }
   main {
     padding: 1rem;
   }
   .topbar {
     padding: 1rem;
   }
-  .shell ::ng-deep .mat-drawer {
-    position: fixed;
+}
+
+@media (max-width: 520px) {
+  .result-actions {
+    width: 100%;
   }
-  .shell ::ng-deep .mat-drawer-backdrop {
-    visibility: visible;
+
+  .result-actions button {
+    flex: 1;
   }
 }

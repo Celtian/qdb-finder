@@ -1,27 +1,35 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
   defaultFinderColumns,
   finderColumns,
@@ -79,9 +87,11 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-team-finder',
   imports: [
+    AppNavigationMenu,
     FormField,
     CountryFlag,
     DatabaseFilter,
+    FinderFilterDrawer,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -91,7 +101,6 @@ const validId = (value: string | null): number | undefined => {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatSidenavModule,
     MatSortModule,
     MatTableModule,
   ],
@@ -103,14 +112,15 @@ export class TeamFinder {
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly columnPreferences = inject(FinderColumnPreferences);
-  private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private requestSequence = 0;
-  private debounceId?: ReturnType<typeof setTimeout>;
+  private filterDialogRef?: MatDialogRef<unknown>;
+  private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(this.initialRequest());
+  protected readonly request = signal<TeamSearchRequest>(this.initialRequest());
+  protected readonly draftRequest = signal<TeamSearchRequest>(this.initialRequest());
   protected readonly result = signal<TeamResultPage>({
     rows: [],
     total: 0,
@@ -131,7 +141,7 @@ export class TeamFinder {
   );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    databaseVersions(this.databases(), this.request().databaseIds),
+    databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
   protected readonly ratingFilters = [
     { key: 'overall', label: 'Overall' },
@@ -147,50 +157,52 @@ export class TeamFinder {
     league: {},
     country: {},
   });
+  private appliedLabels: Record<'league' | 'country', Record<string, FilterDisplay>> = {
+    league: {},
+    country: {},
+  };
   protected readonly selectedLeagues = computed(() =>
-    this.request().leagueKeys.map(
+    this.draftRequest().leagueKeys.map(
       (key): FilterDisplay => this.labels().league[key] ?? { key, label: key },
     ),
   );
   protected readonly selectedCountries = computed(() =>
-    this.request().countryIds.map((id): FilterDisplay => {
+    this.draftRequest().countryIds.map((id): FilterDisplay => {
       const key = String(id);
       return this.labels().country[key] ?? { key, label: key };
     }),
   );
   protected readonly rows = computed(() => this.result().rows.map(teamDisplay));
-  protected readonly isNarrow = toSignal(
-    this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
-    { initialValue: false },
+  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
+  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly resultStatus = computed(() =>
+    this.loading() ? 'Searching teams…' : `${this.result().total.toLocaleString()} team editions`,
   );
-  protected readonly hasFilters = computed(() => {
-    const request = this.request();
-    return Boolean(
-      request.text ||
-      request.databaseIds.length ||
-      request.versions.length ||
-      request.leagueKeys.length ||
-      request.countryIds.length ||
-      request.playerEdition ||
-      request.leagueEdition ||
-      request.stadiumEdition ||
-      Object.keys(request.overall).length ||
-      Object.keys(request.attack).length ||
-      Object.keys(request.midfield).length ||
-      Object.keys(request.defence).length,
-    );
-  });
+
+  private filterCount(request: TeamSearchRequest): number {
+    return [
+      request.databaseIds.length > 0,
+      request.versions.length > 0,
+      request.leagueKeys.length > 0,
+      request.countryIds.length > 0,
+      Boolean(request.playerEdition || request.leagueEdition || request.stadiumEdition),
+      Object.keys(request.overall).length > 0,
+      Object.keys(request.attack).length > 0,
+      Object.keys(request.midfield).length > 0,
+      Object.keys(request.defence).length > 0,
+    ].filter(Boolean).length;
+  }
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
       this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
-    effect(() => {
+    effect((onCleanup) => {
       const text = this.model().text;
-      clearTimeout(this.debounceId);
-      this.debounceId = setTimeout(() => {
+      const debounceId = setTimeout(() => {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+      onCleanup(() => clearTimeout(debounceId));
     });
     effect(() => {
       if (!this.databaseContext.revision()) return;
@@ -205,26 +217,19 @@ export class TeamFinder {
   }
 
   protected setVersions(versions: number[]): void {
-    this.request.update((value) => ({ ...value, versions, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, versions }));
   }
 
   protected setDatabases(databaseIds: string[]): void {
     const availableVersions = databaseVersions(this.databases(), databaseIds);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       databaseIds,
       versions: value.versions.filter((version) => availableVersions.includes(version)),
       playerEdition: undefined,
       leagueEdition: undefined,
       stadiumEdition: undefined,
-      offset: 0,
     }));
-    this.contextPlayer.set(undefined);
-    this.contextLeague.set(undefined);
-    this.contextStadium.set(undefined);
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
-    void this.search();
   }
 
   protected setRange(
@@ -234,22 +239,20 @@ export class TeamFinder {
   ): void {
     const raw = (event.target as HTMLInputElement).value;
     const number = raw === '' ? undefined : Number(raw);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       [kind]: { ...value[kind], [boundary]: number },
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected async suggest(facet: TeamFacet, event: Event): Promise<void> {
     const text = (event.target as HTMLInputElement).value;
     const options = await this.qdb.suggestEntityFacets({
-      databaseIds: this.request().databaseIds,
+      databaseIds: this.draftRequest().databaseIds,
       entity: 'team',
       facet,
       text,
-      versions: this.request().versions,
+      versions: this.draftRequest().versions,
       limit: 20,
     });
     this.suggestions.update((value) => ({ ...value, [facet]: options }));
@@ -257,17 +260,15 @@ export class TeamFinder {
 
   protected addFacet(facet: TeamFacet, option: EntityFacetOption, input: HTMLInputElement): void {
     if (facet === 'league')
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         leagueKeys: [...new Set([...value.leagueKeys, option.key])],
-        offset: 0,
       }));
     else if (option.id !== undefined) {
       const id = option.id;
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         countryIds: [...new Set([...value.countryIds, id])],
-        offset: 0,
       }));
     }
     this.labels.update((value) => ({
@@ -282,34 +283,49 @@ export class TeamFinder {
       },
     }));
     input.value = '';
-    void this.search();
   }
 
   protected removeFacet(facet: TeamFacet, key: string): void {
     if (facet === 'league')
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         leagueKeys: value.leagueKeys.filter((item) => item !== key),
-        offset: 0,
       }));
     else
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         countryIds: value.countryIds.filter((item) => item !== Number(key)),
-        offset: 0,
       }));
-    void this.search();
   }
 
   protected clearFilters(): void {
-    this.model.set({ text: '' });
-    this.request.set(defaultTeamSearchRequest());
+    const current = this.request();
+    this.request.set({
+      ...defaultTeamSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
     this.labels.set({ league: {}, country: {} });
+    this.appliedLabels = { league: {}, country: {} };
     this.contextPlayer.set(undefined);
     this.contextLeague.set(undefined);
     this.contextStadium.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
+  }
+
+  protected clearDraftFilters(): void {
+    const current = this.draftRequest();
+    this.draftRequest.set({
+      ...defaultTeamSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
+    this.labels.set({ league: {}, country: {} });
   }
 
   protected retrySearch(): void {
@@ -334,6 +350,49 @@ export class TeamFinder {
       direction,
       offset: 0,
     }));
+    void this.search();
+  }
+
+  protected openFilters(): void {
+    this.draftRequest.set(this.cloneRequest(this.request()));
+    this.labels.set({
+      league: { ...this.appliedLabels.league },
+      country: { ...this.appliedLabels.country },
+    });
+    this.filterDialogRef = this.dialog.open(
+      this.filterDrawer(),
+      finderFilterDialogConfig('team-filter-title'),
+    );
+  }
+
+  protected applyFilters(): void {
+    const current = this.request();
+    const draft = this.draftRequest();
+    const databaseChanged = current.databaseIds.join('\u0000') !== draft.databaseIds.join('\u0000');
+    const contextCleared = Boolean(
+      (current.playerEdition && !draft.playerEdition) ||
+      (current.leagueEdition && !draft.leagueEdition) ||
+      (current.stadiumEdition && !draft.stadiumEdition),
+    );
+    this.request.set({
+      ...this.cloneRequest(draft),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+      offset: 0,
+    });
+    this.appliedLabels = {
+      league: { ...this.labels().league },
+      country: { ...this.labels().country },
+    };
+    if (databaseChanged || contextCleared) {
+      this.contextPlayer.set(undefined);
+      this.contextLeague.set(undefined);
+      this.contextStadium.set(undefined);
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
+    this.filterDialogRef?.close();
     void this.search();
   }
 
@@ -387,6 +446,20 @@ export class TeamFinder {
       offset: 0,
     }));
     void this.search();
+  }
+
+  private cloneRequest(value: TeamSearchRequest): TeamSearchRequest {
+    return {
+      ...value,
+      databaseIds: [...value.databaseIds],
+      versions: [...value.versions],
+      leagueKeys: [...value.leagueKeys],
+      countryIds: [...value.countryIds],
+      overall: { ...value.overall },
+      attack: { ...value.attack },
+      midfield: { ...value.midfield },
+      defence: { ...value.defence },
+    };
   }
 
   private initialRequest(): TeamSearchRequest {

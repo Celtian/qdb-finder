@@ -13,8 +13,18 @@ main {
 }
 
 header {
-  max-width: 720px;
+  max-width: 780px;
   margin-bottom: 2.5rem;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.page-heading > div {
+  min-width: 0;
 }
 
 h1,

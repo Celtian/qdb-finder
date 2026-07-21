@@ -14,30 +14,37 @@ describe('finder columns', () => {
   it('defines all existing columns and visible birth dates in canonical order', () => {
     expect(defaultFinderColumns('players')).toEqual([
       'name',
-      'database',
       'originalId',
+      'database',
       'version',
       'nationality',
       'teams',
       'positions',
       'birthDate',
       'age',
+      'height',
+      'weight',
+      'preferredFoot',
       'overall',
       'potential',
       'bestRating',
     ]);
     expect(defaultFinderColumns('referees')).toEqual([
       'name',
-      'database',
       'originalId',
+      'database',
       'version',
       'nationality',
       'leagues',
       'birthDate',
       'age',
       'height',
+      'weight',
       'real',
     ]);
+    for (const columns of Object.values(finderColumns)) {
+      expect(columns[1]?.key).toBe('originalId');
+    }
     expect(Object.values(finderColumns).every((columns) => columns[0]?.required)).toBe(true);
   });
 

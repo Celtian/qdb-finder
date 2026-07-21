@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
+import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
 import { Qdb } from '../../core/qdb';
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 
@@ -17,7 +18,14 @@ interface HomeTile {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [
+    AppNavigationMenu,
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })

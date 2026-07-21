@@ -6,24 +6,17 @@
 
 .entity-shell {
   height: 100%;
+  overflow: auto;
   background: #f7f8fc;
-}
-
-.entity-filters {
-  width: 310px;
-  overflow-x: hidden;
-  border-right: 1px solid #e2e5ef;
-  background: #fff;
 }
 
 .filter-content {
   width: 100%;
   min-width: 0;
-  padding: 1.25rem;
+  padding: 0;
   overflow-x: hidden;
 }
 
-.filter-heading,
 .entity-topbar,
 .context-banner {
   display: flex;
@@ -31,39 +24,32 @@
   gap: 1rem;
 }
 
-.filter-heading {
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-}
-
-.filter-heading p,
-.filter-heading h2,
 .entity-topbar p,
 .entity-topbar h1 {
   margin: 0;
 }
 
-.entity-filters mat-form-field,
-.entity-filters mat-chip-set {
+.filter-content mat-form-field,
+.filter-content mat-chip-set {
   display: block;
   width: 100%;
 }
 
-.entity-filters mat-form-field.filter-with-hint {
+.filter-content mat-form-field.filter-with-hint {
   margin-bottom: 0.5rem;
 }
 
-.entity-filters mat-chip-set {
+.filter-content mat-chip-set {
   margin: -0.7rem 0 1rem;
 }
 
-.entity-filters fieldset {
+.filter-content fieldset {
   margin: 0 0 1rem;
   padding: 0;
   border: 0;
 }
 
-.entity-filters legend {
+.filter-content legend {
   margin-bottom: 0.5rem;
   font-weight: 600;
   text-transform: capitalize;
@@ -148,11 +134,19 @@ main {
   border-bottom: 1px solid #e2e5ef;
 }
 
-.column-button {
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.column-button,
+.filter-button {
   flex: 0 0 auto;
 }
 
-.column-count {
+.column-count,
+.filter-count {
   display: inline-flex;
   min-width: 1.25rem;
   height: 1.25rem;
@@ -216,20 +210,18 @@ table {
 }
 
 @media (max-width: 900px) {
-  .entity-filters {
-    width: min(340px, 88vw);
-  }
-
   main,
   .entity-topbar {
     padding: 1rem;
   }
+}
 
-  .entity-shell ::ng-deep .mat-drawer {
-    position: fixed;
+@media (max-width: 520px) {
+  .result-actions {
+    width: 100%;
   }
 
-  .entity-shell ::ng-deep .mat-drawer-backdrop {
-    visibility: visible;
+  .result-actions button {
+    flex: 1;
   }
 }

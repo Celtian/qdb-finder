@@ -47,10 +47,15 @@ describe('LeagueFinder', () => {
     await fixture.whenStable();
   });
 
+  afterEach(() => TestBed.inject(MatDialog).closeAll());
+
   it('creates with newest-edition sorting', () => {
     const testable = component as unknown as { request(): LeagueSearchRequest };
 
     expect(component).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+    ).toBeTruthy();
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
@@ -87,14 +92,26 @@ describe('LeagueFinder', () => {
     ).toEqual(['name', 'level']);
   });
 
-  it('searches immediately when league tiers change', async () => {
-    const testable = component as unknown as { setLevels(levels: number[]): void };
+  it('stages league tiers until Apply', async () => {
+    const testable = component as unknown as {
+      openFilters(): void;
+      setLevels(levels: number[]): void;
+      applyFilters(): void;
+    };
     searchLeagues.mockClear();
 
+    testable.openFilters();
     testable.setLevels([1, 2]);
+    expect(searchLeagues).not.toHaveBeenCalled();
+    testable.applyFilters();
     await fixture.whenStable();
 
     expect(searchLeagues).toHaveBeenCalledWith(expect.objectContaining({ levels: [1, 2] }));
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.filter-button')
+        ?.getAttribute('aria-label'),
+    ).toBe('Choose filters, 1 active');
   });
 
   it('renders the original league ID as a non-sortable column after the name', async () => {
@@ -130,7 +147,7 @@ describe('LeagueFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['League', 'Database', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['League', 'Original ID', 'Database', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('2216');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);

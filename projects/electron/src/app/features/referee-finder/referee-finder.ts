@@ -1,26 +1,34 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
   defaultFinderColumns,
   finderColumns,
@@ -70,9 +78,11 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-referee-finder',
   imports: [
+    AppNavigationMenu,
     FormField,
     CountryFlag,
     DatabaseFilter,
+    FinderFilterDrawer,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -82,7 +92,6 @@ const validId = (value: string | null): number | undefined => {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatSidenavModule,
     MatSortModule,
     MatTableModule,
   ],
@@ -94,14 +103,15 @@ export class RefereeFinder {
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly columnPreferences = inject(FinderColumnPreferences);
-  private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private requestSequence = 0;
-  private debounceId?: ReturnType<typeof setTimeout>;
+  private filterDialogRef?: MatDialogRef<unknown>;
+  private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(this.initialRequest());
+  protected readonly request = signal<RefereeSearchRequest>(this.initialRequest());
+  protected readonly draftRequest = signal<RefereeSearchRequest>(this.initialRequest());
   protected readonly result = signal<RefereeResultPage>({
     rows: [],
     total: 0,
@@ -120,7 +130,7 @@ export class RefereeFinder {
   );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    databaseVersions(this.databases(), this.request().databaseIds),
+    databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
   protected readonly availability = signal<AvailabilityFilter>('all');
   protected readonly suggestions = signal<Record<RefereeFacet, EntityFacetOption[]>>({
@@ -131,14 +141,18 @@ export class RefereeFinder {
     nationality: {},
     league: {},
   });
+  private appliedLabels: Record<RefereeFacet, Record<string, FilterDisplay>> = {
+    nationality: {},
+    league: {},
+  };
   protected readonly selectedNationalities = computed(() =>
-    this.request().nationalityIds.map((id): FilterDisplay => {
+    this.draftRequest().nationalityIds.map((id): FilterDisplay => {
       const key = String(id);
       return this.labels().nationality[key] ?? { key, label: key };
     }),
   );
   protected readonly selectedLeagues = computed(() =>
-    this.request().leagueKeys.map(
+    this.draftRequest().leagueKeys.map(
       (key): FilterDisplay => this.labels().league[key] ?? { key, label: key },
     ),
   );
@@ -149,35 +163,37 @@ export class RefereeFinder {
       leagueText: row.leagues.join(', '),
     })),
   );
-  protected readonly isNarrow = toSignal(
-    this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
-    { initialValue: false },
+  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
+  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly resultStatus = computed(() =>
+    this.loading()
+      ? 'Searching referees…'
+      : `${this.result().total.toLocaleString()} referee editions`,
   );
-  protected readonly hasFilters = computed(() => {
-    const request = this.request();
-    return Boolean(
-      request.text ||
-      request.databaseIds.length ||
-      request.versions.length ||
-      request.gender !== undefined ||
-      request.nationalityIds.length ||
-      request.leagueKeys.length ||
-      request.leagueEdition ||
-      request.isReal !== undefined ||
-      Object.keys(request.age).length,
-    );
-  });
+
+  private filterCount(request: RefereeSearchRequest): number {
+    return [
+      request.databaseIds.length > 0,
+      request.versions.length > 0,
+      request.gender !== undefined,
+      request.nationalityIds.length > 0,
+      request.leagueKeys.length > 0,
+      Boolean(request.leagueEdition),
+      request.isReal !== undefined,
+      Object.keys(request.age).length > 0,
+    ].filter(Boolean).length;
+  }
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
       this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
-    effect(() => {
+    effect((onCleanup) => {
       const text = this.model().text;
-      clearTimeout(this.debounceId);
-      this.debounceId = setTimeout(() => {
+      const debounceId = setTimeout(() => {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+      onCleanup(() => clearTimeout(debounceId));
     });
     effect(() => {
       if (!this.databaseContext.revision()) return;
@@ -188,60 +204,49 @@ export class RefereeFinder {
   }
 
   protected setVersions(versions: number[]): void {
-    this.request.update((value) => ({ ...value, versions, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, versions }));
   }
 
   protected setDatabases(databaseIds: string[]): void {
     const availableVersions = databaseVersions(this.databases(), databaseIds);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       databaseIds,
       versions: value.versions.filter((version) => availableVersions.includes(version)),
       leagueEdition: undefined,
-      offset: 0,
     }));
-    this.contextLeague.set(undefined);
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
-    void this.search();
   }
 
   protected setGender(gender: GenderFilter): void {
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       gender: gender === 'all' ? undefined : gender,
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected setAge(boundary: 'min' | 'max', event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       age: { ...value.age, [boundary]: raw === '' ? undefined : Number(raw) },
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected setAvailability(value: AvailabilityFilter): void {
     this.availability.set(value);
-    this.request.update((request) => ({
+    this.draftRequest.update((request) => ({
       ...request,
       isReal: value === 'all' ? undefined : value === 'real',
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected async suggest(facet: RefereeFacet, event: Event): Promise<void> {
     const options = await this.qdb.suggestEntityFacets({
-      databaseIds: this.request().databaseIds,
+      databaseIds: this.draftRequest().databaseIds,
       entity: 'referee',
       facet,
       text: (event.target as HTMLInputElement).value,
-      versions: this.request().versions,
+      versions: this.draftRequest().versions,
       limit: 20,
     });
     this.suggestions.update((value) => ({ ...value, [facet]: options }));
@@ -253,17 +258,15 @@ export class RefereeFinder {
     input: HTMLInputElement,
   ): void {
     if (facet === 'league')
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         leagueKeys: [...new Set([...value.leagueKeys, option.key])],
-        offset: 0,
       }));
     else if (option.id !== undefined) {
       const id = option.id;
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         nationalityIds: [...new Set([...value.nationalityIds, id])],
-        offset: 0,
       }));
     }
     this.labels.update((value) => ({
@@ -278,33 +281,49 @@ export class RefereeFinder {
       },
     }));
     input.value = '';
-    void this.search();
   }
 
   protected removeFacet(facet: RefereeFacet, key: string): void {
     if (facet === 'league')
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         leagueKeys: value.leagueKeys.filter((item) => item !== key),
-        offset: 0,
       }));
     else
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         nationalityIds: value.nationalityIds.filter((item) => item !== Number(key)),
-        offset: 0,
       }));
-    void this.search();
   }
 
   protected clearFilters(): void {
-    this.model.set({ text: '' });
-    this.request.set(defaultRefereeSearchRequest());
+    const current = this.request();
+    this.request.set({
+      ...defaultRefereeSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
     this.labels.set({ nationality: {}, league: {} });
+    this.appliedLabels = { nationality: {}, league: {} };
     this.availability.set('all');
     this.contextLeague.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
+  }
+
+  protected clearDraftFilters(): void {
+    const current = this.draftRequest();
+    this.draftRequest.set({
+      ...defaultRefereeSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
+    this.labels.set({ nationality: {}, league: {} });
+    this.availability.set('all');
   }
 
   protected retrySearch(): void {
@@ -329,6 +348,46 @@ export class RefereeFinder {
       direction,
       offset: 0,
     }));
+    void this.search();
+  }
+
+  protected openFilters(): void {
+    this.draftRequest.set(this.cloneRequest(this.request()));
+    this.labels.set({
+      nationality: { ...this.appliedLabels.nationality },
+      league: { ...this.appliedLabels.league },
+    });
+    this.availability.set(
+      this.request().isReal === undefined ? 'all' : this.request().isReal ? 'real' : 'generic',
+    );
+    this.filterDialogRef = this.dialog.open(
+      this.filterDrawer(),
+      finderFilterDialogConfig('referee-filter-title'),
+    );
+  }
+
+  protected applyFilters(): void {
+    const current = this.request();
+    const draft = this.draftRequest();
+    const databaseChanged = current.databaseIds.join('\u0000') !== draft.databaseIds.join('\u0000');
+    const contextCleared = Boolean(current.leagueEdition && !draft.leagueEdition);
+    this.request.set({
+      ...this.cloneRequest(draft),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+      offset: 0,
+    });
+    this.appliedLabels = {
+      nationality: { ...this.labels().nationality },
+      league: { ...this.labels().league },
+    };
+    if (databaseChanged || contextCleared) {
+      this.contextLeague.set(undefined);
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
+    this.filterDialogRef?.close();
     void this.search();
   }
 
@@ -382,6 +441,17 @@ export class RefereeFinder {
       offset: 0,
     }));
     void this.search();
+  }
+
+  private cloneRequest(value: RefereeSearchRequest): RefereeSearchRequest {
+    return {
+      ...value,
+      databaseIds: [...value.databaseIds],
+      versions: [...value.versions],
+      nationalityIds: [...value.nationalityIds],
+      leagueKeys: [...value.leagueKeys],
+      age: { ...value.age },
+    };
   }
 
   private initialRequest(): RefereeSearchRequest {

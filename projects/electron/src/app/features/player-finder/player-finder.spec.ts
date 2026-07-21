@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
@@ -56,11 +56,87 @@ describe('PlayerFinder', () => {
     await fixture.whenStable();
   });
 
+  afterEach(() => TestBed.inject(MatDialog).closeAll());
+
   it('should create', () => {
     expect(component).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+    ).toBeTruthy();
     expect((fixture.nativeElement as HTMLElement).querySelector('.search')?.textContent).toContain(
       'Search players, teams, leagues, countries or Original ID',
     );
+  });
+
+  it('keeps Filters and Columns available in loading, error, and empty states', async () => {
+    const testable = component as unknown as {
+      loading: { set(value: boolean): void };
+      error: { set(value: string): void };
+    };
+    const expectControls = (): void => {
+      const element = fixture.nativeElement as HTMLElement;
+      expect(element.querySelector('.filter-button')).toBeTruthy();
+      expect(element.querySelector('.column-button')).toBeTruthy();
+    };
+
+    testable.loading.set(true);
+    await fixture.whenStable();
+    expectControls();
+    testable.loading.set(false);
+    testable.error.set('Unavailable');
+    await fixture.whenStable();
+    expectControls();
+    testable.error.set('');
+    await fixture.whenStable();
+    expectControls();
+  });
+
+  it('counts active filter groups and preserves search text when clearing the draft', async () => {
+    const testable = component as unknown as {
+      request: {
+        (): SearchRequest;
+        update(update: (value: SearchRequest) => SearchRequest): void;
+      };
+      draftRequest(): SearchRequest;
+      activeFilterCount(): number;
+      model: { set(value: { text: string }): void };
+      columns(): readonly FinderColumnKey[];
+      openFilters(): void;
+      setGender(value: 'all' | 'men' | 'women'): void;
+      clearDraftFilters(): void;
+      applyFilters(): void;
+    };
+    testable.request.update((value) => ({
+      ...value,
+      text: 'Messi',
+      databaseIds: ['built-in'],
+      versions: [23],
+      nationalities: ['argentina', 'spain'],
+      age: { min: 20, max: 30 },
+    }));
+    testable.model.set({ text: 'Messi' });
+
+    expect(testable.activeFilterCount()).toBe(4);
+    const columns = testable.columns();
+    testable.openFilters();
+    await fixture.whenStable();
+    testable.setGender('women');
+    TestBed.inject(MatDialog).closeAll();
+    await fixture.whenStable();
+    expect(testable.request().gender).toBeUndefined();
+
+    testable.openFilters();
+    await fixture.whenStable();
+    expect(testable.draftRequest().gender).toBeUndefined();
+    testable.clearDraftFilters();
+    testable.applyFilters();
+    await fixture.whenStable();
+
+    expect(testable.request()).toMatchObject({ text: 'Messi', offset: 0 });
+    expect(testable.request().databaseIds).toEqual([]);
+    expect(testable.request().versions).toEqual([]);
+    expect(testable.request().nationalities).toEqual([]);
+    expect(testable.columns()).toEqual(columns);
   });
 
   it('sorts the newest FIFA editions first by default', () => {
@@ -88,7 +164,7 @@ describe('PlayerFinder', () => {
     await fixture.whenStable();
 
     expect(testable.columns()).toEqual(['name', 'birthDate']);
-    expect(testable.hiddenColumnCount()).toBe(10);
+    expect(testable.hiddenColumnCount()).toBe(13);
     expect(testable.request()).toMatchObject({
       versions: [23],
       sort: 'name',
@@ -161,37 +237,50 @@ describe('PlayerFinder', () => {
     expect(searchPlayers).toHaveBeenCalledWith(expect.objectContaining({ positions: ['ST'] }));
   });
 
-  it('filters gender immediately and resets pagination without changing editions', async () => {
+  it('stages gender until Apply and resets pagination without changing editions', async () => {
     const testable = component as unknown as {
       request: {
         (): SearchRequest;
         update(update: (value: SearchRequest) => SearchRequest): void;
       };
+      openFilters(): void;
+      applyFilters(): void;
       setGender(value: 'all' | 'men' | 'women'): void;
     };
     testable.request.update((value) => ({ ...value, versions: [15], offset: 50 }));
     searchPlayers.mockClear();
 
+    testable.openFilters();
+    await fixture.whenStable();
+    searchPlayers.mockClear();
     testable.setGender('women');
+
+    expect(searchPlayers).not.toHaveBeenCalled();
+    const hint = document.body.querySelector('mat-hint');
+    expect(document.body.textContent).toContain('Women available from FIFA 16');
+    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+    testable.applyFilters();
     await fixture.whenStable();
 
     expect(searchPlayers).toHaveBeenCalledWith(
       expect.objectContaining({ versions: [15], gender: 'women', offset: 0 }),
     );
-    const element = fixture.nativeElement as HTMLElement;
-    const hint = element.querySelector('mat-hint');
-    expect(element.textContent).toContain('Women available from FIFA 16');
-    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
-
+    testable.openFilters();
+    await fixture.whenStable();
     testable.setGender('all');
+    testable.applyFilters();
     await fixture.whenStable();
 
     expect(testable.request().gender).toBeUndefined();
   });
 
-  it('searches immediately when a number range changes', async () => {
-    const element = fixture.nativeElement as HTMLElement;
-    const ageMin = element.querySelector<HTMLInputElement>('fieldset input');
+  it('stages number ranges and searches once on Apply', async () => {
+    const testable = component as unknown as { openFilters(): void; applyFilters(): void };
+    testable.openFilters();
+    await fixture.whenStable();
+    const ageMin = document.body.querySelector<HTMLInputElement>(
+      '.finder-filter-drawer-panel fieldset input',
+    );
     expect(ageMin).toBeTruthy();
     searchPlayers.mockClear();
 
@@ -199,28 +288,35 @@ describe('PlayerFinder', () => {
     ageMin!.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
+    expect(searchPlayers).not.toHaveBeenCalled();
+    testable.applyFilters();
+    await fixture.whenStable();
     expect(searchPlayers).toHaveBeenCalledWith(
       expect.objectContaining({ age: { min: 21 }, offset: 0 }),
     );
-    expect(element.textContent).not.toContain('Apply filters');
+    expect(searchPlayers).toHaveBeenCalledTimes(1);
   });
 
   it('keeps suggestion labels while searching with canonical lowercase keys', async () => {
     const testable = component as unknown as {
       addExactFilter(field: 'teams', option: FilterSuggestion, input: HTMLInputElement): void;
       filterLabel(field: 'teams', key: string): string;
+      openFilters(): void;
+      applyFilters(): void;
     };
     const input = document.createElement('input');
     searchPlayers.mockClear();
 
+    testable.openFilters();
     testable.addExactFilter(
       'teams',
       { key: 'olympique lyonnais', label: 'Olympique Lyonnais', count: 1 },
       input,
     );
-    await fixture.whenStable();
-
     expect(testable.filterLabel('teams', 'olympique lyonnais')).toBe('Olympique Lyonnais');
+    expect(searchPlayers).not.toHaveBeenCalled();
+    testable.applyFilters();
+    await fixture.whenStable();
     expect(searchPlayers).toHaveBeenCalledWith(
       expect.objectContaining({ teams: ['olympique lyonnais'] }),
     );
@@ -234,8 +330,11 @@ describe('PlayerFinder', () => {
         input: HTMLInputElement,
       ): void;
       nationalityCode(key: string): string;
+      openFilters(): void;
     };
 
+    testable.openFilters();
+    await fixture.whenStable();
     testable.addExactFilter(
       'nationalities',
       { key: 'brazil', label: 'Brazil', count: 1, nationalityCode: 'br' },
@@ -244,9 +343,7 @@ describe('PlayerFinder', () => {
     await fixture.whenStable();
 
     expect(testable.nationalityCode('brazil')).toBe('br');
-    const flag = (fixture.nativeElement as HTMLElement).querySelector(
-      'mat-chip app-country-flag img',
-    );
+    const flag = document.body.querySelector('mat-chip app-country-flag img');
     expect(flag?.getAttribute('ng-reflect-ng-src') ?? flag?.getAttribute('src')).toContain(
       'flags/20x15/br.png',
     );
@@ -256,8 +353,11 @@ describe('PlayerFinder', () => {
     suggestFilters.mockResolvedValue([
       { key: 'brazil', label: 'Brazil', count: 100, nationalityCode: 'br' },
     ]);
-    const nationalityInput = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '.filters input',
+    const testable = component as unknown as { openFilters(): void };
+    testable.openFilters();
+    await fixture.whenStable();
+    const nationalityInput = document.body.querySelector<HTMLInputElement>(
+      '.finder-filter-drawer-panel input',
     );
 
     expect(nationalityInput).toBeTruthy();
@@ -292,6 +392,9 @@ describe('PlayerFinder', () => {
       positions: ['ST'],
       birthDate: '2004-02-29',
       age: 20,
+      height: 180,
+      weight: 75,
+      preferredFoot: '1',
       overall: 80,
       potential: 85,
       bestPosition: 'ST',
@@ -316,13 +419,16 @@ describe('PlayerFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Player', 'Database', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Player', 'Original ID', 'Database', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('123456');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
     expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe(
       '29 Feb 2004',
     );
+    expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('180 cm');
+    expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('75 kg');
+    expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('Right');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
       'Choose columns, 0 hidden',
     );
@@ -336,13 +442,24 @@ describe('PlayerFinder', () => {
     ).toBeTruthy();
 
     testable.result.set({
-      rows: [{ ...testableResultRow, birthDate: null }],
+      rows: [
+        {
+          ...testableResultRow,
+          birthDate: null,
+          height: null,
+          weight: null,
+          preferredFoot: '',
+        },
+      ],
       total: 1,
       offset: 0,
       pageSize: 50,
     });
     await fixture.whenStable();
     expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe('—');
+    expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('—');
+    expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('—');
+    expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('—');
 
     testable.result.set({
       rows: [{ ...testableResultRow, nationality: 'Unknown nation', nationalityCode: '' }],
@@ -374,6 +491,9 @@ describe('PlayerFinder', () => {
       positions: ['ST'],
       birthDate: '2004-02-29',
       age: 20,
+      height: 180,
+      weight: 75,
+      preferredFoot: '1',
       overall: 80,
       potential: 85,
       bestPosition: 'ST',
@@ -502,7 +622,12 @@ describe('PlayerFinder contextual routing', () => {
     const harness = await RouterTestingHarness.create();
 
     const component = await harness.navigateByUrl('/players?version=23&teamId=1', PlayerFinder);
-    const testable = component as unknown as { retrySearch(): void };
+    const testable = component as unknown as {
+      retrySearch(): void;
+      openFilters(): void;
+      setDatabases(databaseIds: string[]): void;
+      applyFilters(): void;
+    };
     testable.retrySearch();
     await harness.fixture.whenStable();
 
@@ -514,5 +639,15 @@ describe('PlayerFinder contextual routing', () => {
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('Arsenal');
+
+    testable.openFilters();
+    await harness.fixture.whenStable();
+    testable.setDatabases([]);
+    expect(harness.routeNativeElement?.textContent).toContain('Arsenal');
+    testable.applyFilters();
+    await harness.fixture.whenStable();
+    expect(harness.routeNativeElement?.querySelector('.context-banner')).toBeNull();
+    expect(TestBed.inject(Router).url).toBe('/players');
+    TestBed.inject(MatDialog).closeAll();
   });
 });

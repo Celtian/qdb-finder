@@ -1,13 +1,13 @@
 :host {
-  display: flex;
+  display: block;
   height: 100%;
   min-width: 0;
-  flex-direction: column;
   overflow: hidden;
 }
 
 .app-content {
-  flex: 1;
+  display: block;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   background: #f7f8fc;

@@ -1,18 +1,24 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { BreakpointObserver } from '@angular/cdk/layout';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,6 +28,9 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
   defaultFinderColumns,
   finderColumns,
@@ -37,14 +46,17 @@ import {
   type Gender,
   type LeagueDetails,
   type PlayerSearchRow,
+  type SearchRequest,
   type SearchResultPage,
   type SortField,
   type TeamDetails,
 } from '../../core/qdb-contracts';
 import { PlayerDetail } from '../player-detail/player-detail';
-import { map } from 'rxjs';
 import { positionBadgeClass } from '../../core/position';
-import { formatDateOnly } from '../../core/player-profile-value';
+import {
+  formatDateOnly,
+  preferredFootLabel as formatPreferredFoot,
+} from '../../core/player-profile-value';
 
 type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
 type GenderFilter = 'all' | Gender;
@@ -67,6 +79,7 @@ interface PlayerSearchDisplay extends PlayerSearchRow {
   potentialClass: string;
   bestRatingClass: string;
   birthDateLabel: string;
+  preferredFootLabel: string;
 }
 
 const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
@@ -80,6 +93,7 @@ const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
   potentialClass: scoreBadgeClass(row.potential),
   bestRatingClass: `rating ${positionBadgeClass(row.bestPosition)}`,
   birthDateLabel: formatDateOnly(row.birthDate),
+  preferredFootLabel: formatPreferredFoot(row.preferredFoot),
 });
 const validVersion = (value: string | null): number | undefined => {
   const version = Number(value);
@@ -93,9 +107,11 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-player-finder',
   imports: [
+    AppNavigationMenu,
     FormField,
     CountryFlag,
     DatabaseFilter,
+    FinderFilterDrawer,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -105,7 +121,6 @@ const validId = (value: string | null): number | undefined => {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatSidenavModule,
     MatSortModule,
     MatTableModule,
   ],
@@ -117,14 +132,15 @@ export class PlayerFinder {
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly columnPreferences = inject(FinderColumnPreferences);
-  private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private requestSequence = 0;
-  private debounceId?: ReturnType<typeof setTimeout>;
+  private filterDialogRef?: MatDialogRef<unknown>;
+  private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(this.initialRequest());
+  protected readonly request = signal<SearchRequest>(this.initialRequest());
+  protected readonly draftRequest = signal<SearchRequest>(this.initialRequest());
   protected readonly result = signal<SearchResultPage>({
     rows: [],
     total: 0,
@@ -144,7 +160,7 @@ export class PlayerFinder {
   );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    databaseVersions(this.databases(), this.request().databaseIds),
+    databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
   protected readonly positions = [
     'GK',
@@ -175,28 +191,34 @@ export class PlayerFinder {
     teams: {},
     leagues: {},
   });
+  private appliedFilterLabels: Record<ExactFilterField, Record<string, string>> = {
+    nationalities: {},
+    teams: {},
+    leagues: {},
+  };
   protected readonly nationalityCodes = signal<Record<string, string>>({});
+  private appliedNationalityCodes: Record<string, string> = {};
   protected readonly selectedNationalities = computed<FilterDisplay[]>(() =>
-    this.request().nationalities.map((key) => ({
+    this.draftRequest().nationalities.map((key) => ({
       key,
       label: this.filterLabels().nationalities[key] ?? key,
       nationalityCode: this.nationalityCodes()[key],
     })),
   );
   protected readonly selectedTeams = computed<FilterDisplay[]>(() =>
-    this.request().teams.map((key) => ({
+    this.draftRequest().teams.map((key) => ({
       key,
       label: this.filterLabels().teams[key] ?? key,
     })),
   );
   protected readonly selectedLeagues = computed<FilterDisplay[]>(() =>
-    this.request().leagues.map((key) => ({
+    this.draftRequest().leagues.map((key) => ({
       key,
       label: this.filterLabels().leagues[key] ?? key,
     })),
   );
   protected readonly selectedPositions = computed<PositionDisplay[]>(() =>
-    this.request().positions.map((value) => ({
+    this.draftRequest().positions.map((value) => ({
       value,
       className: positionBadgeClass(value),
     })),
@@ -204,39 +226,46 @@ export class PlayerFinder {
   protected readonly resultRows = computed<PlayerSearchDisplay[]>(() =>
     this.result().rows.map(playerSearchDisplay),
   );
-  protected readonly isNarrow = toSignal(
-    this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
-    { initialValue: false },
-  );
-  protected readonly hasFilters = computed(() => {
+  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
+  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly hasFilters = computed(() => this.activeFilterCount() > 0);
+
+  private filterCount(value: SearchRequest): number {
+    return [
+      value.databaseIds.length > 0,
+      value.versions.length > 0,
+      value.gender !== undefined,
+      value.nationalities.length > 0,
+      value.teams.length > 0,
+      value.leagues.length > 0,
+      value.positions.length > 0,
+      Boolean(value.teamEdition || value.leagueEdition),
+      Object.keys(value.age).length > 0,
+      Object.keys(value.overall).length > 0,
+      Object.keys(value.potential).length > 0,
+    ].filter(Boolean).length;
+  }
+
+  protected readonly resultStatus = computed(() => {
+    if (this.loading()) return 'Searching players…';
+    return `${this.result().total.toLocaleString()} player editions`;
+  });
+
+  protected readonly hasSearchOrFilters = computed(() => {
     const value = this.request();
-    return Boolean(
-      value.text ||
-      value.databaseIds.length ||
-      value.versions.length ||
-      value.gender !== undefined ||
-      value.nationalities.length ||
-      value.teams.length ||
-      value.leagues.length ||
-      value.positions.length ||
-      value.teamEdition ||
-      value.leagueEdition ||
-      Object.keys(value.age).length ||
-      Object.keys(value.overall).length ||
-      Object.keys(value.potential).length,
-    );
+    return Boolean(value.text || this.activeFilterCount());
   });
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
       this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
-    effect(() => {
+    effect((onCleanup) => {
       const text = this.model().text;
-      clearTimeout(this.debounceId);
-      this.debounceId = setTimeout(() => {
+      const debounceId = setTimeout(() => {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+      onCleanup(() => clearTimeout(debounceId));
     });
     effect(() => {
       if (!this.databaseContext.revision()) return;
@@ -249,35 +278,26 @@ export class PlayerFinder {
   }
 
   protected setVersions(versions: number[]): void {
-    this.request.update((value) => ({ ...value, versions, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, versions }));
   }
   protected setDatabases(databaseIds: string[]): void {
     const availableVersions = databaseVersions(this.databases(), databaseIds);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       databaseIds,
       versions: value.versions.filter((version) => availableVersions.includes(version)),
       teamEdition: undefined,
       leagueEdition: undefined,
-      offset: 0,
     }));
-    this.context.set(undefined);
-    this.contextKind.set(undefined);
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
-    void this.search();
   }
   protected setGender(gender: GenderFilter): void {
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       gender: gender === 'all' ? undefined : gender,
-      offset: 0,
     }));
-    void this.search();
   }
   protected setPositions(positions: string[]): void {
-    this.request.update((value) => ({ ...value, positions, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, positions }));
   }
   protected setRange(
     kind: 'age' | 'overall' | 'potential',
@@ -286,12 +306,10 @@ export class PlayerFinder {
   ): void {
     const raw = (event.target as HTMLInputElement).value;
     const number = raw === '' ? undefined : Number(raw);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       [kind]: { ...value[kind], [boundary]: number },
-      offset: 0,
     }));
-    void this.search();
   }
   protected retrySearch(): void {
     void this.search();
@@ -299,10 +317,10 @@ export class PlayerFinder {
   protected async suggest(kind: FilterKind, event: Event): Promise<void> {
     const text = (event.target as HTMLInputElement).value;
     const options = await this.qdb.suggestFilters({
-      databaseIds: this.request().databaseIds,
+      databaseIds: this.draftRequest().databaseIds,
       kind,
       text,
-      versions: this.request().versions,
+      versions: this.draftRequest().versions,
       limit: 12,
     });
     this.suggestions.update((value) => ({ ...value, [kind]: options }));
@@ -313,10 +331,9 @@ export class PlayerFinder {
     input: HTMLInputElement,
   ): void {
     const { key, label } = option;
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       [field]: [...new Set([...value[field], key])],
-      offset: 0,
     }));
     this.filterLabels.update((value) => ({
       ...value,
@@ -328,13 +345,11 @@ export class PlayerFinder {
         [key]: option.nationalityCode ?? '',
       }));
     input.value = '';
-    void this.search();
   }
   protected removeExactFilter(field: ExactFilterField, key: string): void {
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       [field]: value[field].filter((item) => item !== key),
-      offset: 0,
     }));
     this.filterLabels.update((value) => ({
       ...value,
@@ -346,7 +361,6 @@ export class PlayerFinder {
       this.nationalityCodes.update((value) =>
         Object.fromEntries(Object.entries(value).filter(([codeKey]) => codeKey !== key)),
       );
-    void this.search();
   }
   protected filterLabel(field: ExactFilterField, key: string): string {
     return this.filterLabels()[field][key] ?? key;
@@ -355,14 +369,34 @@ export class PlayerFinder {
     return this.nationalityCodes()[key] ?? '';
   }
   protected clearFilters(): void {
-    this.model.set({ text: '' });
-    this.request.set(defaultSearchRequest());
+    const current = this.request();
+    this.request.set({
+      ...defaultSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
     this.filterLabels.set({ nationalities: {}, teams: {}, leagues: {} });
+    this.appliedFilterLabels = { nationalities: {}, teams: {}, leagues: {} };
     this.nationalityCodes.set({});
+    this.appliedNationalityCodes = {};
     this.context.set(undefined);
     this.contextKind.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
+  }
+  protected clearDraftFilters(): void {
+    const value = this.draftRequest();
+    this.draftRequest.set({
+      ...defaultSearchRequest(),
+      text: value.text,
+      sort: value.sort,
+      direction: value.direction,
+      pageSize: value.pageSize,
+    });
+    this.filterLabels.set({ nationalities: {}, teams: {}, leagues: {} });
+    this.nationalityCodes.set({});
   }
   protected page(event: PageEvent): void {
     this.request.update((value) => ({
@@ -381,6 +415,49 @@ export class PlayerFinder {
       direction,
       offset: 0,
     }));
+    void this.search();
+  }
+  protected openFilters(): void {
+    this.draftRequest.set(this.cloneRequest(this.request()));
+    this.filterLabels.set({
+      nationalities: { ...this.appliedFilterLabels.nationalities },
+      teams: { ...this.appliedFilterLabels.teams },
+      leagues: { ...this.appliedFilterLabels.leagues },
+    });
+    this.nationalityCodes.set({ ...this.appliedNationalityCodes });
+    this.filterDialogRef = this.dialog.open(
+      this.filterDrawer(),
+      finderFilterDialogConfig('player-filter-title'),
+    );
+  }
+  protected applyFilters(): void {
+    const current = this.request();
+    const draft = this.draftRequest();
+    const databaseChanged = current.databaseIds.join('\u0000') !== draft.databaseIds.join('\u0000');
+    const contextCleared = Boolean(
+      (current.teamEdition && !draft.teamEdition) ||
+      (current.leagueEdition && !draft.leagueEdition),
+    );
+    this.request.set({
+      ...this.cloneRequest(draft),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+      offset: 0,
+    });
+    this.appliedFilterLabels = {
+      nationalities: { ...this.filterLabels().nationalities },
+      teams: { ...this.filterLabels().teams },
+      leagues: { ...this.filterLabels().leagues },
+    };
+    this.appliedNationalityCodes = { ...this.nationalityCodes() };
+    if (databaseChanged || contextCleared) {
+      this.context.set(undefined);
+      this.contextKind.set(undefined);
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
+    this.filterDialogRef?.close();
     void this.search();
   }
   protected openColumns(): void {
@@ -432,6 +509,21 @@ export class PlayerFinder {
       offset: 0,
     }));
     void this.search();
+  }
+
+  private cloneRequest(value: SearchRequest): SearchRequest {
+    return {
+      ...value,
+      databaseIds: [...value.databaseIds],
+      versions: [...value.versions],
+      nationalities: [...value.nationalities],
+      teams: [...value.teams],
+      leagues: [...value.leagues],
+      positions: [...value.positions],
+      age: { ...value.age },
+      overall: { ...value.overall },
+      potential: { ...value.potential },
+    };
   }
 
   private initialRequest() {

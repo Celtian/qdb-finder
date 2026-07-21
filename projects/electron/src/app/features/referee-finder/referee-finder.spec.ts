@@ -53,8 +53,13 @@ describe('RefereeFinder', () => {
     getReferee.mockClear();
   });
 
+  afterEach(() => TestBed.inject(MatDialog).closeAll());
+
   it('renders the empty state after loading', async () => {
     expect(component).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+    ).toBeTruthy();
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
     ).toContain('Search referees or Original ID');
@@ -66,17 +71,29 @@ describe('RefereeFinder', () => {
     });
   });
 
-  it('applies availability and age filters immediately', () => {
+  it('stages availability and age filters until Apply', async () => {
     const testable = component as unknown as {
+      openFilters(): void;
       setAvailability(value: 'all' | 'real' | 'generic'): void;
       setAge(boundary: 'min' | 'max', event: Event): void;
+      applyFilters(): void;
     };
+    searchReferees.mockClear();
+    testable.openFilters();
     testable.setAvailability('real');
     testable.setAge('min', { target: { value: '30' } } as unknown as Event);
 
+    expect(searchReferees).not.toHaveBeenCalled();
+    testable.applyFilters();
+    await fixture.whenStable();
     expect(searchReferees).toHaveBeenCalledWith(
       expect.objectContaining({ isReal: true, age: { min: 30 } }),
     );
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.filter-button')
+        ?.getAttribute('aria-label'),
+    ).toBe('Choose filters, 2 active');
   });
 
   it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
@@ -114,29 +131,36 @@ describe('RefereeFinder', () => {
     ).toEqual(['name', 'birthDate']);
   });
 
-  it('filters gender immediately and resets pagination without changing editions', async () => {
+  it('stages gender and resets pagination on Apply without changing editions', async () => {
     const testable = component as unknown as {
       request: {
         (): RefereeSearchRequest;
         update(update: (value: RefereeSearchRequest) => RefereeSearchRequest): void;
       };
+      openFilters(): void;
       setGender(value: 'all' | 'men' | 'women'): void;
+      applyFilters(): void;
     };
     testable.request.update((value) => ({ ...value, versions: [15], offset: 50 }));
     searchReferees.mockClear();
 
+    testable.openFilters();
+    await fixture.whenStable();
     testable.setGender('women');
+    expect(searchReferees).not.toHaveBeenCalled();
+    const hint = document.body.querySelector('mat-hint');
+    expect(document.body.textContent).toContain('Women available from FIFA 16');
+    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+    testable.applyFilters();
     await fixture.whenStable();
 
     expect(searchReferees).toHaveBeenCalledWith(
       expect.objectContaining({ versions: [15], gender: 'women', offset: 0 }),
     );
-    const element = fixture.nativeElement as HTMLElement;
-    const hint = element.querySelector('mat-hint');
-    expect(element.textContent).toContain('Women available from FIFA 16');
-    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
-
+    testable.openFilters();
+    await fixture.whenStable();
     testable.setGender('all');
+    testable.applyFilters();
     await fixture.whenStable();
 
     expect(testable.request().gender).toBeUndefined();
@@ -182,13 +206,15 @@ describe('RefereeFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Referee', 'Database', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Referee', 'Original ID', 'Database', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('270317');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
     expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe(
       '1 Jan 1980',
     );
+    expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('183 cm');
+    expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('78 kg');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
       'Choose columns, 0 hidden',
     );

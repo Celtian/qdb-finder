@@ -24,11 +24,13 @@ export type FinderColumnKey =
   | 'playerCount'
   | 'positions'
   | 'potential'
+  | 'preferredFoot'
   | 'real'
   | 'squadSize'
   | 'teamCount'
   | 'teams'
-  | 'version';
+  | 'version'
+  | 'weight';
 
 export interface FinderColumnDefinition {
   key: FinderColumnKey;
@@ -53,22 +55,25 @@ const defineColumn = (
 export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]> = {
   players: [
     defineColumn('name', 'Player', 'name'),
-    defineColumn('database', 'Database'),
     defineColumn('originalId', 'Original ID'),
+    defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('nationality', 'Nationality'),
     defineColumn('teams', 'Teams'),
     defineColumn('positions', 'Positions'),
     defineColumn('birthDate', 'Birth date', 'birthDate'),
     defineColumn('age', 'Age', 'age'),
+    defineColumn('height', 'Height', 'height'),
+    defineColumn('weight', 'Weight', 'weight'),
+    defineColumn('preferredFoot', 'Preferred foot', 'preferredFoot'),
     defineColumn('overall', 'OVR', 'overall'),
     defineColumn('potential', 'POT', 'potential'),
     defineColumn('bestRating', 'Best', 'bestRating'),
   ],
   teams: [
     defineColumn('name', 'Team', 'name'),
-    defineColumn('database', 'Database'),
     defineColumn('originalId', 'Original ID'),
+    defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('country', 'Country'),
     defineColumn('league', 'League', 'league'),
@@ -80,8 +85,8 @@ export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]
   ],
   leagues: [
     defineColumn('name', 'League', 'name'),
-    defineColumn('database', 'Database'),
     defineColumn('originalId', 'Original ID'),
+    defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('country', 'Country', 'country'),
     defineColumn('level', 'Tier', 'level'),
@@ -90,20 +95,21 @@ export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]
   ],
   referees: [
     defineColumn('name', 'Referee', 'name'),
-    defineColumn('database', 'Database'),
     defineColumn('originalId', 'Original ID'),
+    defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('nationality', 'Nationality', 'nationality'),
     defineColumn('leagues', 'Leagues', 'leagueCount'),
     defineColumn('birthDate', 'Birth date', 'birthDate'),
     defineColumn('age', 'Age', 'age'),
     defineColumn('height', 'Height', 'height'),
+    defineColumn('weight', 'Weight', 'weight'),
     defineColumn('real', 'Real'),
   ],
   stadiums: [
     defineColumn('name', 'Stadium', 'name'),
-    defineColumn('database', 'Database'),
     defineColumn('originalId', 'Original ID'),
+    defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('country', 'Country', 'country'),
     defineColumn('teams', 'Teams', 'teamCount'),

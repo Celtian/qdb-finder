@@ -1,26 +1,34 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
   defaultFinderColumns,
   finderColumns,
@@ -75,9 +83,11 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-stadium-finder',
   imports: [
+    AppNavigationMenu,
     FormField,
     CountryFlag,
     DatabaseFilter,
+    FinderFilterDrawer,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -87,7 +97,6 @@ const validId = (value: string | null): number | undefined => {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatSidenavModule,
     MatSortModule,
     MatTableModule,
   ],
@@ -99,14 +108,15 @@ export class StadiumFinder {
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly columnPreferences = inject(FinderColumnPreferences);
-  private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private requestSequence = 0;
-  private debounceId?: ReturnType<typeof setTimeout>;
+  private filterDialogRef?: MatDialogRef<unknown>;
+  private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(this.initialRequest());
+  protected readonly request = signal<StadiumSearchRequest>(this.initialRequest());
+  protected readonly draftRequest = signal<StadiumSearchRequest>(this.initialRequest());
   protected readonly result = signal<StadiumResultPage>({
     rows: [],
     total: 0,
@@ -126,7 +136,7 @@ export class StadiumFinder {
   );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    databaseVersions(this.databases(), this.request().databaseIds),
+    databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
   protected readonly availability = signal<AvailabilityFilter>('all');
   protected readonly suggestions = signal<Record<StadiumFacet, EntityFacetOption[]>>({
@@ -137,45 +147,51 @@ export class StadiumFinder {
     country: {},
     team: {},
   });
+  private appliedLabels: Record<StadiumFacet, Record<string, FilterDisplay>> = {
+    country: {},
+    team: {},
+  };
   protected readonly selectedCountries = computed(() =>
-    this.request().countryIds.map((id): FilterDisplay => {
+    this.draftRequest().countryIds.map((id): FilterDisplay => {
       const key = String(id);
       return this.labels().country[key] ?? { key, label: key };
     }),
   );
   protected readonly selectedTeams = computed(() =>
-    this.request().teamKeys.map(
+    this.draftRequest().teamKeys.map(
       (key): FilterDisplay => this.labels().team[key] ?? { key, label: key },
     ),
   );
-  protected readonly isNarrow = toSignal(
-    this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
-    { initialValue: false },
+  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
+  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly resultStatus = computed(() =>
+    this.loading()
+      ? 'Searching stadiums…'
+      : `${this.result().total.toLocaleString()} stadium editions`,
   );
-  protected readonly hasFilters = computed(() => {
-    const request = this.request();
-    return Boolean(
-      request.text ||
-      request.databaseIds.length ||
-      request.versions.length ||
-      request.countryIds.length ||
-      request.teamKeys.length ||
-      request.teamEdition ||
-      request.isLicensed !== undefined ||
-      Object.keys(request.capacity).length,
-    );
-  });
+
+  private filterCount(request: StadiumSearchRequest): number {
+    return [
+      request.databaseIds.length > 0,
+      request.versions.length > 0,
+      request.countryIds.length > 0,
+      request.teamKeys.length > 0,
+      Boolean(request.teamEdition),
+      request.isLicensed !== undefined,
+      Object.keys(request.capacity).length > 0,
+    ].filter(Boolean).length;
+  }
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
       this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
-    effect(() => {
+    effect((onCleanup) => {
       const text = this.model().text;
-      clearTimeout(this.debounceId);
-      this.debounceId = setTimeout(() => {
+      const debounceId = setTimeout(() => {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+      onCleanup(() => clearTimeout(debounceId));
     });
     effect(() => {
       if (!this.databaseContext.revision()) return;
@@ -186,51 +202,42 @@ export class StadiumFinder {
   }
 
   protected setVersions(versions: number[]): void {
-    this.request.update((value) => ({ ...value, versions, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, versions }));
   }
 
   protected setDatabases(databaseIds: string[]): void {
     const availableVersions = databaseVersions(this.databases(), databaseIds);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       databaseIds,
       versions: value.versions.filter((version) => availableVersions.includes(version)),
       teamEdition: undefined,
-      offset: 0,
     }));
-    this.contextTeam.set(undefined);
-    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
-    void this.search();
   }
 
   protected setCapacity(boundary: 'min' | 'max', event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       capacity: { ...value.capacity, [boundary]: raw === '' ? undefined : Number(raw) },
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected setAvailability(value: AvailabilityFilter): void {
     this.availability.set(value);
-    this.request.update((request) => ({
+    this.draftRequest.update((request) => ({
       ...request,
       isLicensed: value === 'all' ? undefined : value === 'licensed',
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected async suggest(facet: StadiumFacet, event: Event): Promise<void> {
     const options = await this.qdb.suggestEntityFacets({
-      databaseIds: this.request().databaseIds,
+      databaseIds: this.draftRequest().databaseIds,
       entity: 'stadium',
       facet,
       text: (event.target as HTMLInputElement).value,
-      versions: this.request().versions,
+      versions: this.draftRequest().versions,
       limit: 20,
     });
     this.suggestions.update((value) => ({ ...value, [facet]: options }));
@@ -242,17 +249,15 @@ export class StadiumFinder {
     input: HTMLInputElement,
   ): void {
     if (facet === 'team')
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         teamKeys: [...new Set([...value.teamKeys, option.key])],
-        offset: 0,
       }));
     else if (option.id !== undefined) {
       const id = option.id;
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         countryIds: [...new Set([...value.countryIds, id])],
-        offset: 0,
       }));
     }
     this.labels.update((value) => ({
@@ -263,33 +268,49 @@ export class StadiumFinder {
       },
     }));
     input.value = '';
-    void this.search();
   }
 
   protected removeFacet(facet: StadiumFacet, key: string): void {
     if (facet === 'team')
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         teamKeys: value.teamKeys.filter((item) => item !== key),
-        offset: 0,
       }));
     else
-      this.request.update((value) => ({
+      this.draftRequest.update((value) => ({
         ...value,
         countryIds: value.countryIds.filter((item) => item !== Number(key)),
-        offset: 0,
       }));
-    void this.search();
   }
 
   protected clearFilters(): void {
-    this.model.set({ text: '' });
-    this.request.set(defaultStadiumSearchRequest());
+    const current = this.request();
+    this.request.set({
+      ...defaultStadiumSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
     this.labels.set({ country: {}, team: {} });
+    this.appliedLabels = { country: {}, team: {} };
     this.availability.set('all');
     this.contextTeam.set(undefined);
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
+  }
+
+  protected clearDraftFilters(): void {
+    const current = this.draftRequest();
+    this.draftRequest.set({
+      ...defaultStadiumSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
+    this.labels.set({ country: {}, team: {} });
+    this.availability.set('all');
   }
 
   protected retrySearch(): void {
@@ -312,6 +333,48 @@ export class StadiumFinder {
       direction,
       offset: 0,
     }));
+    void this.search();
+  }
+  protected openFilters(): void {
+    this.draftRequest.set(this.cloneRequest(this.request()));
+    this.labels.set({
+      country: { ...this.appliedLabels.country },
+      team: { ...this.appliedLabels.team },
+    });
+    this.availability.set(
+      this.request().isLicensed === undefined
+        ? 'all'
+        : this.request().isLicensed
+          ? 'licensed'
+          : 'generic',
+    );
+    this.filterDialogRef = this.dialog.open(
+      this.filterDrawer(),
+      finderFilterDialogConfig('stadium-filter-title'),
+    );
+  }
+  protected applyFilters(): void {
+    const current = this.request();
+    const draft = this.draftRequest();
+    const databaseChanged = current.databaseIds.join('\u0000') !== draft.databaseIds.join('\u0000');
+    const contextCleared = Boolean(current.teamEdition && !draft.teamEdition);
+    this.request.set({
+      ...this.cloneRequest(draft),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+      offset: 0,
+    });
+    this.appliedLabels = {
+      country: { ...this.labels().country },
+      team: { ...this.labels().team },
+    };
+    if (databaseChanged || contextCleared) {
+      this.contextTeam.set(undefined);
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
+    this.filterDialogRef?.close();
     void this.search();
   }
   protected openColumns(): void {
@@ -363,6 +426,17 @@ export class StadiumFinder {
       offset: 0,
     }));
     void this.search();
+  }
+
+  private cloneRequest(value: StadiumSearchRequest): StadiumSearchRequest {
+    return {
+      ...value,
+      databaseIds: [...value.databaseIds],
+      versions: [...value.versions],
+      countryIds: [...value.countryIds],
+      teamKeys: [...value.teamKeys],
+      capacity: { ...value.capacity },
+    };
   }
 
   private initialRequest(): StadiumSearchRequest {

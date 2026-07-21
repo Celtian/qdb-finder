@@ -7,14 +7,14 @@
 .navigation-trigger {
   display: grid;
   width: 48px;
-  height: 44px;
+  height: 48px;
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 0;
+  border-radius: 50%;
   background: transparent;
   color: var(--mat-sys-on-surface, #1a1b20);
-  cursor: default;
+  cursor: pointer;
   -webkit-app-region: no-drag;
 }
 
@@ -24,7 +24,7 @@
 
 .navigation-trigger:focus-visible {
   outline: 2px solid var(--qdb-brand);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
 .navigation-trigger mat-icon {

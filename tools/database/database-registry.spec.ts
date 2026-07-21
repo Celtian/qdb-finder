@@ -14,6 +14,9 @@ interface TestPlayer {
   name: string;
   overall: number;
   birthDate?: string | null;
+  height?: number | null;
+  weight?: number | null;
+  preferredFoot?: string;
   nationality?: string;
 }
 
@@ -82,7 +85,7 @@ const createDatabase = (
   const insert = database.prepare(
     `INSERT INTO player_edition VALUES (
       ?, 23, ?, ?, ?, ?, 'gb-eng', 'ST', 25, ?, ?, 'ST', ?,
-      '', '', '', '', ?, '2022-09-01', NULL, NULL, '', '', '', '{}', '{}', '{}'
+      '', '', '', '', ?, '2022-09-01', ?, ?, ?, '', '', '{}', '{}', '{}'
     )`,
   );
   for (const player of players) {
@@ -97,6 +100,9 @@ const createDatabase = (
       player.overall,
       player.overall,
       player.birthDate ?? null,
+      player.height ?? null,
+      player.weight ?? null,
+      player.preferredFoot ?? '',
     );
   }
   database.close();
@@ -111,12 +117,36 @@ describe('database registry', () => {
     directories.push(root);
     const builtInPath = join(root, 'built-in.sqlite');
     createDatabase(builtInPath, 'built-in', 'Built-in', 'built-in', [
-      { id: 1, name: 'Shared Player', overall: 90, birthDate: '1990-01-01' },
-      { id: 2, name: 'Built-in Player', overall: 80, birthDate: '2000-01-01' },
+      {
+        id: 1,
+        name: 'Shared Player',
+        overall: 90,
+        birthDate: '1990-01-01',
+        height: 180,
+        weight: 80,
+        preferredFoot: '1',
+      },
+      {
+        id: 2,
+        name: 'Built-in Player',
+        overall: 80,
+        birthDate: '2000-01-01',
+        height: 170,
+        weight: 70,
+        preferredFoot: '1',
+      },
     ]);
     const library = new DatabaseLibrary(builtInPath, root);
     createDatabase(library.pathFor(CUSTOM_ID), CUSTOM_ID, 'Custom', 'custom', [
-      { id: 1, name: 'Modified Player', overall: 95, birthDate: '1985-01-01' },
+      {
+        id: 1,
+        name: 'Modified Player',
+        overall: 95,
+        birthDate: '1985-01-01',
+        height: 190,
+        weight: 90,
+        preferredFoot: '2',
+      },
     ]);
     return { library, registry: new DatabaseRegistry(library) };
   };
@@ -177,6 +207,39 @@ describe('database registry', () => {
     expect(
       registry.searchPlayers({ ...request, offset: 2 }).rows.map(({ birthDate }) => birthDate),
     ).toEqual(['2000-01-01']);
+    registry.close();
+  });
+
+  it('sorts player profile columns globally across databases', () => {
+    const { registry } = setup();
+
+    expect(
+      registry
+        .searchPlayers({
+          ...defaultSearchRequest(),
+          sort: 'height',
+          direction: 'desc',
+        })
+        .rows.map(({ name }) => name),
+    ).toEqual(['Modified Player', 'Shared Player', 'Built-in Player']);
+    expect(
+      registry
+        .searchPlayers({
+          ...defaultSearchRequest(),
+          sort: 'weight',
+          direction: 'asc',
+        })
+        .rows.map(({ name }) => name),
+    ).toEqual(['Built-in Player', 'Shared Player', 'Modified Player']);
+    expect(
+      registry
+        .searchPlayers({
+          ...defaultSearchRequest(),
+          sort: 'preferredFoot',
+          direction: 'desc',
+        })
+        .rows.map(({ name }) => name),
+    ).toEqual(['Modified Player', 'Built-in Player', 'Shared Player']);
     registry.close();
   });
 

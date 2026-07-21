@@ -53,8 +53,13 @@ describe('StadiumFinder', () => {
     getStadium.mockClear();
   });
 
+  afterEach(() => TestBed.inject(MatDialog).closeAll());
+
   it('renders the empty state after loading', async () => {
     expect(component).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+    ).toBeTruthy();
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
     ).toContain('Search stadiums or Original ID');
@@ -66,17 +71,29 @@ describe('StadiumFinder', () => {
     });
   });
 
-  it('applies licensed and capacity filters immediately', () => {
+  it('stages licensed and capacity filters until Apply', async () => {
     const testable = component as unknown as {
+      openFilters(): void;
       setAvailability(value: 'all' | 'licensed' | 'generic'): void;
       setCapacity(boundary: 'min' | 'max', event: Event): void;
+      applyFilters(): void;
     };
+    searchStadiums.mockClear();
+    testable.openFilters();
     testable.setAvailability('licensed');
     testable.setCapacity('min', { target: { value: '50000' } } as unknown as Event);
 
+    expect(searchStadiums).not.toHaveBeenCalled();
+    testable.applyFilters();
+    await fixture.whenStable();
     expect(searchStadiums).toHaveBeenLastCalledWith(
       expect.objectContaining({ isLicensed: true, capacity: { min: 50_000 } }),
     );
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.filter-button')
+        ?.getAttribute('aria-label'),
+    ).toBe('Choose filters, 2 active');
   });
 
   it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
@@ -145,7 +162,7 @@ describe('StadiumFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Stadium', 'Database', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Stadium', 'Original ID', 'Database', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('1098');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);

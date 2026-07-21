@@ -1,28 +1,20 @@
-<mat-sidenav-container class="shell">
-  <mat-sidenav
-    #filters
-    class="filters"
-    [mode]="isNarrow() ? 'over' : 'side'"
-    [opened]="!isNarrow()"
+<ng-template #filterDrawer>
+  <app-finder-filter-drawer
+    title="Player filters"
+    titleId="player-filter-title"
+    [canClear]="draftHasFilters()"
+    (clearAll)="clearDraftFilters()"
+    (apply)="applyFilters()"
   >
     <div class="filter-content">
-      <div class="filter-heading">
-        <div>
-          <p>QDB Finder</p>
-          <h2>Filters</h2>
-        </div>
-        <button type="button" mat-icon-button aria-label="Close filters" (click)="filters.close()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
       <app-database-filter
         [databases]="databases()"
-        [selected]="request().databaseIds"
+        [selected]="draftRequest().databaseIds"
         (selectedChange)="setDatabases($event)"
       />
       <mat-form-field appearance="outline"
         ><mat-label>FIFA versions</mat-label
-        ><mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
+        ><mat-select multiple [value]="draftRequest().versions" (valueChange)="setVersions($event)">
           @for (version of versions(); track version) {
             <mat-option [value]="version">FIFA {{ version }}</mat-option>
           }
@@ -30,7 +22,7 @@
       >
       <mat-form-field class="filter-with-hint" appearance="outline">
         <mat-label>Gender</mat-label>
-        <mat-select [value]="request().gender ?? 'all'" (valueChange)="setGender($event)">
+        <mat-select [value]="draftRequest().gender ?? 'all'" (valueChange)="setGender($event)">
           <mat-option value="all">All</mat-option>
           <mat-option value="men">Men</mat-option>
           <mat-option value="women">Women</mat-option>
@@ -139,7 +131,11 @@
       </mat-chip-set>
       <mat-form-field appearance="outline"
         ><mat-label>Positions</mat-label
-        ><mat-select multiple [value]="request().positions" (valueChange)="setPositions($event)">
+        ><mat-select
+          multiple
+          [value]="draftRequest().positions"
+          (valueChange)="setPositions($event)"
+        >
           <mat-select-trigger>
             <span class="position-list">
               @for (position of selectedPositions(); track position.value) {
@@ -157,8 +153,17 @@
       <fieldset>
         <legend>Age</legend>
         <div class="range">
-          <label>Min<input type="number" (input)="setRange('age', 'min', $event)" /></label
-          ><label>Max<input type="number" (input)="setRange('age', 'max', $event)" /></label>
+          <label
+            >Min<input
+              type="number"
+              [value]="draftRequest().age.min ?? ''"
+              (input)="setRange('age', 'min', $event)" /></label
+          ><label
+            >Max<input
+              type="number"
+              [value]="draftRequest().age.max ?? ''"
+              (input)="setRange('age', 'max', $event)"
+          /></label>
         </div>
       </fieldset>
       <fieldset>
@@ -169,9 +174,15 @@
               type="number"
               min="1"
               max="99"
+              [value]="draftRequest().overall.min ?? ''"
               (input)="setRange('overall', 'min', $event)" /></label
           ><label
-            >Max<input type="number" min="1" max="99" (input)="setRange('overall', 'max', $event)"
+            >Max<input
+              type="number"
+              min="1"
+              max="99"
+              [value]="draftRequest().overall.max ?? ''"
+              (input)="setRange('overall', 'max', $event)"
           /></label>
         </div>
       </fieldset>
@@ -183,12 +194,14 @@
               type="number"
               min="1"
               max="99"
+              [value]="draftRequest().potential.min ?? ''"
               (input)="setRange('potential', 'min', $event)" /></label
           ><label
             >Max<input
               type="number"
               min="1"
               max="99"
+              [value]="draftRequest().potential.max ?? ''"
               (input)="setRange('potential', 'max', $event)"
           /></label>
         </div>
@@ -196,48 +209,75 @@
       <p class="filter-note">
         Team, league and nationality are exact filters and are also searchable in the main box.
       </p>
-      <div class="filter-actions">
-        <button type="button" mat-button [disabled]="!hasFilters()" (click)="clearFilters()">
-          Reset
-        </button>
-      </div>
     </div>
-  </mat-sidenav>
-  <mat-sidenav-content>
-    <header class="topbar">
-      <button type="button" mat-icon-button aria-label="Open filters" (click)="filters.toggle()">
-        <mat-icon>tune</mat-icon>
-      </button>
-      <div>
-        <p class="eyebrow">Offline FIFA database</p>
-        <h1>Find any player, any edition</h1>
+  </app-finder-filter-drawer>
+</ng-template>
+
+<div class="shell">
+  <header class="topbar">
+    <app-navigation-menu />
+    <div>
+      <p class="eyebrow">Offline FIFA database</p>
+      <h1>Find any player, any edition</h1>
+    </div>
+  </header>
+  <main>
+    @if (context(); as entity) {
+      <div class="context-banner">
+        <mat-icon>filter_alt</mat-icon>
+        <span>
+          Showing FIFA {{ entity.version }} players from <strong>{{ entity.name }}</strong>
+          {{ contextKind() }} in {{ entity.databaseName }}
+        </span>
+        <button type="button" mat-button (click)="clearFilters()">Clear</button>
       </div>
-    </header>
-    <main>
-      @if (context(); as entity) {
-        <div class="context-banner">
-          <mat-icon>filter_alt</mat-icon>
-          <span>
-            Showing FIFA {{ entity.version }} players from <strong>{{ entity.name }}</strong>
-            {{ contextKind() }} in {{ entity.databaseName }}
-          </span>
-          <button type="button" mat-button (click)="clearFilters()">Clear</button>
-        </div>
-      }
-      <mat-form-field class="search" appearance="outline"
-        ><mat-label>Search players, teams, leagues, countries or Original ID</mat-label
-        ><mat-icon matPrefix>search</mat-icon
-        ><input matInput autocomplete="off" [formField]="searchForm.text" /><button
-          type="button"
-          mat-icon-button
-          matSuffix
-          aria-label="Clear search"
-          [disabled]="!model().text"
-          (click)="model.set({ text: '' })"
-        >
-          <mat-icon>close</mat-icon>
-        </button></mat-form-field
+    }
+    <mat-form-field class="search" appearance="outline"
+      ><mat-label>Search players, teams, leagues, countries or Original ID</mat-label
+      ><mat-icon matPrefix>search</mat-icon
+      ><input matInput autocomplete="off" [formField]="searchForm.text" /><button
+        type="button"
+        mat-icon-button
+        matSuffix
+        aria-label="Clear search"
+        [disabled]="!model().text"
+        (click)="model.set({ text: '' })"
       >
+        <mat-icon>close</mat-icon>
+      </button></mat-form-field
+    >
+    <section class="results" aria-live="polite">
+      <div class="result-header">
+        <div class="result-count">{{ resultStatus() }}</div>
+        <div class="result-actions">
+          <button
+            class="filter-button"
+            matButton="tonal"
+            type="button"
+            [attr.aria-label]="'Choose filters, ' + activeFilterCount() + ' active'"
+            (click)="openFilters()"
+          >
+            <mat-icon aria-hidden="true">tune</mat-icon>
+            Filters
+            @if (activeFilterCount()) {
+              <span class="filter-count" aria-hidden="true">{{ activeFilterCount() }}</span>
+            }
+          </button>
+          <button
+            class="column-button"
+            matButton="tonal"
+            type="button"
+            [attr.aria-label]="'Choose columns, ' + hiddenColumnCount() + ' hidden'"
+            (click)="openColumns()"
+          >
+            <mat-icon aria-hidden="true">view_column</mat-icon>
+            Columns
+            @if (hiddenColumnCount()) {
+              <span class="column-count" aria-hidden="true">{{ hiddenColumnCount() }}</span>
+            }
+          </button>
+        </div>
+      </div>
       @if (loading()) {
         <div class="state">
           <mat-spinner diameter="42" />
@@ -255,7 +295,7 @@
           <mat-icon>person_search</mat-icon>
           <h2>
             {{
-              hasFilters()
+              hasSearchOrFilters()
                 ? 'No players match these filters'
                 : 'Start with a player name or Original ID'
             }}
@@ -266,132 +306,126 @@
           </p>
         </div>
       } @else {
-        <section class="results" aria-live="polite">
-          <div class="result-header">
-            <div class="result-count">
-              <strong>{{ result().total.toLocaleString() }}</strong> player editions
-            </div>
-            <button
-              class="column-button"
-              matButton="tonal"
-              type="button"
-              [attr.aria-label]="'Choose columns, ' + hiddenColumnCount() + ' hidden'"
-              (click)="openColumns()"
+        <div class="table-scroll">
+          <table
+            mat-table
+            matSort
+            [dataSource]="resultRows()"
+            [matSortActive]="request().sort"
+            [matSortDirection]="request().direction"
+            (matSortChange)="sort($event)"
+          >
+            <ng-container matColumnDef="name"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="name">Player</th>
+              <td *matCellDef="let row" mat-cell>
+                <button type="button" class="player-link" (click)="openPlayer(row)">
+                  {{ row.name }}
+                </button>
+              </td></ng-container
             >
-              <mat-icon aria-hidden="true">view_column</mat-icon>
-              Columns
-              @if (hiddenColumnCount()) {
-                <span class="column-count" aria-hidden="true">{{ hiddenColumnCount() }}</span>
-              }
-            </button>
-          </div>
-          <div class="table-scroll">
-            <table
-              mat-table
-              matSort
-              [dataSource]="resultRows()"
-              [matSortActive]="request().sort"
-              [matSortDirection]="request().direction"
-              (matSortChange)="sort($event)"
+            <ng-container matColumnDef="originalId"
+              ><th *matHeaderCellDef mat-header-cell>Original ID</th>
+              <td *matCellDef="let row" class="original-id" mat-cell>
+                {{ row.playerId }}
+              </td></ng-container
             >
-              <ng-container matColumnDef="name"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="name">Player</th>
-                <td *matCellDef="let row" mat-cell>
-                  <button type="button" class="player-link" (click)="openPlayer(row)">
-                    {{ row.name }}
-                  </button>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="database">
-                <th *matHeaderCellDef mat-header-cell>Database</th>
-                <td *matCellDef="let row" mat-cell>{{ row.databaseName }}</td>
-              </ng-container>
-              <ng-container matColumnDef="originalId"
-                ><th *matHeaderCellDef mat-header-cell>Original ID</th>
-                <td *matCellDef="let row" class="original-id" mat-cell>
-                  {{ row.playerId }}
-                </td></ng-container
-              >
-              <ng-container matColumnDef="version"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="version">Edition</th>
-                <td *matCellDef="let row" mat-cell>FIFA {{ row.version }}</td></ng-container
-              >
-              <ng-container matColumnDef="nationality"
-                ><th *matHeaderCellDef mat-header-cell>Nationality</th>
-                <td *matCellDef="let row" mat-cell>
-                  <span class="nationality-with-flag">
-                    @if (row.nationalityCode) {
-                      <app-country-flag decorative [code]="row.nationalityCode" />
-                    }
-                    <span>{{ row.nationality || '—' }}</span>
-                  </span>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="teams"
-                ><th *matHeaderCellDef mat-header-cell>Teams</th>
-                <td *matCellDef="let row" mat-cell>
-                  {{ row.teamsLabel }}
-                </td></ng-container
-              >
-              <ng-container matColumnDef="positions"
-                ><th *matHeaderCellDef mat-header-cell>Positions</th>
-                <td *matCellDef="let row" mat-cell>
-                  <span class="position-list">
-                    @for (position of row.positionDisplays; track position.value) {
-                      <span [class]="position.className">{{ position.value }}</span>
-                    }
-                  </span>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="birthDate"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="birthDate">Birth date</th>
-                <td *matCellDef="let row" mat-cell>{{ row.birthDateLabel }}</td></ng-container
-              >
-              <ng-container matColumnDef="age"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="age">Age</th>
-                <td *matCellDef="let row" mat-cell>{{ row.age ?? '—' }}</td></ng-container
-              >
-              <ng-container matColumnDef="overall"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="overall">OVR</th>
-                <td *matCellDef="let row" mat-cell>
-                  <strong [class]="row.overallClass">
-                    {{ row.overall }}
-                  </strong>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="potential"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="potential">POT</th>
-                <td *matCellDef="let row" mat-cell>
-                  <span [class]="row.potentialClass">
-                    {{ row.potential }}
-                  </span>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="bestRating"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="bestRating">Best</th>
-                <td *matCellDef="let row" mat-cell>
-                  <span [class]="row.bestRatingClass"
-                    >{{ row.bestRating }} {{ row.bestPosition }}</span
-                  >
-                </td></ng-container
-              >
-              <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
-              <tr
-                *matRowDef="let row; columns: columns()"
-                mat-row
-                (dblclick)="openPlayer(row)"
-              ></tr>
-            </table>
-          </div>
-          <mat-paginator
-            [length]="result().total"
-            [pageSize]="result().pageSize"
-            [pageIndex]="result().offset / result().pageSize"
-            [pageSizeOptions]="[25, 50, 100]"
-            (page)="page($event)"
-          />
-        </section>
+            <ng-container matColumnDef="database">
+              <th *matHeaderCellDef mat-header-cell>Database</th>
+              <td *matCellDef="let row" mat-cell>{{ row.databaseName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="version"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="version">Edition</th>
+              <td *matCellDef="let row" mat-cell>FIFA {{ row.version }}</td></ng-container
+            >
+            <ng-container matColumnDef="nationality"
+              ><th *matHeaderCellDef mat-header-cell>Nationality</th>
+              <td *matCellDef="let row" mat-cell>
+                <span class="nationality-with-flag">
+                  @if (row.nationalityCode) {
+                    <app-country-flag decorative [code]="row.nationalityCode" />
+                  }
+                  <span>{{ row.nationality || '—' }}</span>
+                </span>
+              </td></ng-container
+            >
+            <ng-container matColumnDef="teams"
+              ><th *matHeaderCellDef mat-header-cell>Teams</th>
+              <td *matCellDef="let row" mat-cell>
+                {{ row.teamsLabel }}
+              </td></ng-container
+            >
+            <ng-container matColumnDef="positions"
+              ><th *matHeaderCellDef mat-header-cell>Positions</th>
+              <td *matCellDef="let row" mat-cell>
+                <span class="position-list">
+                  @for (position of row.positionDisplays; track position.value) {
+                    <span [class]="position.className">{{ position.value }}</span>
+                  }
+                </span>
+              </td></ng-container
+            >
+            <ng-container matColumnDef="birthDate"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="birthDate">Birth date</th>
+              <td *matCellDef="let row" mat-cell>{{ row.birthDateLabel }}</td></ng-container
+            >
+            <ng-container matColumnDef="age"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="age">Age</th>
+              <td *matCellDef="let row" mat-cell>{{ row.age ?? '—' }}</td></ng-container
+            >
+            <ng-container matColumnDef="height"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="height">Height</th>
+              <td *matCellDef="let row" mat-cell>
+                {{ row.height === null ? '—' : row.height + ' cm' }}
+              </td></ng-container
+            >
+            <ng-container matColumnDef="weight"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="weight">Weight</th>
+              <td *matCellDef="let row" mat-cell>
+                {{ row.weight === null ? '—' : row.weight + ' kg' }}
+              </td></ng-container
+            >
+            <ng-container matColumnDef="preferredFoot"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="preferredFoot">
+                Preferred foot
+              </th>
+              <td *matCellDef="let row" mat-cell>{{ row.preferredFootLabel }}</td></ng-container
+            >
+            <ng-container matColumnDef="overall"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="overall">OVR</th>
+              <td *matCellDef="let row" mat-cell>
+                <strong [class]="row.overallClass">
+                  {{ row.overall }}
+                </strong>
+              </td></ng-container
+            >
+            <ng-container matColumnDef="potential"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="potential">POT</th>
+              <td *matCellDef="let row" mat-cell>
+                <span [class]="row.potentialClass">
+                  {{ row.potential }}
+                </span>
+              </td></ng-container
+            >
+            <ng-container matColumnDef="bestRating"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="bestRating">Best</th>
+              <td *matCellDef="let row" mat-cell>
+                <span [class]="row.bestRatingClass"
+                  >{{ row.bestRating }} {{ row.bestPosition }}</span
+                >
+              </td></ng-container
+            >
+            <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
+            <tr *matRowDef="let row; columns: columns()" mat-row (dblclick)="openPlayer(row)"></tr>
+          </table>
+        </div>
+        <mat-paginator
+          [length]="result().total"
+          [pageSize]="result().pageSize"
+          [pageIndex]="result().offset / result().pageSize"
+          [pageSizeOptions]="[25, 50, 100]"
+          (page)="page($event)"
+        />
       }
-    </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+    </section>
+  </main>
+</div>

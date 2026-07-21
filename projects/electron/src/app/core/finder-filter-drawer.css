@@ -1,0 +1,63 @@
+:host,
+.filter-drawer {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.filter-drawer {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--mat-sys-surface, #fff);
+}
+
+.drawer-header,
+.drawer-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.drawer-header {
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e5ef;
+}
+
+.drawer-header p,
+.drawer-header h2 {
+  margin: 0;
+}
+
+.drawer-header p {
+  color: var(--qdb-brand);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.filter-fields {
+  min-width: 0;
+  padding: 1.25rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.drawer-footer {
+  border-top: 1px solid #e2e5ef;
+}
+
+.drawer-footer span {
+  flex: 1;
+}
+
+@media (max-width: 420px) {
+  .drawer-footer {
+    flex-wrap: wrap;
+  }
+
+  .drawer-footer span {
+    display: none;
+  }
+}

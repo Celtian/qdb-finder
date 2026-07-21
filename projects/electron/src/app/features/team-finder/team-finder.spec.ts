@@ -18,7 +18,12 @@ import { TeamFinder } from './team-finder';
 describe('TeamFinder', () => {
   let component: TeamFinder;
   let fixture: ComponentFixture<TeamFinder>;
-  const searchTeams = vi.fn(async () => ({ rows: [], total: 0, offset: 0, pageSize: 50 }));
+  const searchTeams = vi.fn(async (request: TeamSearchRequest) => ({
+    rows: [],
+    total: 0,
+    offset: request.offset,
+    pageSize: request.pageSize,
+  }));
   const suggestEntityFacets = vi.fn(async (): Promise<EntityFacetOption[]> => []);
   const getTeam = vi.fn(async (): Promise<TeamDetails> => ({}) as TeamDetails);
 
@@ -47,10 +52,15 @@ describe('TeamFinder', () => {
     await fixture.whenStable();
   });
 
+  afterEach(() => TestBed.inject(MatDialog).closeAll());
+
   it('creates with newest-edition sorting', () => {
     const testable = component as unknown as { request(): TeamSearchRequest };
 
     expect(component).toBeTruthy();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+    ).toBeTruthy();
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
@@ -87,9 +97,12 @@ describe('TeamFinder', () => {
     ).toEqual(['name', 'country']);
   });
 
-  it('searches immediately when a rating range changes', async () => {
-    const overallMin = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      'fieldset input',
+  it('stages rating ranges and searches once on Apply', async () => {
+    const testable = component as unknown as { openFilters(): void; applyFilters(): void };
+    testable.openFilters();
+    await fixture.whenStable();
+    const overallMin = document.body.querySelector<HTMLInputElement>(
+      '.finder-filter-drawer-panel fieldset input',
     );
     searchTeams.mockClear();
 
@@ -97,7 +110,18 @@ describe('TeamFinder', () => {
     overallMin!.dispatchEvent(new Event('input'));
     await fixture.whenStable();
 
+    expect(searchTeams).not.toHaveBeenCalled();
+    testable.applyFilters();
     expect(searchTeams).toHaveBeenCalledWith(expect.objectContaining({ overall: { min: 80 } }));
+    expect(searchTeams.mock.calls.filter(([request]) => request.overall.min === 80)).toHaveLength(
+      1,
+    );
+    await fixture.whenStable();
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.filter-button')
+        ?.getAttribute('aria-label'),
+    ).toBe('Choose filters, 1 active');
   });
 
   it('renders the original team ID as a non-sortable column after the name', async () => {
@@ -138,7 +162,7 @@ describe('TeamFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Team', 'Database', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Team', 'Original ID', 'Database', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('116009');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);

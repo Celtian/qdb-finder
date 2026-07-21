@@ -33,12 +33,12 @@ describe('App', () => {
     expect(fixture.nativeElement.getAttribute('app-version')).toBe(VERSION_INFO.version);
   });
 
-  it('renders the compact shell without a global sidenav', async () => {
+  it('renders routed content without a custom titlebar or global sidenav', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.querySelector('app-window-titlebar')).toBeTruthy();
+    expect(element.querySelector('app-window-titlebar')).toBeNull();
     expect(element.querySelector('main.app-content')).toBeTruthy();
     expect(element.querySelector('mat-sidenav-container')).toBeNull();
     expect(element.querySelector('.mobile-navigation-bar')).toBeNull();

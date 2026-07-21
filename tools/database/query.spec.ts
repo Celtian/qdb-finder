@@ -27,6 +27,14 @@ integration('player queries', () => {
     expect(database.search({ ...request, text: 'Mess' }).total).toBeGreaterThan(0);
   });
 
+  it('returns player profile columns in search results', () => {
+    expect(database.search({ ...request, text: '158023', versions: [23] }).rows[0]).toMatchObject({
+      height: 169,
+      weight: 67,
+      preferredFoot: '2',
+    });
+  });
+
   it('finds every entity type by exact Original ID', () => {
     const player = database.search({ ...request, text: ' 158023 ', versions: [23] });
     const allPlayerEditions = database.search({ ...request, text: '158023', pageSize: 200 });

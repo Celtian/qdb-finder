@@ -43,6 +43,9 @@ describe('database row mapping fallbacks', () => {
         positions: null,
         birth_date: null,
         age: null,
+        height: null,
+        weight: null,
+        preferred_foot: '',
         overall: 50,
         potential: 50,
         best_position: 'GK',
@@ -56,6 +59,9 @@ describe('database row mapping fallbacks', () => {
       positions: [],
       birthDate: null,
       age: null,
+      height: null,
+      weight: null,
+      preferredFoot: '',
     });
   });
 

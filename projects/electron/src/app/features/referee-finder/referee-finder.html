@@ -1,33 +1,20 @@
-<mat-sidenav-container class="entity-shell">
-  <mat-sidenav
-    #filters
-    class="entity-filters"
-    [mode]="isNarrow() ? 'over' : 'side'"
-    [opened]="!isNarrow()"
+<ng-template #filterDrawer>
+  <app-finder-filter-drawer
+    title="Referee filters"
+    titleId="referee-filter-title"
+    [canClear]="draftHasFilters()"
+    (clearAll)="clearDraftFilters()"
+    (apply)="applyFilters()"
   >
     <div class="filter-content">
-      <div class="filter-heading">
-        <div>
-          <p>QDB Finder</p>
-          <h2>Referee filters</h2>
-        </div>
-        <button
-          type="button"
-          mat-icon-button
-          aria-label="Close referee filters"
-          (click)="filters.close()"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
       <app-database-filter
         [databases]="databases()"
-        [selected]="request().databaseIds"
+        [selected]="draftRequest().databaseIds"
         (selectedChange)="setDatabases($event)"
       />
       <mat-form-field appearance="outline">
         <mat-label>FIFA versions</mat-label>
-        <mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
+        <mat-select multiple [value]="draftRequest().versions" (valueChange)="setVersions($event)">
           @for (version of versions(); track version) {
             <mat-option [value]="version">FIFA {{ version }}</mat-option>
           }
@@ -35,7 +22,7 @@
       </mat-form-field>
       <mat-form-field class="filter-with-hint" appearance="outline">
         <mat-label>Gender</mat-label>
-        <mat-select [value]="request().gender ?? 'all'" (valueChange)="setGender($event)">
+        <mat-select [value]="draftRequest().gender ?? 'all'" (valueChange)="setGender($event)">
           <mat-option value="all">All</mat-option>
           <mat-option value="men">Men</mat-option>
           <mat-option value="women">Women</mat-option>
@@ -114,8 +101,22 @@
       <fieldset>
         <legend>Age</legend>
         <div class="range">
-          <label>Min<input type="number" min="1" max="99" (input)="setAge('min', $event)" /></label>
-          <label>Max<input type="number" min="1" max="99" (input)="setAge('max', $event)" /></label>
+          <label
+            >Min<input
+              type="number"
+              min="1"
+              max="99"
+              [value]="draftRequest().age.min ?? ''"
+              (input)="setAge('min', $event)"
+          /></label>
+          <label
+            >Max<input
+              type="number"
+              min="1"
+              max="99"
+              [value]="draftRequest().age.max ?? ''"
+              (input)="setAge('max', $event)"
+          /></label>
         </div>
       </fieldset>
       <mat-form-field appearance="outline">
@@ -126,50 +127,74 @@
           <mat-option value="generic">Generic</mat-option>
         </mat-select>
       </mat-form-field>
-      <button type="button" mat-button [disabled]="!hasFilters()" (click)="clearFilters()">
-        Reset
-      </button>
     </div>
-  </mat-sidenav>
-  <mat-sidenav-content>
-    <header class="entity-topbar">
+  </app-finder-filter-drawer>
+</ng-template>
+
+<div class="entity-shell">
+  <header class="entity-topbar">
+    <app-navigation-menu />
+    <div>
+      <p class="eyebrow">Officials across every edition</p>
+      <h1>Browse referee editions</h1>
+    </div>
+  </header>
+  <main>
+    @if (contextLeague(); as league) {
+      <div class="context-banner">
+        <mat-icon>filter_alt</mat-icon
+        ><span
+          >Showing FIFA {{ league.version }} referees for <strong>{{ league.name }}</strong> in
+          {{ league.databaseName }}</span
+        ><button type="button" mat-button (click)="clearFilters()">Clear</button>
+      </div>
+    }
+    <mat-form-field class="entity-search" appearance="outline">
+      <mat-label>Search referees or Original ID</mat-label><mat-icon matPrefix>search</mat-icon>
+      <input matInput autocomplete="off" [formField]="searchForm.text" />
       <button
         type="button"
         mat-icon-button
-        aria-label="Open referee filters"
-        (click)="filters.toggle()"
+        matSuffix
+        aria-label="Clear referee search"
+        [disabled]="!model().text"
+        (click)="model.set({ text: '' })"
       >
-        <mat-icon>tune</mat-icon>
+        <mat-icon>close</mat-icon>
       </button>
-      <div>
-        <p class="eyebrow">Officials across every edition</p>
-        <h1>Browse referee editions</h1>
-      </div>
-    </header>
-    <main>
-      @if (contextLeague(); as league) {
-        <div class="context-banner">
-          <mat-icon>filter_alt</mat-icon
-          ><span
-            >Showing FIFA {{ league.version }} referees for <strong>{{ league.name }}</strong> in
-            {{ league.databaseName }}</span
-          ><button type="button" mat-button (click)="clearFilters()">Clear</button>
+    </mat-form-field>
+    <section class="results" aria-live="polite">
+      <div class="result-header">
+        <div class="result-count">{{ resultStatus() }}</div>
+        <div class="result-actions">
+          <button
+            class="filter-button"
+            matButton="tonal"
+            type="button"
+            [attr.aria-label]="'Choose filters, ' + activeFilterCount() + ' active'"
+            (click)="openFilters()"
+          >
+            <mat-icon aria-hidden="true">tune</mat-icon>
+            Filters
+            @if (activeFilterCount()) {
+              <span class="filter-count" aria-hidden="true">{{ activeFilterCount() }}</span>
+            }
+          </button>
+          <button
+            class="column-button"
+            matButton="tonal"
+            type="button"
+            [attr.aria-label]="'Choose columns, ' + hiddenColumnCount() + ' hidden'"
+            (click)="openColumns()"
+          >
+            <mat-icon aria-hidden="true">view_column</mat-icon>
+            Columns
+            @if (hiddenColumnCount()) {
+              <span class="column-count" aria-hidden="true">{{ hiddenColumnCount() }}</span>
+            }
+          </button>
         </div>
-      }
-      <mat-form-field class="entity-search" appearance="outline">
-        <mat-label>Search referees or Original ID</mat-label><mat-icon matPrefix>search</mat-icon>
-        <input matInput autocomplete="off" [formField]="searchForm.text" />
-        <button
-          type="button"
-          mat-icon-button
-          matSuffix
-          aria-label="Clear referee search"
-          [disabled]="!model().text"
-          (click)="model.set({ text: '' })"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
+      </div>
       @if (loading()) {
         <div class="state">
           <mat-spinner diameter="42" />
@@ -188,112 +213,92 @@
           <h2>No referees match these filters</h2>
         </div>
       } @else {
-        <section class="results" aria-live="polite">
-          <div class="result-header">
-            <div class="result-count">
-              <strong>{{ result().total.toLocaleString() }}</strong> referee editions
-            </div>
-            <button
-              class="column-button"
-              matButton="tonal"
-              type="button"
-              [attr.aria-label]="'Choose columns, ' + hiddenColumnCount() + ' hidden'"
-              (click)="openColumns()"
+        <div class="table-scroll">
+          <table
+            mat-table
+            matSort
+            [dataSource]="rows()"
+            [matSortActive]="request().sort"
+            [matSortDirection]="request().direction"
+            (matSortChange)="sort($event)"
+          >
+            <ng-container matColumnDef="name"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="name">Referee</th>
+              <td *matCellDef="let row" mat-cell>
+                <button type="button" class="entity-link" (click)="openReferee(row)">
+                  {{ row.name }}
+                </button>
+              </td></ng-container
             >
-              <mat-icon aria-hidden="true">view_column</mat-icon>
-              Columns
-              @if (hiddenColumnCount()) {
-                <span class="column-count" aria-hidden="true">{{ hiddenColumnCount() }}</span>
-              }
-            </button>
-          </div>
-          <div class="table-scroll">
-            <table
-              mat-table
-              matSort
-              [dataSource]="rows()"
-              [matSortActive]="request().sort"
-              [matSortDirection]="request().direction"
-              (matSortChange)="sort($event)"
+            <ng-container matColumnDef="originalId"
+              ><th *matHeaderCellDef mat-header-cell>Original ID</th>
+              <td *matCellDef="let row" class="original-id" mat-cell>
+                {{ row.refereeId }}
+              </td></ng-container
             >
-              <ng-container matColumnDef="name"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="name">Referee</th>
-                <td *matCellDef="let row" mat-cell>
-                  <button type="button" class="entity-link" (click)="openReferee(row)">
-                    {{ row.name }}
-                  </button>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="database">
-                <th *matHeaderCellDef mat-header-cell>Database</th>
-                <td *matCellDef="let row" mat-cell>{{ row.databaseName }}</td>
-              </ng-container>
-              <ng-container matColumnDef="originalId"
-                ><th *matHeaderCellDef mat-header-cell>Original ID</th>
-                <td *matCellDef="let row" class="original-id" mat-cell>
-                  {{ row.refereeId }}
-                </td></ng-container
-              >
-              <ng-container matColumnDef="version"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="version">Edition</th>
-                <td *matCellDef="let row" mat-cell>FIFA {{ row.version }}</td></ng-container
-              >
-              <ng-container matColumnDef="nationality"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="nationality">
-                  Nationality
-                </th>
-                <td *matCellDef="let row" mat-cell>
-                  <span class="country-with-flag">
-                    @if (row.nationalityCode) {
-                      <app-country-flag decorative [code]="row.nationalityCode" />
-                    }
-                    <span>{{ row.nationalityName || '—' }}</span></span
-                  >
-                </td></ng-container
-              >
-              <ng-container matColumnDef="leagues"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="leagueCount">Leagues</th>
-                <td *matCellDef="let row" mat-cell>
-                  <span class="league-list">{{ row.leagueText || '—' }}</span>
-                </td></ng-container
-              >
-              <ng-container matColumnDef="birthDate"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="birthDate">Birth date</th>
-                <td *matCellDef="let row" mat-cell>{{ row.birthDateLabel }}</td></ng-container
-              >
-              <ng-container matColumnDef="age"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="age">Age</th>
-                <td *matCellDef="let row" mat-cell>{{ row.age ?? '—' }}</td></ng-container
-              >
-              <ng-container matColumnDef="height"
-                ><th *matHeaderCellDef mat-header-cell mat-sort-header="height">Height</th>
-                <td *matCellDef="let row" mat-cell>
-                  {{ row.height ? row.height + ' cm' : '—' }}
-                </td></ng-container
-              >
-              <ng-container matColumnDef="real"
-                ><th *matHeaderCellDef mat-header-cell>Real</th>
-                <td *matCellDef="let row" mat-cell>
-                  {{ row.isReal === null ? '—' : row.isReal ? 'Yes' : 'No' }}
-                </td></ng-container
-              >
-              <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
-              <tr
-                *matRowDef="let row; columns: columns()"
-                mat-row
-                (dblclick)="openReferee(row)"
-              ></tr>
-            </table>
-          </div>
-          <mat-paginator
-            [length]="result().total"
-            [pageSize]="result().pageSize"
-            [pageIndex]="result().offset / result().pageSize"
-            [pageSizeOptions]="[25, 50, 100]"
-            (page)="page($event)"
-          />
-        </section>
+            <ng-container matColumnDef="database">
+              <th *matHeaderCellDef mat-header-cell>Database</th>
+              <td *matCellDef="let row" mat-cell>{{ row.databaseName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="version"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="version">Edition</th>
+              <td *matCellDef="let row" mat-cell>FIFA {{ row.version }}</td></ng-container
+            >
+            <ng-container matColumnDef="nationality"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="nationality">Nationality</th>
+              <td *matCellDef="let row" mat-cell>
+                <span class="country-with-flag">
+                  @if (row.nationalityCode) {
+                    <app-country-flag decorative [code]="row.nationalityCode" />
+                  }
+                  <span>{{ row.nationalityName || '—' }}</span></span
+                >
+              </td></ng-container
+            >
+            <ng-container matColumnDef="leagues"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="leagueCount">Leagues</th>
+              <td *matCellDef="let row" mat-cell>
+                <span class="league-list">{{ row.leagueText || '—' }}</span>
+              </td></ng-container
+            >
+            <ng-container matColumnDef="birthDate"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="birthDate">Birth date</th>
+              <td *matCellDef="let row" mat-cell>{{ row.birthDateLabel }}</td></ng-container
+            >
+            <ng-container matColumnDef="age"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="age">Age</th>
+              <td *matCellDef="let row" mat-cell>{{ row.age ?? '—' }}</td></ng-container
+            >
+            <ng-container matColumnDef="height"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="height">Height</th>
+              <td *matCellDef="let row" mat-cell>
+                {{ row.height === null ? '—' : row.height + ' cm' }}
+              </td></ng-container
+            >
+            <ng-container matColumnDef="weight"
+              ><th *matHeaderCellDef mat-header-cell mat-sort-header="weight">Weight</th>
+              <td *matCellDef="let row" mat-cell>
+                {{ row.weight === null ? '—' : row.weight + ' kg' }}
+              </td></ng-container
+            >
+            <ng-container matColumnDef="real"
+              ><th *matHeaderCellDef mat-header-cell>Real</th>
+              <td *matCellDef="let row" mat-cell>
+                {{ row.isReal === null ? '—' : row.isReal ? 'Yes' : 'No' }}
+              </td></ng-container
+            >
+            <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
+            <tr *matRowDef="let row; columns: columns()" mat-row (dblclick)="openReferee(row)"></tr>
+          </table>
+        </div>
+        <mat-paginator
+          [length]="result().total"
+          [pageSize]="result().pageSize"
+          [pageIndex]="result().offset / result().pageSize"
+          [pageSizeOptions]="[25, 50, 100]"
+          (page)="page($event)"
+        />
       }
-    </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+    </section>
+  </main>
+</div>

@@ -110,6 +110,12 @@ const playerComparator =
           return row.birthDate;
         case 'age':
           return row.age;
+        case 'height':
+          return row.height;
+        case 'weight':
+          return row.weight;
+        case 'preferredFoot':
+          return row.preferredFoot;
         case 'overall':
           return row.overall;
         case 'potential':
@@ -186,6 +192,8 @@ const refereeComparator =
           return row.age;
         case 'height':
           return row.height;
+        case 'weight':
+          return row.weight;
         case 'leagueCount':
           return row.leagueCount;
       }

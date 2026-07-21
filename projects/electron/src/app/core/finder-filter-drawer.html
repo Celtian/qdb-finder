@@ -1,0 +1,24 @@
+<div class="filter-drawer" [attr.aria-labelledby]="titleId()">
+  <div class="drawer-header">
+    <div>
+      <p>QDB Finder</p>
+      <h2 [id]="titleId()">{{ title() }}</h2>
+    </div>
+    <button matIconButton type="button" [attr.aria-label]="'Close ' + title()" (click)="cancel()">
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </div>
+
+  <div class="filter-fields">
+    <ng-content />
+  </div>
+
+  <div class="drawer-footer">
+    <button matButton type="button" [disabled]="!canClear()" (click)="clearAll.emit()">
+      Clear all
+    </button>
+    <span></span>
+    <button matButton type="button" (click)="cancel()">Cancel</button>
+    <button matButton="filled" type="button" (click)="apply.emit()">Apply</button>
+  </div>
+</div>

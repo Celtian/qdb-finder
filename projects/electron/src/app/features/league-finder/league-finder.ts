@@ -1,26 +1,34 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  TemplateRef,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
   defaultFinderColumns,
   finderColumns,
@@ -35,6 +43,7 @@ import {
   type EntityFacetOption,
   type LeagueEditionRow,
   type LeagueResultPage,
+  type LeagueSearchRequest,
   type LeagueSortField,
   type RefereeEditionRow,
 } from '../../core/qdb-contracts';
@@ -59,9 +68,11 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-league-finder',
   imports: [
+    AppNavigationMenu,
     FormField,
     CountryFlag,
     DatabaseFilter,
+    FinderFilterDrawer,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -71,7 +82,6 @@ const validId = (value: string | null): number | undefined => {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatSidenavModule,
     MatSortModule,
     MatTableModule,
   ],
@@ -83,14 +93,15 @@ export class LeagueFinder {
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
   private readonly columnPreferences = inject(FinderColumnPreferences);
-  private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private requestSequence = 0;
-  private debounceId?: ReturnType<typeof setTimeout>;
+  private filterDialogRef?: MatDialogRef<unknown>;
+  private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal(this.initialRequest());
+  protected readonly request = signal<LeagueSearchRequest>(this.initialRequest());
+  protected readonly draftRequest = signal<LeagueSearchRequest>(this.initialRequest());
   protected readonly contextReferee = signal<RefereeEditionRow | undefined>(undefined);
   protected readonly result = signal<LeagueResultPage>({
     rows: [],
@@ -109,44 +120,47 @@ export class LeagueFinder {
   );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    databaseVersions(this.databases(), this.request().databaseIds),
+    databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
   protected readonly levels = Array.from({ length: 7 }, (_, index) => index + 1);
   protected readonly countrySuggestions = signal<EntityFacetOption[]>([]);
   protected readonly countryLabels = signal<Record<string, CountryDisplay>>({});
+  private appliedCountryLabels: Record<string, CountryDisplay> = {};
   protected readonly selectedCountries = computed(() =>
-    this.request().countryIds.map((id): CountryDisplay => {
+    this.draftRequest().countryIds.map((id): CountryDisplay => {
       const key = String(id);
       return this.countryLabels()[key] ?? { key, label: key };
     }),
   );
-  protected readonly isNarrow = toSignal(
-    this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
-    { initialValue: false },
+  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
+  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly resultStatus = computed(() =>
+    this.loading()
+      ? 'Searching leagues…'
+      : `${this.result().total.toLocaleString()} league editions`,
   );
-  protected readonly hasFilters = computed(() => {
-    const request = this.request();
-    return Boolean(
-      request.text ||
-      request.databaseIds.length ||
-      request.versions.length ||
-      request.countryIds.length ||
-      request.levels.length ||
-      request.refereeEdition,
-    );
-  });
+
+  private filterCount(request: LeagueSearchRequest): number {
+    return [
+      request.databaseIds.length > 0,
+      request.versions.length > 0,
+      request.countryIds.length > 0,
+      request.levels.length > 0,
+      Boolean(request.refereeEdition),
+    ].filter(Boolean).length;
+  }
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
       this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
     void this.loadContextReferee();
-    effect(() => {
+    effect((onCleanup) => {
       const text = this.model().text;
-      clearTimeout(this.debounceId);
-      this.debounceId = setTimeout(() => {
+      const debounceId = setTimeout(() => {
         this.request.update((value) => ({ ...value, text, offset: 0 }));
         void this.search();
       }, 250);
+      onCleanup(() => clearTimeout(debounceId));
     });
     effect(() => {
       if (!this.databaseContext.revision()) return;
@@ -155,37 +169,31 @@ export class LeagueFinder {
   }
 
   protected setVersions(versions: number[]): void {
-    this.request.update((value) => ({ ...value, versions, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, versions }));
   }
 
   protected setDatabases(databaseIds: string[]): void {
     const availableVersions = databaseVersions(this.databases(), databaseIds);
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       databaseIds,
       versions: value.versions.filter((version) => availableVersions.includes(version)),
       refereeEdition: undefined,
-      offset: 0,
     }));
-    this.contextReferee.set(undefined);
-    void this.router.navigate([], { queryParams: {}, replaceUrl: true });
-    void this.search();
   }
 
   protected setLevels(levels: number[]): void {
-    this.request.update((value) => ({ ...value, levels, offset: 0 }));
-    void this.search();
+    this.draftRequest.update((value) => ({ ...value, levels }));
   }
 
   protected async suggestCountries(event: Event): Promise<void> {
     this.countrySuggestions.set(
       await this.qdb.suggestEntityFacets({
-        databaseIds: this.request().databaseIds,
+        databaseIds: this.draftRequest().databaseIds,
         entity: 'league',
         facet: 'country',
         text: (event.target as HTMLInputElement).value,
-        versions: this.request().versions,
+        versions: this.draftRequest().versions,
         limit: 30,
       }),
     );
@@ -194,10 +202,9 @@ export class LeagueFinder {
   protected addCountry(option: EntityFacetOption, input: HTMLInputElement): void {
     if (option.id === undefined) return;
     const id = option.id;
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       countryIds: [...new Set([...value.countryIds, id])],
-      offset: 0,
     }));
     this.countryLabels.update((value) => ({
       ...value,
@@ -208,25 +215,41 @@ export class LeagueFinder {
       },
     }));
     input.value = '';
-    void this.search();
   }
 
   protected removeCountry(key: string): void {
-    this.request.update((value) => ({
+    this.draftRequest.update((value) => ({
       ...value,
       countryIds: value.countryIds.filter((id) => id !== Number(key)),
-      offset: 0,
     }));
-    void this.search();
   }
 
   protected clearFilters(): void {
-    this.model.set({ text: '' });
-    this.request.set(defaultLeagueSearchRequest());
+    const current = this.request();
+    this.request.set({
+      ...defaultLeagueSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
     this.countryLabels.set({});
+    this.appliedCountryLabels = {};
     this.contextReferee.set(undefined);
     void this.router.navigate([], { queryParams: {}, replaceUrl: true });
     void this.search();
+  }
+
+  protected clearDraftFilters(): void {
+    const current = this.draftRequest();
+    this.draftRequest.set({
+      ...defaultLeagueSearchRequest(),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+    });
+    this.countryLabels.set({});
   }
 
   protected retrySearch(): void {
@@ -251,6 +274,37 @@ export class LeagueFinder {
       direction,
       offset: 0,
     }));
+    void this.search();
+  }
+
+  protected openFilters(): void {
+    this.draftRequest.set(this.cloneRequest(this.request()));
+    this.countryLabels.set({ ...this.appliedCountryLabels });
+    this.filterDialogRef = this.dialog.open(
+      this.filterDrawer(),
+      finderFilterDialogConfig('league-filter-title'),
+    );
+  }
+
+  protected applyFilters(): void {
+    const current = this.request();
+    const draft = this.draftRequest();
+    const databaseChanged = current.databaseIds.join('\u0000') !== draft.databaseIds.join('\u0000');
+    const contextCleared = Boolean(current.refereeEdition && !draft.refereeEdition);
+    this.request.set({
+      ...this.cloneRequest(draft),
+      text: current.text,
+      sort: current.sort,
+      direction: current.direction,
+      pageSize: current.pageSize,
+      offset: 0,
+    });
+    this.appliedCountryLabels = { ...this.countryLabels() };
+    if (databaseChanged || contextCleared) {
+      this.contextReferee.set(undefined);
+      void this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    }
+    this.filterDialogRef?.close();
     void this.search();
   }
 
@@ -306,6 +360,16 @@ export class LeagueFinder {
     void this.search();
   }
 
+  private cloneRequest(value: LeagueSearchRequest): LeagueSearchRequest {
+    return {
+      ...value,
+      databaseIds: [...value.databaseIds],
+      versions: [...value.versions],
+      countryIds: [...value.countryIds],
+      levels: [...value.levels],
+    };
+  }
+
   private async search(): Promise<void> {
     const sequence = ++this.requestSequence;
     this.loading.set(true);
@@ -321,7 +385,7 @@ export class LeagueFinder {
     }
   }
 
-  private initialRequest() {
+  private initialRequest(): LeagueSearchRequest {
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const refereeId = validId(this.route.snapshot.queryParamMap.get('refereeId'));
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';

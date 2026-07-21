@@ -3,6 +3,9 @@ export type SortField =
   | 'version'
   | 'birthDate'
   | 'age'
+  | 'height'
+  | 'weight'
+  | 'preferredFoot'
   | 'overall'
   | 'potential'
   | 'bestRating';
@@ -31,6 +34,7 @@ export type RefereeSortField =
   | 'birthDate'
   | 'age'
   | 'height'
+  | 'weight'
   | 'leagueCount';
 export type StadiumSortField =
   | 'name'
@@ -106,6 +110,9 @@ export interface PlayerSearchRow extends PlayerEditionKey {
   positions: string[];
   birthDate: string | null;
   age: number | null;
+  height: number | null;
+  weight: number | null;
+  preferredFoot: string;
   overall: number;
   potential: number;
   bestPosition: string;
@@ -306,9 +313,6 @@ export interface PlayerDetails extends PlayerSearchRow {
   commonName: string;
   jerseyName: string;
   snapshotDate: string;
-  height: number | null;
-  weight: number | null;
-  preferredFoot: string;
   attackingWorkRate: string;
   defensiveWorkRate: string;
   attributes: Record<string, number>;
@@ -497,15 +501,6 @@ export interface QdbApi {
     listener: (progress: DatabaseSourceValidationProgress) => void,
   ): () => void;
   onDatabaseImportProgress(listener: (progress: DatabaseImportProgress) => void): () => void;
-}
-
-export interface QdbWindowApi {
-  readonly nativeControls: boolean;
-  minimize(): Promise<void>;
-  toggleMaximize(): Promise<void>;
-  close(): Promise<void>;
-  isMaximized(): Promise<boolean>;
-  onMaximizedChange(listener: (maximized: boolean) => void): () => void;
 }
 
 export const defaultSearchRequest = (): SearchRequest => ({

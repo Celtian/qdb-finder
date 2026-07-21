@@ -41,20 +41,8 @@ const sourceSelections = new Map<string, string>();
 const imports = new Map<string, { worker: Worker; cancel: () => void }>();
 const validations = new Map<string, { worker: Worker; cancel: () => void }>();
 
-const useWslWindowControls =
-  process.platform === 'linux' &&
-  Boolean(process.env['WSL_DISTRO_NAME'] || process.env['WSL_INTEROP']);
-
 app.disableHardwareAcceleration();
 app.setName('QDB Finder');
-
-const sendMaximizedState = (window: BrowserWindow): void =>
-  window.webContents.send('qdb:window:maximized-change', window.isMaximized());
-
-const toggleWindowMaximized = (window: BrowserWindow): void => {
-  if (window.isMaximized()) window.unmaximize();
-  else window.maximize();
-};
 
 const senderWindow = (event: IpcMainInvokeEvent): BrowserWindow | undefined =>
   BrowserWindow.fromWebContents(event.sender) ?? undefined;
@@ -271,16 +259,6 @@ const createWindow = async (): Promise<void> => {
     minWidth: 900,
     minHeight: 620,
     show: false,
-    ...(useWslWindowControls
-      ? {
-          titleBarStyle: 'hidden' as const,
-          titleBarOverlay: {
-            color: '#ffffff',
-            symbolColor: '#1a1b20',
-            height: 44,
-          },
-        }
-      : { frame: false }),
     autoHideMenuBar: true,
     backgroundColor: '#f7f8fc',
     icon: join(app.getAppPath(), 'resources', 'icons', 'qdb-finder.png'),
@@ -291,8 +269,6 @@ const createWindow = async (): Promise<void> => {
       nodeIntegration: false,
     },
   });
-  window.on('maximize', () => sendMaximizedState(window));
-  window.on('unmaximize', () => sendMaximizedState(window));
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url);
     return { action: 'deny' };
@@ -413,17 +389,6 @@ app.whenReady().then(async () => {
     databaseRegistry.closeDatabase(id);
     databaseLibrary.remove(id);
     databaseRegistry.refresh();
-  });
-  ipcMain.handle('qdb:window:minimize', (event) => senderWindow(event)?.minimize());
-  ipcMain.handle('qdb:window:toggle-maximize', (event) => {
-    const window = senderWindow(event);
-    if (!window) return;
-    toggleWindowMaximized(window);
-  });
-  ipcMain.handle('qdb:window:close', (event) => senderWindow(event)?.close());
-  ipcMain.handle('qdb:window:is-maximized', (event) => {
-    const window = senderWindow(event);
-    return window?.isMaximized() ?? false;
   });
   if (app.isPackaged) updateElectronApp();
   await createWindow();

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
 import type { WritableSignal } from '@angular/core';
 import { Qdb } from '../../core/qdb';
 import type {
@@ -88,6 +89,7 @@ describe('Databases', () => {
     await TestBed.configureTestingModule({
       imports: [Databases],
       providers: [
+        provideRouter([]),
         {
           provide: Qdb,
           useValue: {
@@ -122,6 +124,7 @@ describe('Databases', () => {
 
   it('initially shows only the source folder field', () => {
     const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[aria-label="Open main navigation"]')).toBeTruthy();
     expect(element.textContent).toContain('Manage FIFA databases');
     expect(element.textContent).toContain('Built-in FIFA 11–23');
     expect(element.textContent).not.toContain('Activate');

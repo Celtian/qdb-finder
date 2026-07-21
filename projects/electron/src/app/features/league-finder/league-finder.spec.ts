@@ -147,12 +147,14 @@ describe('LeagueFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['League', 'Original ID', 'Database', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['League', 'Original ID', 'Edition', 'Country']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('2216');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('td.cdk-column-database')).toBeNull();
+    expect(element.querySelector('td.cdk-column-teamCount')).toBeTruthy();
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 0 hidden',
+      'Choose columns, 1 hidden',
     );
   });
 

@@ -11,17 +11,14 @@ import {
 describe('finder columns', () => {
   beforeEach(() => window.localStorage.clear());
 
-  it('defines all existing columns and visible birth dates in canonical order', () => {
+  it('defines lean defaults separately from all columns in canonical order', () => {
     expect(defaultFinderColumns('players')).toEqual([
       'name',
       'originalId',
-      'database',
       'version',
       'nationality',
-      'teams',
       'positions',
       'birthDate',
-      'age',
       'height',
       'weight',
       'preferredFoot',
@@ -32,15 +29,44 @@ describe('finder columns', () => {
     expect(defaultFinderColumns('referees')).toEqual([
       'name',
       'originalId',
-      'database',
       'version',
       'nationality',
-      'leagues',
       'birthDate',
-      'age',
       'height',
       'weight',
       'real',
+    ]);
+    expect(defaultFinderColumns('teams')).toEqual([
+      'name',
+      'originalId',
+      'version',
+      'country',
+      'league',
+      'squadSize',
+      'overall',
+      'attack',
+      'midfield',
+      'defence',
+    ]);
+    expect(defaultFinderColumns('leagues')).toEqual([
+      'name',
+      'originalId',
+      'version',
+      'country',
+      'level',
+      'teamCount',
+      'playerCount',
+    ]);
+    expect(defaultFinderColumns('stadiums')).toEqual([
+      'name',
+      'originalId',
+      'version',
+      'country',
+      'teams',
+      'capacity',
+      'built',
+      'pitch',
+      'licensed',
     ]);
     for (const columns of Object.values(finderColumns)) {
       expect(columns[1]?.key).toBe('originalId');

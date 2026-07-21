@@ -162,12 +162,14 @@ describe('StadiumFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Stadium', 'Original ID', 'Database', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Stadium', 'Original ID', 'Edition', 'Country']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('1098');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('td.cdk-column-database')).toBeNull();
+    expect(element.querySelector('td.cdk-column-teams')).toBeTruthy();
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 0 hidden',
+      'Choose columns, 1 hidden',
     );
   });
 

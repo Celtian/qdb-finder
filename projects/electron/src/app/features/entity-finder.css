@@ -167,6 +167,12 @@ table {
   width: 100%;
 }
 
+.mat-column-originalId,
+.mat-column-database,
+.mat-column-birthDate {
+  white-space: nowrap;
+}
+
 .entity-link {
   display: inline-block;
   max-width: 100%;

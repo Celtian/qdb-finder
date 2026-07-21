@@ -148,6 +148,11 @@ table {
   width: 100%;
   min-width: 1240px;
 }
+.mat-column-originalId,
+.mat-column-database,
+.mat-column-birthDate {
+  white-space: nowrap;
+}
 .player-link {
   display: inline-block;
   max-width: 100%;

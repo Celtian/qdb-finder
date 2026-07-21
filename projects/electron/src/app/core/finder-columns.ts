@@ -120,12 +120,64 @@ export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]
   ],
 };
 
+const defaultVisibleFinderColumns = {
+  players: [
+    'name',
+    'originalId',
+    'version',
+    'nationality',
+    'positions',
+    'birthDate',
+    'height',
+    'weight',
+    'preferredFoot',
+    'overall',
+    'potential',
+    'bestRating',
+  ],
+  teams: [
+    'name',
+    'originalId',
+    'version',
+    'country',
+    'league',
+    'squadSize',
+    'overall',
+    'attack',
+    'midfield',
+    'defence',
+  ],
+  leagues: ['name', 'originalId', 'version', 'country', 'level', 'teamCount', 'playerCount'],
+  referees: [
+    'name',
+    'originalId',
+    'version',
+    'nationality',
+    'birthDate',
+    'height',
+    'weight',
+    'real',
+  ],
+  stadiums: [
+    'name',
+    'originalId',
+    'version',
+    'country',
+    'teams',
+    'capacity',
+    'built',
+    'pitch',
+    'licensed',
+  ],
+} satisfies Record<FinderKind, readonly FinderColumnKey[]>;
+
 const allColumnKeys = [
   ...new Set(Object.values(finderColumns).flatMap((columns) => columns.map(({ key }) => key))),
 ];
 
-export const defaultFinderColumns = (finder: FinderKind): FinderColumnKey[] =>
-  finderColumns[finder].map(({ key }) => key);
+export const defaultFinderColumns = (finder: FinderKind): FinderColumnKey[] => [
+  ...defaultVisibleFinderColumns[finder],
+];
 
 export const toFinderColumnVisibility = (
   visibleColumns: readonly FinderColumnKey[],

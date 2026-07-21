@@ -146,6 +146,7 @@ describe('TeamFinder', () => {
       foundationYear: 1900,
     };
     const testable = component as unknown as {
+      columns: { set(value: readonly FinderColumnKey[]): void };
       loading: { set(value: boolean): void };
       error: { set(value: string): void };
       result: { set(value: TeamResultPage): void };
@@ -162,13 +163,21 @@ describe('TeamFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Team', 'Original ID', 'Database', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Team', 'Original ID', 'Edition', 'Country']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('116009');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('td.cdk-column-database')).toBeNull();
+    expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 0 hidden',
+      'Choose columns, 1 hidden',
     );
+
+    testable.columns.set(['name', 'originalId', 'database']);
+    await fixture.whenStable();
+    const databaseCell = element.querySelector<HTMLElement>('td.cdk-column-database');
+    expect(databaseCell?.textContent?.trim()).toBe('Built-in FIFA 11–23');
+    expect(getComputedStyle(databaseCell!).whiteSpace).toBe('nowrap');
   });
 
   it('supports the complete interactive filter, paging, sorting and detail workflow', async () => {

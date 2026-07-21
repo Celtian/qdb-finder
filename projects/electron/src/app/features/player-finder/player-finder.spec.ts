@@ -372,6 +372,7 @@ describe('PlayerFinder', () => {
 
   it('renders the database nationality code beside result text', async () => {
     const testable = component as unknown as {
+      columns: { set(value: readonly FinderColumnKey[]): void };
       loading: { set(value: boolean): void };
       result: {
         set(value: SearchResultPage): void;
@@ -419,18 +420,22 @@ describe('PlayerFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Player', 'Original ID', 'Database', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Player', 'Original ID', 'Edition', 'Nationality']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('123456');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
-    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe(
-      '29 Feb 2004',
-    );
+    const birthDateCell = element.querySelector<HTMLElement>('td.cdk-column-birthDate');
+    expect(birthDateCell?.textContent?.trim()).toBe('29 Feb 2004');
+    expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(birthDateCell!).whiteSpace).toBe('nowrap');
+    expect(element.querySelector('td.cdk-column-database')).toBeNull();
+    expect(element.querySelector('td.cdk-column-teams')).toBeNull();
+    expect(element.querySelector('td.cdk-column-age')).toBeNull();
     expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('180 cm');
     expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('75 kg');
     expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('Right');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 0 hidden',
+      'Choose columns, 3 hidden',
     );
     expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
     expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
@@ -472,6 +477,12 @@ describe('PlayerFinder', () => {
     const missingFlagCell = element.querySelector('td.cdk-column-nationality');
     expect(missingFlagCell?.textContent).toContain('Unknown nation');
     expect(missingFlagCell?.querySelector('app-country-flag')).toBeNull();
+
+    testable.columns.set(['name', 'originalId', 'database', 'birthDate']);
+    await fixture.whenStable();
+    const databaseCell = element.querySelector<HTMLElement>('td.cdk-column-database');
+    expect(databaseCell?.textContent?.trim()).toBe('Built-in FIFA 11–23');
+    expect(getComputedStyle(databaseCell!).whiteSpace).toBe('nowrap');
   });
 
   it('supports the complete filter, paging, sorting and detail workflow', async () => {

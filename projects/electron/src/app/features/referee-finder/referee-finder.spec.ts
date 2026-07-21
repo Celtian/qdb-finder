@@ -206,17 +206,21 @@ describe('RefereeFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 4)).toEqual(['Referee', 'Original ID', 'Database', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Referee', 'Original ID', 'Edition', 'Nationality']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('270317');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
-    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe(
-      '1 Jan 1980',
-    );
+    const birthDateCell = element.querySelector<HTMLElement>('td.cdk-column-birthDate');
+    expect(birthDateCell?.textContent?.trim()).toBe('1 Jan 1980');
+    expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(birthDateCell!).whiteSpace).toBe('nowrap');
+    expect(element.querySelector('td.cdk-column-database')).toBeNull();
+    expect(element.querySelector('td.cdk-column-leagues')).toBeNull();
+    expect(element.querySelector('td.cdk-column-age')).toBeNull();
     expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('183 cm');
     expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('78 kg');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 0 hidden',
+      'Choose columns, 3 hidden',
     );
 
     testable.result.set({ rows: [{ ...row, birthDate: null }], total: 1, offset: 0, pageSize: 50 });

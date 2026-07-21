@@ -113,7 +113,12 @@ integration('player queries', () => {
     expect(current.rows[0]?.nationalityCode).toBe('ar');
     expect(legacy.rows[0]?.nationalityCode).toBe('de');
     expect(
-      database.suggest({ kind: 'nationality', text: 'England', versions: [23] })[0],
+      database.suggest({
+        databaseIds: [],
+        kind: 'nationality',
+        text: 'England',
+        versions: [23],
+      })[0],
     ).toMatchObject({ nationalityCode: 'gb-eng' });
   });
 
@@ -164,7 +169,9 @@ integration('player queries', () => {
       teamCount: 20,
       playerCount: 636,
     });
-    expect(database.getLeague({ version: 23, leagueId: 13 }).teams[0]).toMatchObject({
+    expect(
+      database.getLeague({ databaseId: 'built-in', version: 23, leagueId: 13 }).teams[0],
+    ).toMatchObject({
       version: 23,
       leagueId: 13,
     });
@@ -196,19 +203,19 @@ integration('player queries', () => {
     const men = database.search({
       ...request,
       versions: [23],
-      teamEdition: { version: 23, teamId: 1 },
+      teamEdition: { databaseId: 'built-in', version: 23, teamId: 1 },
       pageSize: 100,
     });
     const women = database.search({
       ...request,
       versions: [23],
-      teamEdition: { version: 23, teamId: 116_009 },
+      teamEdition: { databaseId: 'built-in', version: 23, teamId: 116_009 },
       pageSize: 100,
     });
     const league = database.search({
       ...request,
       versions: [23],
-      leagueEdition: { version: 23, leagueId: 13 },
+      leagueEdition: { databaseId: 'built-in', version: 23, leagueId: 13 },
     });
 
     expect(men.total).toBe(33);
@@ -220,6 +227,7 @@ integration('player queries', () => {
   it('returns version-aware country and league facets', () => {
     expect(
       database.suggestEntityFacets({
+        databaseIds: [],
         entity: 'team',
         facet: 'country',
         text: 'England',
@@ -228,6 +236,7 @@ integration('player queries', () => {
     ).toMatchObject({ id: 14, label: 'England', countryCode: 'gb-eng' });
     expect(
       database.suggestEntityFacets({
+        databaseIds: [],
         entity: 'team',
         facet: 'league',
         text: 'Premier',
@@ -244,7 +253,7 @@ integration('player queries', () => {
       text: 'Dong-Kyoo Choi',
       versions: [23],
     });
-    const legacy = database.getReferee({ version: 11, refereeId: 29 });
+    const legacy = database.getReferee({ databaseId: 'built-in', version: 11, refereeId: 29 });
 
     expect(current.rows[0]).toMatchObject({
       refereeId: 176_705,
@@ -292,9 +301,13 @@ integration('player queries', () => {
   });
 
   it('keeps stadium countries source-faithful and historical status nullable', () => {
-    const current = database.getStadium({ version: 23, stadiumId: 1 });
-    const missingCountry = database.getStadium({ version: 17, stadiumId: 1 });
-    const legacy = database.getStadium({ version: 11, stadiumId: 1 });
+    const current = database.getStadium({ databaseId: 'built-in', version: 23, stadiumId: 1 });
+    const missingCountry = database.getStadium({
+      databaseId: 'built-in',
+      version: 17,
+      stadiumId: 1,
+    });
+    const legacy = database.getStadium({ databaseId: 'built-in', version: 11, stadiumId: 1 });
 
     expect(current).toMatchObject({
       name: 'Old Trafford',
@@ -315,24 +328,24 @@ integration('player queries', () => {
   it('filters both relationship directions by exact FIFA edition', () => {
     const referees = database.searchReferees({
       ...defaultRefereeSearchRequest(),
-      leagueEdition: { version: 23, leagueId: 13 },
+      leagueEdition: { databaseId: 'built-in', version: 23, leagueId: 13 },
       pageSize: 100,
     });
     const leagues = database.searchLeagues({
       ...defaultLeagueSearchRequest(),
-      refereeEdition: { version: 23, refereeId: 221_871 },
+      refereeEdition: { databaseId: 'built-in', version: 23, refereeId: 221_871 },
     });
     const stadiums = database.searchStadiums({
       ...defaultStadiumSearchRequest(),
-      teamEdition: { version: 23, teamId: 11 },
+      teamEdition: { databaseId: 'built-in', version: 23, teamId: 11 },
     });
     const teams = database.searchTeams({
       ...defaultTeamSearchRequest(),
-      stadiumEdition: { version: 23, stadiumId: 1 },
+      stadiumEdition: { databaseId: 'built-in', version: 23, stadiumId: 1 },
     });
     const playerTeams = database.searchTeams({
       ...defaultTeamSearchRequest(),
-      playerEdition: { version: 23, playerId: 158_023 },
+      playerEdition: { databaseId: 'built-in', version: 23, playerId: 158_023 },
     });
 
     expect(referees.rows).toEqual(
@@ -396,6 +409,7 @@ integration('player queries', () => {
   it('returns referee and stadium facets with source country flags', () => {
     expect(
       database.suggestEntityFacets({
+        databaseIds: [],
         entity: 'referee',
         facet: 'nationality',
         text: 'England',
@@ -404,6 +418,7 @@ integration('player queries', () => {
     ).toMatchObject({ id: 14, label: 'England', countryCode: 'gb-eng' });
     expect(
       database.suggestEntityFacets({
+        databaseIds: [],
         entity: 'stadium',
         facet: 'team',
         text: 'Manchester United',
@@ -508,12 +523,20 @@ integration('player queries', () => {
       ['stadium', 'team'],
     ] as const) {
       expect(
-        database.suggestEntityFacets({ entity, facet, text: '', versions: [], limit: 200 }),
+        database.suggestEntityFacets({
+          databaseIds: [],
+          entity,
+          facet,
+          text: '',
+          versions: [],
+          limit: 200,
+        }),
       ).not.toHaveLength(0);
     }
 
     expect(
       database.suggestEntityFacets({
+        databaseIds: [],
         entity: 'team',
         facet: 'unsupported',
         text: '',
@@ -521,22 +544,40 @@ integration('player queries', () => {
       } as never),
     ).toEqual([]);
     for (const kind of ['nationality', 'team', 'league'] as const) {
-      expect(database.suggest({ kind, text: '', versions: [], limit: 100 })).not.toHaveLength(0);
+      expect(
+        database.suggest({ databaseIds: [], kind, text: '', versions: [], limit: 100 }),
+      ).not.toHaveLength(0);
     }
   });
 
   it('loads complete entity details and reports missing edition keys', () => {
-    expect(database.getPlayer({ version: 23, playerId: 158_023 })).toMatchObject({
+    expect(
+      database.getPlayer({ databaseId: 'built-in', version: 23, playerId: 158_023 }),
+    ).toMatchObject({
       name: 'Lionel Messi',
       preferredFoot: '2',
     });
-    expect(database.getTeam({ version: 23, teamId: 11 }).stadium).toMatchObject({ stadiumId: 1 });
-    expect(database.getTeam({ version: 11, teamId: 111_592 }).stadium).toBeNull();
+    expect(
+      database.getTeam({ databaseId: 'built-in', version: 23, teamId: 11 }).stadium,
+    ).toMatchObject({ stadiumId: 1 });
+    expect(
+      database.getTeam({ databaseId: 'built-in', version: 11, teamId: 111_592 }).stadium,
+    ).toBeNull();
 
-    expect(() => database.getPlayer({ version: 23, playerId: -1 })).toThrow(/not found/i);
-    expect(() => database.getTeam({ version: 23, teamId: -1 })).toThrow(/not found/i);
-    expect(() => database.getLeague({ version: 23, leagueId: -1 })).toThrow(/not found/i);
-    expect(() => database.getReferee({ version: 23, refereeId: -1 })).toThrow(/not found/i);
-    expect(() => database.getStadium({ version: 23, stadiumId: -1 })).toThrow(/not found/i);
+    expect(() => database.getPlayer({ databaseId: 'built-in', version: 23, playerId: -1 })).toThrow(
+      /not found/i,
+    );
+    expect(() => database.getTeam({ databaseId: 'built-in', version: 23, teamId: -1 })).toThrow(
+      /not found/i,
+    );
+    expect(() => database.getLeague({ databaseId: 'built-in', version: 23, leagueId: -1 })).toThrow(
+      /not found/i,
+    );
+    expect(() =>
+      database.getReferee({ databaseId: 'built-in', version: 23, refereeId: -1 }),
+    ).toThrow(/not found/i);
+    expect(() =>
+      database.getStadium({ databaseId: 'built-in', version: 23, stadiumId: -1 }),
+    ).toThrow(/not found/i);
   });
 });

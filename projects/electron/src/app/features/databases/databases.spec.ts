@@ -26,7 +26,6 @@ const builtIn: DatabaseDescriptor = {
   versions: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
   generatedAt: '2026-07-20T00:00:00.000Z',
   sqliteVersion: '3.50.0',
-  active: true,
   status: 'available',
 };
 
@@ -81,8 +80,7 @@ describe('Databases', () => {
     status: 'completed' as const,
     report: validReport,
   }));
-  const activateDatabase = vi.fn(async () => builtIn);
-  const removeDatabase = vi.fn(async () => builtIn);
+  const removeDatabase = vi.fn(async () => undefined);
   const cancelDatabaseImport = vi.fn(async () => true);
   const cancelDatabaseSourceValidation = vi.fn(async () => true);
 
@@ -98,7 +96,6 @@ describe('Databases', () => {
             validateDatabaseSource,
             cancelDatabaseSourceValidation,
             importDatabase,
-            activateDatabase,
             removeDatabase,
             cancelDatabaseImport,
             onDatabaseSourceValidationProgress: (listener: typeof validationProgressListener) => {
@@ -117,7 +114,6 @@ describe('Databases', () => {
     selectDatabaseSource.mockClear();
     validateDatabaseSource.mockClear();
     importDatabase.mockClear();
-    activateDatabase.mockClear();
     fixture = TestBed.createComponent(Databases);
     await fixture.whenStable();
   });
@@ -128,11 +124,11 @@ describe('Databases', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Manage FIFA databases');
     expect(element.textContent).toContain('Built-in FIFA 11–23');
-    expect(element.textContent).toContain('Active');
+    expect(element.textContent).not.toContain('Activate');
     expect(element.textContent).toContain('Source folder');
     expect(element.textContent).not.toContain('Database name');
     expect(element.textContent).not.toContain('FIFA version');
-    expect(element.textContent).not.toContain('Import and activate');
+    expect(element.querySelector('button[type="submit"]')).toBeNull();
     expect(validationProgressListener).toBeTypeOf('function');
   });
 
@@ -151,7 +147,7 @@ describe('Databases', () => {
     expect(element.textContent).toContain('Database name');
     expect(element.textContent).toContain('FIFA version');
     expect(element.textContent).toContain('Validate source');
-    expect(element.textContent).not.toContain('Import and activate');
+    expect(element.querySelector('button[type="submit"]')).toBeNull();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'Detected FIFA 16 from the folder headers',
     );
@@ -163,7 +159,9 @@ describe('Databases', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'Source validation completed',
     );
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Import and activate');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('button[type="submit"]'),
+    ).not.toBeNull();
 
     testable.model.update((value) => ({ ...value, name: ' Custom FIFA 16 ' }));
     testable.import();
@@ -179,7 +177,7 @@ describe('Databases', () => {
       }),
     );
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'was imported and activated',
+      'was imported and is ready to search',
     );
   });
 
@@ -234,7 +232,9 @@ describe('Databases', () => {
     expect(alert?.textContent).toContain('referee.txt · refereeid');
     expect(alert?.textContent).toContain('Line 57');
     expect(alert?.textContent).toContain('14366 warnings');
-    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Import and activate');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('button[type="submit"]'),
+    ).toBeNull();
     expect(importDatabase).not.toHaveBeenCalled();
   });
 
@@ -268,7 +268,7 @@ describe('Databases', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('1 warning found');
-    expect(element.textContent).toContain('Import and activate');
+    expect(element.querySelector('button[type="submit"]')).not.toBeNull();
     expect(element.querySelector('app-source-validation-report [role="status"]')).not.toBeNull();
   });
 
@@ -281,14 +281,16 @@ describe('Databases', () => {
     await testable.selectFolder();
     await testable.validateSource();
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Import and activate');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('button[type="submit"]'),
+    ).not.toBeNull();
 
     testable.model.update((value) => ({ ...value, version: 17 }));
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).not.toContain('Source validation completed');
-    expect(element.textContent).not.toContain('Import and activate');
+    expect(element.querySelector('button[type="submit"]')).toBeNull();
     expect(element.textContent).toContain('Validate source');
   });
 
@@ -304,13 +306,7 @@ describe('Databases', () => {
     expect(cancelDatabaseSourceValidation).toHaveBeenCalledWith('validation-request');
   });
 
-  it('activates an available custom database', async () => {
-    const testable = fixture.componentInstance as unknown as {
-      activate(database: DatabaseDescriptor): Promise<void>;
-    };
-    await testable.activate({ ...builtIn, id: 'custom-id', kind: 'custom', active: false });
-
-    expect(activateDatabase).toHaveBeenCalledWith('custom-id');
-    expect(listDatabases).toHaveBeenCalled();
+  it('does not expose activation controls', () => {
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Activate');
   });
 });

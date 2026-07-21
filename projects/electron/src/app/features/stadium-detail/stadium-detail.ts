@@ -41,7 +41,11 @@ export class StadiumDetail {
 
   protected async viewTeams(): Promise<void> {
     await this.router.navigate(['/teams'], {
-      queryParams: { version: this.stadium.version, stadiumId: this.stadium.stadiumId },
+      queryParams: {
+        databaseId: this.stadium.databaseId,
+        version: this.stadium.version,
+        stadiumId: this.stadium.stadiumId,
+      },
     });
     this.dialog.close();
   }

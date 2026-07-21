@@ -31,12 +31,12 @@ import type {
   TeamEditionKey,
   TeamSearchRequest,
 } from '../../src/app/core/qdb-contracts';
-import { PlayerDatabase } from '../database';
 import { DatabaseLibrary } from '../database-library';
+import { DatabaseRegistry } from '../database-registry';
 import { inspectSourceHeaders, SUPPORTED_FIFA_VERSIONS } from '../importer';
 
-let database: PlayerDatabase;
 let databaseLibrary: DatabaseLibrary;
+let databaseRegistry: DatabaseRegistry;
 const sourceSelections = new Map<string, string>();
 const imports = new Map<string, { worker: Worker; cancel: () => void }>();
 const validations = new Map<string, { worker: Worker; cancel: () => void }>();
@@ -64,19 +64,6 @@ const databasePath = (): string =>
   (app.isPackaged
     ? join(process.resourcesPath, 'database', 'qdb.sqlite')
     : join(app.getAppPath(), 'resources', 'database', 'qdb.sqlite'));
-
-const switchDatabase = (id: string): ReturnType<DatabaseLibrary['activeInfo']> => {
-  const next = new PlayerDatabase(databaseLibrary.pathFor(id));
-  try {
-    const info = databaseLibrary.activate(id);
-    database.close();
-    database = next;
-    return info;
-  } catch (error) {
-    next.close();
-    throw error;
-  }
-};
 
 const validateImportRequest = (request: DatabaseImportRequest): string => {
   const name = request.name.trim();
@@ -246,7 +233,7 @@ const importDatabase = (
           try {
             databaseLibrary.ensureUniqueName(name);
             databaseLibrary.install(databaseId);
-            switchDatabase(databaseId);
+            databaseRegistry.refresh();
             const descriptor = databaseLibrary.list().find(({ id }) => id === databaseId);
             if (!descriptor) throw new Error('Imported database could not be registered.');
             settled = true;
@@ -321,32 +308,37 @@ const createWindow = async (): Promise<void> => {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   databaseLibrary = new DatabaseLibrary(databasePath(), app.getPath('userData'));
-  database = new PlayerDatabase(databaseLibrary.activePath());
-  ipcMain.handle('qdb:search', (_event, request: SearchRequest) => database.search(request));
-  ipcMain.handle('qdb:player', (_event, key: PlayerEditionKey) => database.getPlayer(key));
+  databaseRegistry = new DatabaseRegistry(databaseLibrary);
+  ipcMain.handle('qdb:search', (_event, request: SearchRequest) =>
+    databaseRegistry.searchPlayers(request),
+  );
+  ipcMain.handle('qdb:player', (_event, key: PlayerEditionKey) => databaseRegistry.getPlayer(key));
   ipcMain.handle('qdb:teams:search', (_event, request: TeamSearchRequest) =>
-    database.searchTeams(request),
+    databaseRegistry.searchTeams(request),
   );
-  ipcMain.handle('qdb:team', (_event, key: TeamEditionKey) => database.getTeam(key));
+  ipcMain.handle('qdb:team', (_event, key: TeamEditionKey) => databaseRegistry.getTeam(key));
   ipcMain.handle('qdb:leagues:search', (_event, request: LeagueSearchRequest) =>
-    database.searchLeagues(request),
+    databaseRegistry.searchLeagues(request),
   );
-  ipcMain.handle('qdb:league', (_event, key: LeagueEditionKey) => database.getLeague(key));
+  ipcMain.handle('qdb:league', (_event, key: LeagueEditionKey) => databaseRegistry.getLeague(key));
   ipcMain.handle('qdb:referees:search', (_event, request: RefereeSearchRequest) =>
-    database.searchReferees(request),
+    databaseRegistry.searchReferees(request),
   );
-  ipcMain.handle('qdb:referee', (_event, key: RefereeEditionKey) => database.getReferee(key));
+  ipcMain.handle('qdb:referee', (_event, key: RefereeEditionKey) =>
+    databaseRegistry.getReferee(key),
+  );
   ipcMain.handle('qdb:stadiums:search', (_event, request: StadiumSearchRequest) =>
-    database.searchStadiums(request),
+    databaseRegistry.searchStadiums(request),
   );
-  ipcMain.handle('qdb:stadium', (_event, key: StadiumEditionKey) => database.getStadium(key));
+  ipcMain.handle('qdb:stadium', (_event, key: StadiumEditionKey) =>
+    databaseRegistry.getStadium(key),
+  );
   ipcMain.handle('qdb:entity-facets', (_event, request: EntityFacetRequest) =>
-    database.suggestEntityFacets(request),
+    databaseRegistry.suggestEntityFacets(request),
   );
   ipcMain.handle('qdb:suggest', (_event, request: FilterSuggestionRequest) =>
-    database.suggest(request),
+    databaseRegistry.suggest(request),
   );
-  ipcMain.handle('qdb:info', () => database.info());
   ipcMain.handle('qdb:databases:list', () => databaseLibrary.list());
   ipcMain.handle('qdb:databases:select-source', async (event) => {
     const window = senderWindow(event);
@@ -417,15 +409,10 @@ app.whenReady().then(async () => {
     running.cancel();
     return true;
   });
-  ipcMain.handle('qdb:databases:activate', (_event, id: string) => switchDatabase(id));
   ipcMain.handle('qdb:databases:remove', (_event, id: string) => {
-    if (database.info().id === id) {
-      const builtIn = new PlayerDatabase(databaseLibrary.pathFor('built-in'));
-      database.close();
-      database = builtIn;
-    }
+    databaseRegistry.closeDatabase(id);
     databaseLibrary.remove(id);
-    return database.info();
+    databaseRegistry.refresh();
   });
   ipcMain.handle('qdb:window:minimize', (event) => senderWindow(event)?.minimize());
   ipcMain.handle('qdb:window:toggle-maximize', (event) => {
@@ -451,5 +438,5 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   for (const running of validations.values()) running.cancel();
   for (const running of imports.values()) running.cancel();
-  database?.close();
+  databaseRegistry?.close();
 });

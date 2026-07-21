@@ -19,6 +19,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
+import { DatabaseFilter } from '../../core/database-filter/database-filter';
+import { databaseVersions } from '../../core/database-filter/database-filter-options';
 import { Qdb } from '../../core/qdb';
 import {
   defaultStadiumSearchRequest,
@@ -67,6 +69,7 @@ const validId = (value: string | null): number | undefined => {
   imports: [
     FormField,
     CountryFlag,
+    DatabaseFilter,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -107,6 +110,7 @@ export class StadiumFinder {
   protected readonly contextTeam = signal<TeamEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'database',
     'originalId',
     'version',
     'country',
@@ -116,11 +120,9 @@ export class StadiumFinder {
     'pitch',
     'licensed',
   ];
+  protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    [
-      ...(this.databaseContext.info()?.versions ??
-        Array.from({ length: 13 }, (_, index) => 23 - index)),
-    ].sort((left, right) => right - left),
+    databaseVersions(this.databases(), this.request().databaseIds),
   );
   protected readonly availability = signal<AvailabilityFilter>('all');
   protected readonly suggestions = signal<Record<StadiumFacet, EntityFacetOption[]>>({
@@ -150,6 +152,7 @@ export class StadiumFinder {
     const request = this.request();
     return Boolean(
       request.text ||
+      request.databaseIds.length ||
       request.versions.length ||
       request.countryIds.length ||
       request.teamKeys.length ||
@@ -181,6 +184,20 @@ export class StadiumFinder {
     void this.search();
   }
 
+  protected setDatabases(databaseIds: string[]): void {
+    const availableVersions = databaseVersions(this.databases(), databaseIds);
+    this.request.update((value) => ({
+      ...value,
+      databaseIds,
+      versions: value.versions.filter((version) => availableVersions.includes(version)),
+      teamEdition: undefined,
+      offset: 0,
+    }));
+    this.contextTeam.set(undefined);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    void this.search();
+  }
+
   protected setCapacity(boundary: 'min' | 'max', event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
     this.request.update((value) => ({
@@ -203,6 +220,7 @@ export class StadiumFinder {
 
   protected async suggest(facet: StadiumFacet, event: Event): Promise<void> {
     const options = await this.qdb.suggestEntityFacets({
+      databaseIds: this.request().databaseIds,
       entity: 'stadium',
       facet,
       text: (event.target as HTMLInputElement).value,
@@ -303,13 +321,21 @@ export class StadiumFinder {
 
   private initialRequest(): StadiumSearchRequest {
     const request = defaultStadiumSearchRequest();
+    const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const teamId = validId(this.route.snapshot.queryParamMap.get('teamId'));
     return version && teamId
-      ? { ...request, versions: [version], teamEdition: { version, teamId } }
+      ? {
+          ...request,
+          databaseIds: [databaseId],
+          versions: [version],
+          teamEdition: { databaseId, version, teamId },
+        }
       : request;
   }
-  private async loadContextTeam(key: { version: number; teamId: number }): Promise<void> {
+  private async loadContextTeam(
+    key: NonNullable<StadiumSearchRequest['teamEdition']>,
+  ): Promise<void> {
     try {
       this.contextTeam.set(await this.qdb.getTeam(key));
     } catch {

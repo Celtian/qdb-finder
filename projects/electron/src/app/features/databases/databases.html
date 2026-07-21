@@ -91,7 +91,7 @@
               @if (sourceValidated()) {
                 <button type="submit" mat-flat-button>
                   <mat-icon>storage</mat-icon>
-                  Import and activate
+                  Import
                 </button>
               }
             }
@@ -121,10 +121,7 @@
     } @else {
       <div class="database-grid">
         @for (database of databases(); track database.id) {
-          <mat-card
-            [class.active]="database.active"
-            [class.incompatible]="database.status === 'incompatible'"
-          >
+          <mat-card [class.incompatible]="database.status === 'incompatible'">
             <mat-card-header>
               <div mat-card-avatar class="database-icon"><mat-icon>storage</mat-icon></div>
               <mat-card-title>{{ database.name }}</mat-card-title>
@@ -160,11 +157,6 @@
               }
             </mat-card-content>
             <mat-card-actions align="end">
-              @if (database.active) {
-                <span class="active-label"><mat-icon>check</mat-icon>Active</span>
-              } @else if (database.status === 'available') {
-                <button type="button" mat-button (click)="activate(database)">Activate</button>
-              }
               @if (database.kind === 'custom') {
                 <button type="button" mat-button (click)="remove(database)">Remove</button>
               }

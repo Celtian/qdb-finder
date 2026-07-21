@@ -20,6 +20,11 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
+      <app-database-filter
+        [databases]="databases()"
+        [selected]="request().databaseIds"
+        (selectedChange)="setDatabases($event)"
+      />
       <mat-form-field appearance="outline">
         <mat-label>FIFA versions</mat-label>
         <mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
@@ -144,7 +149,8 @@
         <div class="context-banner">
           <mat-icon>filter_alt</mat-icon>
           <span
-            >Showing FIFA {{ player.version }} teams for <strong>{{ player.name }}</strong></span
+            >Showing FIFA {{ player.version }} teams for <strong>{{ player.name }}</strong> in
+            {{ player.databaseName }}</span
           >
           <button type="button" mat-button (click)="clearFilters()">Clear</button>
         </div>
@@ -153,7 +159,8 @@
         <div class="context-banner">
           <mat-icon>filter_alt</mat-icon>
           <span
-            >Showing FIFA {{ league.version }} teams from <strong>{{ league.name }}</strong></span
+            >Showing FIFA {{ league.version }} teams from <strong>{{ league.name }}</strong> in
+            {{ league.databaseName }}</span
           >
           <button type="button" mat-button (click)="clearFilters()">Clear</button>
         </div>
@@ -162,7 +169,8 @@
         <div class="context-banner">
           <mat-icon>filter_alt</mat-icon>
           <span
-            >Showing FIFA {{ stadium.version }} teams for <strong>{{ stadium.name }}</strong></span
+            >Showing FIFA {{ stadium.version }} teams for <strong>{{ stadium.name }}</strong> in
+            {{ stadium.databaseName }}</span
           >
           <button type="button" mat-button (click)="clearFilters()">Clear</button>
         </div>
@@ -220,6 +228,10 @@
                     {{ row.name }}
                   </button>
                 </td>
+              </ng-container>
+              <ng-container matColumnDef="database">
+                <th *matHeaderCellDef mat-header-cell>Database</th>
+                <td *matCellDef="let row" mat-cell>{{ row.databaseName }}</td>
               </ng-container>
               <ng-container matColumnDef="originalId">
                 <th *matHeaderCellDef mat-header-cell>Original ID</th>

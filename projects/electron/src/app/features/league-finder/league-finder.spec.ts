@@ -67,6 +67,8 @@ describe('LeagueFinder', () => {
   it('renders the original league ID as a non-sortable column after the name', async () => {
     const row: LeagueEditionRow = {
       key: 'internal-league-key',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       leagueId: 2216,
       name: 'Test League',
@@ -95,7 +97,7 @@ describe('LeagueFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 3)).toEqual(['League', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['League', 'Database', 'Original ID', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('2216');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
@@ -113,6 +115,8 @@ describe('LeagueFinder', () => {
     const missingId = { key: 'england', label: 'England', count: 1 };
     const row = {
       key: '23:13',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       leagueId: 13,
       name: 'Premier League',
@@ -203,11 +207,15 @@ describe('LeagueFinder contextual routing', () => {
     (component as unknown as { retrySearch(): void }).retrySearch();
     await harness.fixture.whenStable();
 
-    expect(getReferee).toHaveBeenCalledWith({ version: 23, refereeId: 221_871 });
+    expect(getReferee).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      refereeId: 221_871,
+    });
     expect(searchLeagues).toHaveBeenCalledWith(
       expect.objectContaining({
         versions: [23],
-        refereeEdition: { version: 23, refereeId: 221_871 },
+        refereeEdition: { databaseId: 'built-in', version: 23, refereeId: 221_871 },
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('Test Referee');

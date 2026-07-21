@@ -38,7 +38,11 @@ export class RefereeDetail {
 
   protected async viewLeagues(): Promise<void> {
     await this.router.navigate(['/leagues'], {
-      queryParams: { version: this.referee.version, refereeId: this.referee.refereeId },
+      queryParams: {
+        databaseId: this.referee.databaseId,
+        version: this.referee.version,
+        refereeId: this.referee.refereeId,
+      },
     });
     this.dialog.close();
   }

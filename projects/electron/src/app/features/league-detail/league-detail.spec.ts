@@ -10,6 +10,8 @@ import { LeagueDetail } from './league-detail';
 
 const league: LeagueDetails = {
   key: '23:13',
+  databaseId: 'built-in',
+  databaseName: 'Built-in FIFA 11–23',
   version: 23,
   leagueId: 13,
   name: 'England Premier League (1)',
@@ -23,6 +25,8 @@ const league: LeagueDetails = {
   teams: [
     {
       key: '23:1',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       teamId: 1,
       name: 'Arsenal',
@@ -43,6 +47,8 @@ const league: LeagueDetails = {
   referees: [
     {
       key: '23:188446',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       refereeId: 188446,
       name: 'Test Referee',
@@ -100,7 +106,7 @@ describe('LeagueDetail', () => {
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
-    ).toBe('FIFA 23 league · Original ID 13');
+    ).toBe('FIFA 23 league · Built-in FIFA 11–23 · Original ID 13');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {
@@ -127,11 +133,11 @@ describe('LeagueDetail', () => {
     const router = TestBed.inject(Router);
 
     await testable.viewTeams();
-    expect(router.url).toBe('/teams?version=23&leagueId=13');
+    expect(router.url).toBe('/teams?databaseId=built-in&version=23&leagueId=13');
     await testable.viewPlayers();
-    expect(router.url).toBe('/players?version=23&leagueId=13');
+    expect(router.url).toBe('/players?databaseId=built-in&version=23&leagueId=13');
     await testable.viewReferees();
-    expect(router.url).toBe('/referees?version=23&leagueId=13');
+    expect(router.url).toBe('/referees?databaseId=built-in&version=23&leagueId=13');
     expect(close).toHaveBeenCalledTimes(3);
   });
 });

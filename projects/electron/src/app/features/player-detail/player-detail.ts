@@ -64,7 +64,11 @@ export class PlayerDetail {
 
   protected async viewTeams(): Promise<void> {
     const navigated = await this.router.navigate(['/teams'], {
-      queryParams: { version: this.player.version, playerId: this.player.playerId },
+      queryParams: {
+        databaseId: this.player.databaseId,
+        version: this.player.version,
+        playerId: this.player.playerId,
+      },
     });
     if (navigated) this.dialog.close();
   }

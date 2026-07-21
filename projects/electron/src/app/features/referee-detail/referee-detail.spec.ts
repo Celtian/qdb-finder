@@ -10,6 +10,8 @@ import { RefereeDetail } from './referee-detail';
 
 const referee: RefereeDetails = {
   key: '23:188446',
+  databaseId: 'built-in',
+  databaseName: 'Built-in FIFA 11–23',
   version: 23,
   refereeId: 188446,
   name: 'Test Referee',
@@ -30,6 +32,8 @@ const referee: RefereeDetails = {
   leaguesPreview: [
     {
       key: '23:13',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       leagueId: 13,
       name: 'England Premier League (1)',
@@ -74,7 +78,7 @@ describe('RefereeDetail', () => {
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
-    ).toBe('FIFA 23 referee · Original ID 188446');
+    ).toBe('FIFA 23 referee · Built-in FIFA 11–23 · Original ID 188446');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {
@@ -94,7 +98,9 @@ describe('RefereeDetail', () => {
 
   it('opens the exact referee league context', async () => {
     await (component as unknown as { viewLeagues(): Promise<void> }).viewLeagues();
-    expect(TestBed.inject(Router).url).toBe('/leagues?version=23&refereeId=188446');
+    expect(TestBed.inject(Router).url).toBe(
+      '/leagues?databaseId=built-in&version=23&refereeId=188446',
+    );
     expect(close).toHaveBeenCalledOnce();
   });
 });

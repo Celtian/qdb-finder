@@ -358,9 +358,9 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Custom database library',
         paragraphs: [
           'The desktop Databases page imports one FIFA 11–23 edition at a time. Select the folder that directly contains players.txt, teams.txt, nations.txt and the other exported tables, then provide a unique name. QDB Finder checks the headers and automatically selects a uniquely detected FIFA edition. Validate source performs a cancellable read-only scan before import and reports corrupted rows by file, field and line; advisory metadata warnings do not block modified databases.',
-          'Every import becomes an isolated SQLite file in the application-data directory. The bundled database stays immutable, successful imports activate automatically, cancellation removes temporary output, and deleting an import never changes the original text files.',
+          'Every import becomes an isolated SQLite file in the application-data directory. The bundled database stays immutable, compatible databases are searched together by default, cancellation removes temporary output, and deleting an import never changes the original text files.',
         ],
-        note: 'A database with an incompatible schema remains listed but cannot be activated; re-import its source folder with the current application version.',
+        note: 'A database with an incompatible schema remains listed but is excluded from search; re-import its source folder with the current application version.',
       },
     ],
   },

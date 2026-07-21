@@ -38,6 +38,7 @@ export interface NumberRange {
 }
 
 export interface SearchRequest {
+  databaseIds: string[];
   text: string;
   versions: number[];
   gender?: Gender;
@@ -57,32 +58,38 @@ export interface SearchRequest {
 }
 
 export interface PlayerEditionKey {
+  databaseId: string;
   version: number;
   playerId: number;
 }
 
 export interface TeamEditionKey {
+  databaseId: string;
   version: number;
   teamId: number;
 }
 
 export interface LeagueEditionKey {
+  databaseId: string;
   version: number;
   leagueId: number;
 }
 
 export interface RefereeEditionKey {
+  databaseId: string;
   version: number;
   refereeId: number;
 }
 
 export interface StadiumEditionKey {
+  databaseId: string;
   version: number;
   stadiumId: number;
 }
 
 export interface PlayerSearchRow extends PlayerEditionKey {
   key: string;
+  databaseName: string;
   name: string;
   nationality: string;
   nationalityCode: string;
@@ -104,6 +111,7 @@ export interface SearchResultPage {
 }
 
 export interface TeamSearchRequest {
+  databaseIds: string[];
   text: string;
   versions: number[];
   leagueKeys: string[];
@@ -123,6 +131,7 @@ export interface TeamSearchRequest {
 
 export interface TeamEditionRow extends TeamEditionKey {
   key: string;
+  databaseName: string;
   name: string;
   leagueId: number | null;
   leagueKey: string;
@@ -152,6 +161,7 @@ export interface TeamResultPage {
 }
 
 export interface LeagueSearchRequest {
+  databaseIds: string[];
   text: string;
   versions: number[];
   countryIds: number[];
@@ -165,6 +175,7 @@ export interface LeagueSearchRequest {
 
 export interface LeagueEditionRow extends LeagueEditionKey {
   key: string;
+  databaseName: string;
   name: string;
   countryId: number | null;
   countryName: string;
@@ -190,6 +201,7 @@ export interface LeagueResultPage {
 }
 
 export interface RefereeSearchRequest {
+  databaseIds: string[];
   text: string;
   versions: number[];
   gender?: Gender;
@@ -206,6 +218,7 @@ export interface RefereeSearchRequest {
 
 export interface RefereeEditionRow extends RefereeEditionKey {
   key: string;
+  databaseName: string;
   name: string;
   firstName: string;
   lastName: string;
@@ -236,6 +249,7 @@ export interface RefereeResultPage {
 }
 
 export interface StadiumSearchRequest {
+  databaseIds: string[];
   text: string;
   versions: number[];
   countryIds: number[];
@@ -251,6 +265,7 @@ export interface StadiumSearchRequest {
 
 export interface StadiumEditionRow extends StadiumEditionKey {
   key: string;
+  databaseName: string;
   name: string;
   countryId: number | null;
   countryName: string;
@@ -296,6 +311,7 @@ export interface PlayerDetails extends PlayerSearchRow {
 export type FilterKind = 'nationality' | 'team' | 'league';
 
 export interface FilterSuggestionRequest {
+  databaseIds: string[];
   kind: FilterKind;
   text: string;
   versions: number[];
@@ -312,6 +328,7 @@ export interface FilterSuggestion {
 export type EntityFacet = 'league' | 'country' | 'nationality' | 'team';
 
 export interface EntityFacetRequest {
+  databaseIds: string[];
   entity: 'team' | 'league' | 'referee' | 'stadium';
   facet: EntityFacet;
   text: string;
@@ -348,7 +365,6 @@ export type DatabaseKind = 'built-in' | 'custom';
 export type DatabaseStatus = 'available' | 'incompatible';
 
 export interface DatabaseDescriptor extends DatabaseInfo {
-  active: boolean;
   status: DatabaseStatus;
   error?: string;
 }
@@ -460,7 +476,6 @@ export interface QdbApi {
   getStadium(key: StadiumEditionKey): Promise<StadiumDetails>;
   suggestEntityFacets(request: EntityFacetRequest): Promise<EntityFacetOption[]>;
   suggestFilters(request: FilterSuggestionRequest): Promise<FilterSuggestion[]>;
-  getDatabaseInfo(): Promise<DatabaseInfo>;
   listDatabases(): Promise<DatabaseDescriptor[]>;
   selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined>;
   validateDatabaseSource(
@@ -469,8 +484,7 @@ export interface QdbApi {
   cancelDatabaseSourceValidation(requestId: string): Promise<boolean>;
   importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult>;
   cancelDatabaseImport(requestId: string): Promise<boolean>;
-  activateDatabase(id: string): Promise<DatabaseInfo>;
-  removeDatabase(id: string): Promise<DatabaseInfo>;
+  removeDatabase(id: string): Promise<void>;
   onDatabaseSourceValidationProgress(
     listener: (progress: DatabaseSourceValidationProgress) => void,
   ): () => void;
@@ -487,6 +501,7 @@ export interface QdbWindowApi {
 }
 
 export const defaultSearchRequest = (): SearchRequest => ({
+  databaseIds: [],
   text: '',
   versions: [],
   nationalities: [],
@@ -503,6 +518,7 @@ export const defaultSearchRequest = (): SearchRequest => ({
 });
 
 export const defaultTeamSearchRequest = (): TeamSearchRequest => ({
+  databaseIds: [],
   text: '',
   versions: [],
   leagueKeys: [],
@@ -518,6 +534,7 @@ export const defaultTeamSearchRequest = (): TeamSearchRequest => ({
 });
 
 export const defaultLeagueSearchRequest = (): LeagueSearchRequest => ({
+  databaseIds: [],
   text: '',
   versions: [],
   countryIds: [],
@@ -529,6 +546,7 @@ export const defaultLeagueSearchRequest = (): LeagueSearchRequest => ({
 });
 
 export const defaultRefereeSearchRequest = (): RefereeSearchRequest => ({
+  databaseIds: [],
   text: '',
   versions: [],
   nationalityIds: [],
@@ -541,6 +559,7 @@ export const defaultRefereeSearchRequest = (): RefereeSearchRequest => ({
 });
 
 export const defaultStadiumSearchRequest = (): StadiumSearchRequest => ({
+  databaseIds: [],
   text: '',
   versions: [],
   countryIds: [],

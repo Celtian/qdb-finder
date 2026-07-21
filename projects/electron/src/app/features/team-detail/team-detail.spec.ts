@@ -10,6 +10,8 @@ import { TeamDetail } from './team-detail';
 
 const team: TeamDetails = {
   key: '23:1',
+  databaseId: 'built-in',
+  databaseName: 'Built-in FIFA 11–23',
   version: 23,
   teamId: 1,
   name: 'Arsenal',
@@ -27,6 +29,8 @@ const team: TeamDetails = {
   foundationYear: 1886,
   stadium: {
     key: '23:1',
+    databaseId: 'built-in',
+    databaseName: 'Built-in FIFA 11–23',
     version: 23,
     stadiumId: 1,
     name: 'Emirates Stadium',
@@ -44,6 +48,8 @@ const team: TeamDetails = {
   players: [
     {
       key: '23:1',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       playerId: 1,
       name: 'Test Player',
@@ -97,7 +103,7 @@ describe('TeamDetail', () => {
     expect(element.querySelector('.data-badge.position-attacker')).toBeTruthy();
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
-    ).toBe('FIFA 23 team · Original ID 1');
+    ).toBe('FIFA 23 team · Built-in FIFA 11–23 · Original ID 1');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {
@@ -122,9 +128,9 @@ describe('TeamDetail', () => {
     };
     await testable.viewPlayers();
 
-    expect(TestBed.inject(Router).url).toBe('/players?version=23&teamId=1');
+    expect(TestBed.inject(Router).url).toBe('/players?databaseId=built-in&version=23&teamId=1');
     await testable.viewStadium();
-    expect(TestBed.inject(Router).url).toBe('/stadiums?version=23&teamId=1');
+    expect(TestBed.inject(Router).url).toBe('/stadiums?databaseId=built-in&version=23&teamId=1');
     expect(close).toHaveBeenCalledTimes(2);
   });
 });

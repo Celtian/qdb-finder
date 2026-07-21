@@ -20,6 +20,8 @@ import { map } from 'rxjs';
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
+import { DatabaseFilter } from '../../core/database-filter/database-filter';
+import { databaseVersions } from '../../core/database-filter/database-filter-options';
 import { Qdb } from '../../core/qdb';
 import {
   defaultTeamSearchRequest,
@@ -71,6 +73,7 @@ const validId = (value: string | null): number | undefined => {
   imports: [
     FormField,
     CountryFlag,
+    DatabaseFilter,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -112,6 +115,7 @@ export class TeamFinder {
   protected readonly contextStadium = signal<StadiumEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'database',
     'originalId',
     'version',
     'country',
@@ -122,11 +126,9 @@ export class TeamFinder {
     'midfield',
     'defence',
   ];
+  protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    [
-      ...(this.databaseContext.info()?.versions ??
-        Array.from({ length: 13 }, (_, index) => 23 - index)),
-    ].sort((left, right) => right - left),
+    databaseVersions(this.databases(), this.request().databaseIds),
   );
   protected readonly ratingFilters = [
     { key: 'overall', label: 'Overall' },
@@ -162,6 +164,7 @@ export class TeamFinder {
     const request = this.request();
     return Boolean(
       request.text ||
+      request.databaseIds.length ||
       request.versions.length ||
       request.leagueKeys.length ||
       request.countryIds.length ||
@@ -201,6 +204,24 @@ export class TeamFinder {
     void this.search();
   }
 
+  protected setDatabases(databaseIds: string[]): void {
+    const availableVersions = databaseVersions(this.databases(), databaseIds);
+    this.request.update((value) => ({
+      ...value,
+      databaseIds,
+      versions: value.versions.filter((version) => availableVersions.includes(version)),
+      playerEdition: undefined,
+      leagueEdition: undefined,
+      stadiumEdition: undefined,
+      offset: 0,
+    }));
+    this.contextPlayer.set(undefined);
+    this.contextLeague.set(undefined);
+    this.contextStadium.set(undefined);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    void this.search();
+  }
+
   protected setRange(
     kind: 'overall' | 'attack' | 'midfield' | 'defence',
     boundary: 'min' | 'max',
@@ -219,6 +240,7 @@ export class TeamFinder {
   protected async suggest(facet: TeamFacet, event: Event): Promise<void> {
     const text = (event.target as HTMLInputElement).value;
     const options = await this.qdb.suggestEntityFacets({
+      databaseIds: this.request().databaseIds,
       entity: 'team',
       facet,
       text,
@@ -323,6 +345,7 @@ export class TeamFinder {
 
   private initialRequest(): TeamSearchRequest {
     const request = defaultTeamSearchRequest();
+    const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const playerId = validId(this.route.snapshot.queryParamMap.get('playerId'));
     const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
@@ -331,14 +354,33 @@ export class TeamFinder {
       (value) => value !== undefined,
     ).length;
     if (!version || contextCount !== 1) return request;
-    if (playerId) return { ...request, versions: [version], playerEdition: { version, playerId } };
-    if (leagueId) return { ...request, versions: [version], leagueEdition: { version, leagueId } };
+    if (playerId)
+      return {
+        ...request,
+        databaseIds: [databaseId],
+        versions: [version],
+        playerEdition: { databaseId, version, playerId },
+      };
+    if (leagueId)
+      return {
+        ...request,
+        databaseIds: [databaseId],
+        versions: [version],
+        leagueEdition: { databaseId, version, leagueId },
+      };
     if (stadiumId)
-      return { ...request, versions: [version], stadiumEdition: { version, stadiumId } };
+      return {
+        ...request,
+        databaseIds: [databaseId],
+        versions: [version],
+        stadiumEdition: { databaseId, version, stadiumId },
+      };
     return request;
   }
 
-  private async loadContextPlayer(key: { version: number; playerId: number }): Promise<void> {
+  private async loadContextPlayer(
+    key: NonNullable<TeamSearchRequest['playerEdition']>,
+  ): Promise<void> {
     try {
       this.contextPlayer.set(await this.qdb.getPlayer(key));
     } catch {
@@ -346,7 +388,9 @@ export class TeamFinder {
     }
   }
 
-  private async loadContextLeague(key: { version: number; leagueId: number }): Promise<void> {
+  private async loadContextLeague(
+    key: NonNullable<TeamSearchRequest['leagueEdition']>,
+  ): Promise<void> {
     try {
       this.contextLeague.set(await this.qdb.getLeague(key));
     } catch {
@@ -354,7 +398,9 @@ export class TeamFinder {
     }
   }
 
-  private async loadContextStadium(key: { version: number; stadiumId: number }): Promise<void> {
+  private async loadContextStadium(
+    key: NonNullable<TeamSearchRequest['stadiumEdition']>,
+  ): Promise<void> {
     try {
       this.contextStadium.set(await this.qdb.getStadium(key));
     } catch {

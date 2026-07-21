@@ -46,14 +46,22 @@ export class TeamDetail {
 
   protected async viewPlayers(): Promise<void> {
     await this.router.navigate(['/players'], {
-      queryParams: { version: this.team.version, teamId: this.team.teamId },
+      queryParams: {
+        databaseId: this.team.databaseId,
+        version: this.team.version,
+        teamId: this.team.teamId,
+      },
     });
     this.dialog.close();
   }
 
   protected async viewStadium(): Promise<void> {
     await this.router.navigate(['/stadiums'], {
-      queryParams: { version: this.team.version, teamId: this.team.teamId },
+      queryParams: {
+        databaseId: this.team.databaseId,
+        version: this.team.version,
+        teamId: this.team.teamId,
+      },
     });
     this.dialog.close();
   }

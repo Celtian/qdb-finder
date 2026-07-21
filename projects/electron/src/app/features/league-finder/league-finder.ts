@@ -19,6 +19,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
+import { DatabaseFilter } from '../../core/database-filter/database-filter';
+import { databaseVersions } from '../../core/database-filter/database-filter-options';
 import { Qdb } from '../../core/qdb';
 import {
   defaultLeagueSearchRequest,
@@ -51,6 +53,7 @@ const validId = (value: string | null): number | undefined => {
   imports: [
     FormField,
     CountryFlag,
+    DatabaseFilter,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -90,6 +93,7 @@ export class LeagueFinder {
   protected readonly error = signal('');
   protected readonly columns = [
     'name',
+    'database',
     'originalId',
     'version',
     'country',
@@ -97,11 +101,9 @@ export class LeagueFinder {
     'teamCount',
     'playerCount',
   ];
+  protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    [
-      ...(this.databaseContext.info()?.versions ??
-        Array.from({ length: 13 }, (_, index) => 23 - index)),
-    ].sort((left, right) => right - left),
+    databaseVersions(this.databases(), this.request().databaseIds),
   );
   protected readonly levels = Array.from({ length: 7 }, (_, index) => index + 1);
   protected readonly countrySuggestions = signal<EntityFacetOption[]>([]);
@@ -120,6 +122,7 @@ export class LeagueFinder {
     const request = this.request();
     return Boolean(
       request.text ||
+      request.databaseIds.length ||
       request.versions.length ||
       request.countryIds.length ||
       request.levels.length ||
@@ -148,6 +151,20 @@ export class LeagueFinder {
     void this.search();
   }
 
+  protected setDatabases(databaseIds: string[]): void {
+    const availableVersions = databaseVersions(this.databases(), databaseIds);
+    this.request.update((value) => ({
+      ...value,
+      databaseIds,
+      versions: value.versions.filter((version) => availableVersions.includes(version)),
+      refereeEdition: undefined,
+      offset: 0,
+    }));
+    this.contextReferee.set(undefined);
+    void this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    void this.search();
+  }
+
   protected setLevels(levels: number[]): void {
     this.request.update((value) => ({ ...value, levels, offset: 0 }));
     void this.search();
@@ -156,6 +173,7 @@ export class LeagueFinder {
   protected async suggestCountries(event: Event): Promise<void> {
     this.countrySuggestions.set(
       await this.qdb.suggestEntityFacets({
+        databaseIds: this.request().databaseIds,
         entity: 'league',
         facet: 'country',
         text: (event.target as HTMLInputElement).value,
@@ -257,11 +275,13 @@ export class LeagueFinder {
   private initialRequest() {
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const refereeId = validId(this.route.snapshot.queryParamMap.get('refereeId'));
+    const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
     return version !== undefined && refereeId !== undefined
       ? {
           ...defaultLeagueSearchRequest(),
+          databaseIds: [databaseId],
           versions: [version],
-          refereeEdition: { version, refereeId },
+          refereeEdition: { databaseId, version, refereeId },
         }
       : defaultLeagueSearchRequest();
   }

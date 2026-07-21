@@ -5,7 +5,6 @@ import type {
   DatabaseImportProgress,
   DatabaseImportRequest,
   DatabaseImportResult,
-  DatabaseInfo,
   DatabaseSourceSelection,
   DatabaseSourceValidationProgress,
   DatabaseSourceValidationRequest,
@@ -41,7 +40,7 @@ export class Qdb {
   private readonly context = inject(DatabaseContext);
 
   constructor() {
-    void this.refreshDatabaseInfo();
+    void this.refreshDatabaseCatalog();
   }
 
   private get api() {
@@ -86,13 +85,10 @@ export class Qdb {
   suggestFilters(request: FilterSuggestionRequest): Promise<FilterSuggestion[]> {
     return this.api.suggestFilters(request);
   }
-  async getDatabaseInfo(): Promise<DatabaseInfo> {
-    const info = await this.api.getDatabaseInfo();
-    this.context.set(info);
-    return info;
-  }
-  listDatabases(): Promise<DatabaseDescriptor[]> {
-    return this.api.listDatabases();
+  async listDatabases(): Promise<DatabaseDescriptor[]> {
+    const databases = await this.api.listDatabases();
+    this.context.set(databases);
+    return databases;
   }
   selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined> {
     return this.api.selectDatabaseSource();
@@ -107,21 +103,15 @@ export class Qdb {
   }
   async importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult> {
     const result = await this.api.importDatabase(request);
-    if (result.status === 'completed') this.databaseChanged(result.database);
+    if (result.status === 'completed') await this.refreshDatabaseCatalog(true);
     return result;
   }
   cancelDatabaseImport(requestId: string): Promise<boolean> {
     return this.api.cancelDatabaseImport(requestId);
   }
-  async activateDatabase(id: string): Promise<DatabaseInfo> {
-    const info = await this.api.activateDatabase(id);
-    this.databaseChanged(info);
-    return info;
-  }
-  async removeDatabase(id: string): Promise<DatabaseInfo> {
-    const info = await this.api.removeDatabase(id);
-    if (this.context.info()?.id !== info.id) this.databaseChanged(info);
-    return info;
+  async removeDatabase(id: string): Promise<void> {
+    await this.api.removeDatabase(id);
+    await this.refreshDatabaseCatalog(true);
   }
   onDatabaseSourceValidationProgress(
     listener: (progress: DatabaseSourceValidationProgress) => void,
@@ -132,15 +122,11 @@ export class Qdb {
     return this.api.onDatabaseImportProgress(listener);
   }
 
-  private async refreshDatabaseInfo(): Promise<void> {
+  private async refreshDatabaseCatalog(changed = false): Promise<void> {
     try {
-      this.context.set(await this.api.getDatabaseInfo());
+      this.context.set(await this.api.listDatabases(), changed);
     } catch {
       // Feature screens already expose database connection errors.
     }
-  }
-
-  private databaseChanged(info: DatabaseInfo): void {
-    this.context.set(info, true);
   }
 }

@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { Qdb } from '../../core/qdb';
-import type { DatabaseInfo } from '../../core/qdb-contracts';
+import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 
 interface HomeTile {
   title: string;
@@ -23,47 +23,51 @@ interface HomeTile {
 })
 export class Home {
   private readonly qdb = inject(Qdb);
-  protected readonly info = signal<DatabaseInfo | undefined>(undefined);
+  protected readonly databases = signal<DatabaseDescriptor[]>([]);
+  protected readonly availableDatabases = computed(() =>
+    this.databases().filter((database) => database.status === 'available'),
+  );
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly tiles = computed<HomeTile[]>(() => {
-    const info = this.info();
-    if (!info) return [];
+    const databases = this.availableDatabases();
+    const count = (field: keyof DatabaseDescriptor): number =>
+      databases.reduce((total, database) => total + Number(database[field]), 0);
     return [
       {
         title: 'Players',
         description: 'Search ratings, positions, nationalities and complete FIFA histories.',
         icon: 'groups',
         route: '/players',
-        count: info.editions,
+        count: count('editions'),
       },
       {
         title: 'Teams',
         description: 'Compare squads and team ratings for every available edition.',
         icon: 'shield',
         route: '/teams',
-        count: info.teamEditions,
+        count: count('teamEditions'),
       },
       {
         title: 'Leagues',
         description: 'Browse competitions, countries, tiers, teams and player counts.',
         icon: 'emoji_events',
         route: '/leagues',
-        count: info.leagueEditions,
+        count: count('leagueEditions'),
       },
       {
         title: 'Referees',
         description: 'Explore officials, nationalities, league assignments and FIFA histories.',
         icon: 'sports',
         route: '/referees',
-        count: info.refereeEditions,
+        count: count('refereeEditions'),
       },
       {
         title: 'Stadiums',
         description: 'Compare grounds, capacities, pitch sizes and linked teams by edition.',
         icon: 'stadium',
         route: '/stadiums',
-        count: info.stadiumEditions,
+        count: count('stadiumEditions'),
       },
     ];
   });
@@ -80,7 +84,7 @@ export class Home {
     this.loading.set(true);
     this.error.set('');
     try {
-      this.info.set(await this.qdb.getDatabaseInfo());
+      this.databases.set(await this.qdb.listDatabases());
     } catch (error) {
       this.error.set(
         error instanceof Error ? error.message : 'Database information is unavailable.',

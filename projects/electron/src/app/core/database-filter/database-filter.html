@@ -1,0 +1,15 @@
+<mat-form-field appearance="outline">
+  <mat-label>Databases</mat-label>
+  <mat-select
+    multiple
+    aria-label="Filter by databases"
+    [value]="selectValue()"
+    (valueChange)="changeSelection($event)"
+  >
+    <mat-select-trigger>{{ selectionLabel() }}</mat-select-trigger>
+    <mat-option [value]="allDatabases">All databases</mat-option>
+    @for (database of databases(); track database.id) {
+      <mat-option [value]="database.id">{{ database.name }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>

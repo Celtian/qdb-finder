@@ -98,6 +98,7 @@ const originalIdValue = (value: string): string | undefined => {
 
 export class PlayerDatabase {
   private readonly database: DatabaseSync;
+  private readonly databaseInfo: DatabaseInfo;
 
   constructor(path: string) {
     this.database = new DatabaseSync(path, { readOnly: true });
@@ -119,6 +120,7 @@ export class PlayerDatabase {
         `Database schema ${schemaVersion}/${metadataSchemaVersion} is incompatible with required schema ${DATABASE_SCHEMA_VERSION}. Re-import this database.`,
       );
     }
+    this.databaseInfo = this.info();
   }
 
   close(): void {
@@ -632,7 +634,9 @@ export class PlayerDatabase {
 
   private toSearchRow(row: Row): PlayerSearchRow {
     return {
-      key: String(row['key']),
+      key: `${this.databaseInfo.id}:${String(row['key'])}`,
+      databaseId: this.databaseInfo.id,
+      databaseName: this.databaseInfo.name,
       version: Number(row['version']),
       playerId: Number(row['player_id']),
       name: String(row['display_name']),
@@ -655,7 +659,9 @@ export class PlayerDatabase {
 
   private toTeamRow(row: Row): TeamEditionRow {
     return {
-      key: String(row['key']),
+      key: `${this.databaseInfo.id}:${String(row['key'])}`,
+      databaseId: this.databaseInfo.id,
+      databaseName: this.databaseInfo.name,
       version: Number(row['version']),
       teamId: Number(row['team_id']),
       name: String(row['team_name']),
@@ -676,7 +682,9 @@ export class PlayerDatabase {
 
   private toLeagueRow(row: Row): LeagueEditionRow {
     return {
-      key: String(row['key']),
+      key: `${this.databaseInfo.id}:${String(row['key'])}`,
+      databaseId: this.databaseInfo.id,
+      databaseName: this.databaseInfo.name,
       version: Number(row['version']),
       leagueId: Number(row['league_id']),
       name: String(row['league_name']),
@@ -692,7 +700,9 @@ export class PlayerDatabase {
 
   private toRefereeRow(row: Row): RefereeEditionRow {
     return {
-      key: String(row['key']),
+      key: `${this.databaseInfo.id}:${String(row['key'])}`,
+      databaseId: this.databaseInfo.id,
+      databaseName: this.databaseInfo.name,
       version: Number(row['version']),
       refereeId: Number(row['referee_id']),
       name: String(row['referee_name']),
@@ -719,7 +729,9 @@ export class PlayerDatabase {
     const pitchLength = nullableNumber(row['pitch_length']);
     const pitchWidth = nullableNumber(row['pitch_width']);
     return {
-      key: String(row['key']),
+      key: `${this.databaseInfo.id}:${String(row['key'])}`,
+      databaseId: this.databaseInfo.id,
+      databaseName: this.databaseInfo.name,
       version: Number(row['version']),
       stadiumId: Number(row['stadium_id']),
       name: String(row['stadium_name']),

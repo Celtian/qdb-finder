@@ -177,7 +177,7 @@ export class Databases {
           version: this.model().version,
         });
         if (result.status === 'completed') {
-          this.success.set(`“${result.database.name}” was imported and activated.`);
+          this.success.set(`“${result.database.name}” was imported and is ready to search.`);
           this.selectionId = '';
           this.validationSnapshot.set(undefined);
           this.sourceStatus.set('');
@@ -207,17 +207,6 @@ export class Databases {
 
   protected async cancelImport(): Promise<void> {
     if (this.requestId) await this.qdb.cancelDatabaseImport(this.requestId);
-  }
-
-  protected async activate(database: DatabaseDescriptor): Promise<void> {
-    if (database.active || database.status !== 'available') return;
-    this.error.set('');
-    try {
-      await this.qdb.activateDatabase(database.id);
-      await this.load();
-    } catch (error) {
-      this.error.set(error instanceof Error ? error.message : 'Database could not be activated.');
-    }
   }
 
   protected async remove(database: DatabaseDescriptor): Promise<void> {

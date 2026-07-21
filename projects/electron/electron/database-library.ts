@@ -1,12 +1,4 @@
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, renameSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { DatabaseDescriptor, DatabaseInfo, DatabaseKind } from '../src/app/core/qdb-contracts';
@@ -54,19 +46,14 @@ const metadataInfo = (path: string): DatabaseInfo => {
 
 export class DatabaseLibrary {
   readonly customDirectory: string;
-  private readonly settingsPath: string;
-  private activeId: string;
 
   constructor(
     private readonly builtInPath: string,
     userDataPath: string,
   ) {
     this.customDirectory = join(userDataPath, 'databases');
-    this.settingsPath = join(userDataPath, 'active-database.json');
     mkdirSync(this.customDirectory, { recursive: true });
     this.cleanupTemporaryFiles();
-    this.activeId = this.readActiveId();
-    if (!this.isActivatable(this.activeId)) this.setActiveId(BUILT_IN_ID);
   }
 
   list(): DatabaseDescriptor[] {
@@ -83,14 +70,6 @@ export class DatabaseLibrary {
         if (left.kind !== right.kind) return left.kind === 'built-in' ? -1 : 1;
         return left.name.localeCompare(right.name);
       });
-  }
-
-  activePath(): string {
-    return this.pathFor(this.activeId);
-  }
-
-  activeInfo(): DatabaseInfo {
-    return metadataInfo(this.activePath());
   }
 
   pathFor(id: string): string {
@@ -118,26 +97,14 @@ export class DatabaseLibrary {
     if (info.id !== id || info.kind !== 'custom' || info.schemaVersion !== DATABASE_SCHEMA_VERSION)
       throw new Error('The imported database metadata is invalid.');
     renameSync(temporaryPath, destination);
-    return { ...info, active: false, status: 'available' };
+    return { ...info, status: 'available' };
   }
 
-  activate(id: string): DatabaseInfo {
-    const descriptor = this.list().find((database) => database.id === id);
-    if (!descriptor) throw new Error('Database was not found.');
-    if (descriptor.status !== 'available')
-      throw new Error(descriptor.error ?? 'Database is incompatible and must be re-imported.');
-    this.setActiveId(id);
-    return descriptor;
-  }
-
-  remove(id: string): { activeChanged: boolean } {
+  remove(id: string): void {
     if (id === BUILT_IN_ID) throw new Error('The built-in database cannot be removed.');
     const path = this.pathFor(id);
     if (!existsSync(path)) throw new Error('Database was not found.');
-    const activeChanged = this.activeId === id;
-    if (activeChanged) this.setActiveId(BUILT_IN_ID);
     this.removeFiles(path);
-    return { activeChanged };
   }
 
   discardTemporary(id: string): void {
@@ -149,7 +116,7 @@ export class DatabaseLibrary {
       const database = new PlayerDatabase(path);
       const info = database.info();
       database.close();
-      return { ...info, active: info.id === this.activeId, status: 'available' };
+      return { ...info, status: 'available' };
     } catch (error) {
       let info: DatabaseInfo;
       try {
@@ -175,37 +142,10 @@ export class DatabaseLibrary {
       }
       return {
         ...info,
-        active: false,
         status: 'incompatible',
         error: error instanceof Error ? error.message : 'Database is unreadable.',
       };
     }
-  }
-
-  private isActivatable(id: string): boolean {
-    try {
-      const database = new PlayerDatabase(this.pathFor(id));
-      database.close();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private readActiveId(): string {
-    try {
-      const value = JSON.parse(readFileSync(this.settingsPath, 'utf8')) as { activeId?: unknown };
-      return typeof value.activeId === 'string' ? value.activeId : BUILT_IN_ID;
-    } catch {
-      return BUILT_IN_ID;
-    }
-  }
-
-  private setActiveId(id: string): void {
-    const temporaryPath = `${this.settingsPath}.tmp`;
-    writeFileSync(temporaryPath, JSON.stringify({ activeId: id }), 'utf8');
-    renameSync(temporaryPath, this.settingsPath);
-    this.activeId = id;
   }
 
   private cleanupTemporaryFiles(): void {

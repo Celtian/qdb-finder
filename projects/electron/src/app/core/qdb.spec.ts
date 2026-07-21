@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { DatabaseContext } from './database-context';
+import type { DatabaseDescriptor } from './qdb-contracts';
 import { Qdb } from './qdb';
 
 describe('Qdb', () => {
@@ -18,15 +19,13 @@ describe('Qdb', () => {
     getStadium: vi.fn(),
     suggestEntityFacets: vi.fn(),
     suggestFilters: vi.fn(),
-    getDatabaseInfo: vi.fn(),
-    listDatabases: vi.fn(),
+    listDatabases: vi.fn<() => Promise<DatabaseDescriptor[]>>(async () => []),
     selectDatabaseSource: vi.fn(),
     validateDatabaseSource: vi.fn(),
     cancelDatabaseSourceValidation: vi.fn(),
     importDatabase: vi.fn(),
     cancelDatabaseImport: vi.fn(),
-    activateDatabase: vi.fn(),
-    removeDatabase: vi.fn(),
+    removeDatabase: vi.fn(async () => undefined),
     onDatabaseSourceValidationProgress: vi.fn(),
     onDatabaseImportProgress: vi.fn(),
   };
@@ -43,6 +42,7 @@ describe('Qdb', () => {
 
   it('forwards entity edition operations through the desktop bridge', () => {
     const teamRequest = {
+      databaseIds: [],
       text: '',
       versions: [],
       leagueKeys: [],
@@ -57,6 +57,7 @@ describe('Qdb', () => {
       direction: 'desc' as const,
     };
     const leagueRequest = {
+      databaseIds: [],
       text: '',
       versions: [],
       countryIds: [],
@@ -68,10 +69,11 @@ describe('Qdb', () => {
     };
 
     void service.searchTeams(teamRequest);
-    void service.getTeam({ version: 23, teamId: 1 });
+    void service.getTeam({ databaseId: 'built-in', version: 23, teamId: 1 });
     void service.searchLeagues(leagueRequest);
-    void service.getLeague({ version: 23, leagueId: 13 });
+    void service.getLeague({ databaseId: 'built-in', version: 23, leagueId: 13 });
     const refereeRequest = {
+      databaseIds: [],
       text: '',
       versions: [],
       nationalityIds: [],
@@ -83,6 +85,7 @@ describe('Qdb', () => {
       direction: 'desc' as const,
     };
     const stadiumRequest = {
+      databaseIds: [],
       text: '',
       versions: [],
       countryIds: [],
@@ -94,10 +97,11 @@ describe('Qdb', () => {
       direction: 'desc' as const,
     };
     void service.searchReferees(refereeRequest);
-    void service.getReferee({ version: 23, refereeId: 188446 });
+    void service.getReferee({ databaseId: 'built-in', version: 23, refereeId: 188446 });
     void service.searchStadiums(stadiumRequest);
-    void service.getStadium({ version: 23, stadiumId: 1 });
+    void service.getStadium({ databaseId: 'built-in', version: 23, stadiumId: 1 });
     void service.suggestEntityFacets({
+      databaseIds: [],
       entity: 'team',
       facet: 'country',
       text: '',
@@ -105,18 +109,34 @@ describe('Qdb', () => {
     });
 
     expect(api.searchTeams).toHaveBeenCalledWith(teamRequest);
-    expect(api.getTeam).toHaveBeenCalledWith({ version: 23, teamId: 1 });
+    expect(api.getTeam).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      teamId: 1,
+    });
     expect(api.searchLeagues).toHaveBeenCalledWith(leagueRequest);
-    expect(api.getLeague).toHaveBeenCalledWith({ version: 23, leagueId: 13 });
+    expect(api.getLeague).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      leagueId: 13,
+    });
     expect(api.searchReferees).toHaveBeenCalledWith(refereeRequest);
-    expect(api.getReferee).toHaveBeenCalledWith({ version: 23, refereeId: 188446 });
+    expect(api.getReferee).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      refereeId: 188446,
+    });
     expect(api.searchStadiums).toHaveBeenCalledWith(stadiumRequest);
-    expect(api.getStadium).toHaveBeenCalledWith({ version: 23, stadiumId: 1 });
+    expect(api.getStadium).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      stadiumId: 1,
+    });
     expect(api.suggestEntityFacets).toHaveBeenCalledOnce();
   });
 
-  it('publishes active database changes to database-backed screens', async () => {
-    const info = {
+  it('publishes database catalog changes to database-backed screens', async () => {
+    const database = {
       id: 'custom-id',
       name: 'Custom FIFA 23',
       kind: 'custom' as const,
@@ -131,13 +151,14 @@ describe('Qdb', () => {
       versions: [23],
       generatedAt: '2026-07-20T00:00:00.000Z',
       sqliteVersion: '3.50.0',
+      status: 'available' as const,
     };
-    api.activateDatabase.mockResolvedValueOnce(info);
+    api.listDatabases.mockResolvedValueOnce([database]);
 
-    await service.activateDatabase('custom-id');
+    await service.removeDatabase('removed-id');
 
     const context = TestBed.inject(DatabaseContext);
-    expect(context.info()).toEqual(info);
+    expect(context.databases()).toEqual([database]);
     expect(context.revision()).toBe(1);
   });
 });

@@ -19,6 +19,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
+import { DatabaseFilter } from '../../core/database-filter/database-filter';
+import { databaseVersions } from '../../core/database-filter/database-filter-options';
 import { Qdb } from '../../core/qdb';
 import {
   defaultRefereeSearchRequest,
@@ -60,6 +62,7 @@ const validId = (value: string | null): number | undefined => {
   imports: [
     FormField,
     CountryFlag,
+    DatabaseFilter,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -99,6 +102,7 @@ export class RefereeFinder {
   protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'database',
     'originalId',
     'version',
     'nationality',
@@ -107,11 +111,9 @@ export class RefereeFinder {
     'height',
     'real',
   ];
+  protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    [
-      ...(this.databaseContext.info()?.versions ??
-        Array.from({ length: 13 }, (_, index) => 23 - index)),
-    ].sort((left, right) => right - left),
+    databaseVersions(this.databases(), this.request().databaseIds),
   );
   protected readonly availability = signal<AvailabilityFilter>('all');
   protected readonly suggestions = signal<Record<RefereeFacet, EntityFacetOption[]>>({
@@ -144,6 +146,7 @@ export class RefereeFinder {
     const request = this.request();
     return Boolean(
       request.text ||
+      request.databaseIds.length ||
       request.versions.length ||
       request.gender !== undefined ||
       request.nationalityIds.length ||
@@ -173,6 +176,20 @@ export class RefereeFinder {
 
   protected setVersions(versions: number[]): void {
     this.request.update((value) => ({ ...value, versions, offset: 0 }));
+    void this.search();
+  }
+
+  protected setDatabases(databaseIds: string[]): void {
+    const availableVersions = databaseVersions(this.databases(), databaseIds);
+    this.request.update((value) => ({
+      ...value,
+      databaseIds,
+      versions: value.versions.filter((version) => availableVersions.includes(version)),
+      leagueEdition: undefined,
+      offset: 0,
+    }));
+    this.contextLeague.set(undefined);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
 
@@ -207,6 +224,7 @@ export class RefereeFinder {
 
   protected async suggest(facet: RefereeFacet, event: Event): Promise<void> {
     const options = await this.qdb.suggestEntityFacets({
+      databaseIds: this.request().databaseIds,
       entity: 'referee',
       facet,
       text: (event.target as HTMLInputElement).value,
@@ -314,14 +332,22 @@ export class RefereeFinder {
 
   private initialRequest(): RefereeSearchRequest {
     const request = defaultRefereeSearchRequest();
+    const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
     return version && leagueId
-      ? { ...request, versions: [version], leagueEdition: { version, leagueId } }
+      ? {
+          ...request,
+          databaseIds: [databaseId],
+          versions: [version],
+          leagueEdition: { databaseId, version, leagueId },
+        }
       : request;
   }
 
-  private async loadContextLeague(key: { version: number; leagueId: number }): Promise<void> {
+  private async loadContextLeague(
+    key: NonNullable<RefereeSearchRequest['leagueEdition']>,
+  ): Promise<void> {
     try {
       this.contextLeague.set(await this.qdb.getLeague(key));
     } catch {

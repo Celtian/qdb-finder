@@ -20,6 +20,11 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
+      <app-database-filter
+        [databases]="databases()"
+        [selected]="request().databaseIds"
+        (selectedChange)="setDatabases($event)"
+      />
       <mat-form-field appearance="outline">
         <mat-label>FIFA versions</mat-label>
         <mat-select multiple [value]="request().versions" (valueChange)="setVersions($event)">
@@ -146,7 +151,8 @@
         <div class="context-banner">
           <mat-icon>filter_alt</mat-icon
           ><span
-            >Showing FIFA {{ league.version }} referees for <strong>{{ league.name }}</strong></span
+            >Showing FIFA {{ league.version }} referees for <strong>{{ league.name }}</strong> in
+            {{ league.databaseName }}</span
           ><button type="button" mat-button (click)="clearFilters()">Clear</button>
         </div>
       }
@@ -203,6 +209,10 @@
                   </button>
                 </td></ng-container
               >
+              <ng-container matColumnDef="database">
+                <th *matHeaderCellDef mat-header-cell>Database</th>
+                <td *matCellDef="let row" mat-cell>{{ row.databaseName }}</td>
+              </ng-container>
               <ng-container matColumnDef="originalId"
                 ><th *matHeaderCellDef mat-header-cell>Original ID</th>
                 <td *matCellDef="let row" class="original-id" mat-cell>

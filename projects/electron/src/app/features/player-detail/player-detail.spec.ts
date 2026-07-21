@@ -10,6 +10,8 @@ import { PlayerDetail } from './player-detail';
 
 const player: PlayerDetails = {
   key: '23:1',
+  databaseId: 'built-in',
+  databaseName: 'Built-in FIFA 11–23',
   version: 23,
   playerId: 1,
   name: 'Test Player',
@@ -84,7 +86,7 @@ describe('PlayerDetail', () => {
     const title = element.querySelector('h2[mat-dialog-title]');
 
     expect(eyebrow?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'FIFA 23 player · Original ID 1',
+      'FIFA 23 player · Built-in FIFA 11–23 · Original ID 1',
     );
     expect(eyebrow?.querySelector('.original-id')?.textContent?.trim()).toBe('Original ID 1');
     expect(getComputedStyle(title!).paddingLeft).toBe('0px');
@@ -237,7 +239,7 @@ describe('PlayerDetail', () => {
 
     await (component as unknown as { viewTeams(): Promise<void> }).viewTeams();
 
-    expect(TestBed.inject(Router).url).toBe('/teams?version=23&playerId=1');
+    expect(TestBed.inject(Router).url).toBe('/teams?databaseId=built-in&version=23&playerId=1');
     expect(close).toHaveBeenCalledOnce();
   });
 

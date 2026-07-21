@@ -70,6 +70,8 @@ describe('TeamFinder', () => {
   it('renders the original team ID as a non-sortable column after the name', async () => {
     const row: TeamEditionRow = {
       key: 'internal-team-key',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       teamId: 116_009,
       name: 'Test Team',
@@ -103,7 +105,7 @@ describe('TeamFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 3)).toEqual(['Team', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Team', 'Database', 'Original ID', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('116009');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
@@ -121,6 +123,8 @@ describe('TeamFinder', () => {
     };
     const row = {
       key: '23:11',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       teamId: 11,
       name: 'Manchester United',
@@ -222,11 +226,15 @@ describe('TeamFinder contextual routing', () => {
     (component as unknown as { retrySearch(): void }).retrySearch();
     await harness.fixture.whenStable();
 
-    expect(getStadium).toHaveBeenCalledWith({ version: 23, stadiumId: 1 });
+    expect(getStadium).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      stadiumId: 1,
+    });
     expect(searchTeams).toHaveBeenCalledWith(
       expect.objectContaining({
         versions: [23],
-        stadiumEdition: { version: 23, stadiumId: 1 },
+        stadiumEdition: { databaseId: 'built-in', version: 23, stadiumId: 1 },
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('Old Trafford');
@@ -266,11 +274,15 @@ describe('TeamFinder contextual routing', () => {
     testable.retrySearch();
     await harness.fixture.whenStable();
 
-    expect(getPlayer).toHaveBeenCalledWith({ version: 23, playerId: 158_023 });
+    expect(getPlayer).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      playerId: 158_023,
+    });
     expect(searchTeams).toHaveBeenCalledWith(
       expect.objectContaining({
         versions: [23],
-        playerEdition: { version: 23, playerId: 158_023 },
+        playerEdition: { databaseId: 'built-in', version: 23, playerId: 158_023 },
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain(

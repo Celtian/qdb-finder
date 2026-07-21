@@ -1,10 +1,13 @@
 <main>
   <header>
-    <p class="eyebrow">{{ info()?.name ?? 'Offline FIFA database' }}</p>
+    <p class="eyebrow">
+      {{ availableDatabases().length }} searchable
+      {{ availableDatabases().length === 1 ? 'database' : 'databases' }}
+    </p>
     <h1>Explore every edition</h1>
     <p class="lead">
-      Browse players, teams, leagues, referees and stadiums across the active FIFA database without
-      an internet connection.
+      Browse players, teams, leagues, referees and stadiums across every compatible installed
+      database without an internet connection.
     </p>
   </header>
   @if (loading()) {

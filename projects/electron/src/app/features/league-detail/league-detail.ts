@@ -35,21 +35,33 @@ export class LeagueDetail {
 
   protected async viewTeams(): Promise<void> {
     await this.router.navigate(['/teams'], {
-      queryParams: { version: this.league.version, leagueId: this.league.leagueId },
+      queryParams: {
+        databaseId: this.league.databaseId,
+        version: this.league.version,
+        leagueId: this.league.leagueId,
+      },
     });
     this.dialog.close();
   }
 
   protected async viewPlayers(): Promise<void> {
     await this.router.navigate(['/players'], {
-      queryParams: { version: this.league.version, leagueId: this.league.leagueId },
+      queryParams: {
+        databaseId: this.league.databaseId,
+        version: this.league.version,
+        leagueId: this.league.leagueId,
+      },
     });
     this.dialog.close();
   }
 
   protected async viewReferees(): Promise<void> {
     await this.router.navigate(['/referees'], {
-      queryParams: { version: this.league.version, leagueId: this.league.leagueId },
+      queryParams: {
+        databaseId: this.league.databaseId,
+        version: this.league.version,
+        leagueId: this.league.leagueId,
+      },
     });
     this.dialog.close();
   }

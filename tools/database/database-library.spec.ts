@@ -42,18 +42,15 @@ describe('database library', () => {
     return { library: new DatabaseLibrary(builtInPath, root), root };
   };
 
-  it('installs, activates and removes an isolated custom database', () => {
+  it('installs and removes an isolated custom database', () => {
     const { library } = setup();
     createDatabase(library.temporaryPath(CUSTOM_ID), CUSTOM_ID, 'Custom 23', 'custom');
 
     library.install(CUSTOM_ID);
     expect(library.list().map(({ name }) => name)).toEqual(['Built-in FIFA 11–23', 'Custom 23']);
-    expect(library.activate(CUSTOM_ID).name).toBe('Custom 23');
-    expect(library.activePath()).toBe(library.pathFor(CUSTOM_ID));
     expect(() => library.ensureUniqueName(' custom 23 ')).toThrow(/already exists/);
 
-    expect(library.remove(CUSTOM_ID)).toEqual({ activeChanged: true });
-    expect(library.activeInfo().id).toBe('built-in');
+    expect(library.remove(CUSTOM_ID)).toBeUndefined();
     expect(existsSync(library.pathFor(CUSTOM_ID))).toBe(false);
   });
 
@@ -63,9 +60,7 @@ describe('database library', () => {
 
     expect(library.list().find(({ id }) => id === CUSTOM_ID)).toMatchObject({
       status: 'incompatible',
-      active: false,
     });
-    expect(() => library.activate(CUSTOM_ID)).toThrow(/incompatible/);
     expect(() => library.remove('built-in')).toThrow(/cannot be removed/);
   });
 

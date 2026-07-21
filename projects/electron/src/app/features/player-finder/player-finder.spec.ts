@@ -68,7 +68,7 @@ describe('PlayerFinder', () => {
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
   });
 
-  it('refreshes against a newly active database without clearing filters', async () => {
+  it('refreshes against a changed database catalog without clearing filters', async () => {
     const testable = component as unknown as {
       request: {
         (): SearchRequest;
@@ -80,22 +80,25 @@ describe('PlayerFinder', () => {
     searchPlayers.mockClear();
 
     TestBed.inject(DatabaseContext).set(
-      {
-        id: 'custom-id',
-        name: 'Custom FIFA 23',
-        kind: 'custom',
-        schemaVersion: 1,
-        editions: 1,
-        teamEditions: 1,
-        leagueEditions: 1,
-        refereeEditions: 1,
-        stadiumEditions: 1,
-        teamLinks: 1,
-        sourceFiles: 11,
-        versions: [23],
-        generatedAt: '2026-07-20T00:00:00.000Z',
-        sqliteVersion: '3.50.0',
-      },
+      [
+        {
+          id: 'custom-id',
+          name: 'Custom FIFA 23',
+          kind: 'custom',
+          schemaVersion: 1,
+          editions: 1,
+          teamEditions: 1,
+          leagueEditions: 1,
+          refereeEditions: 1,
+          stadiumEditions: 1,
+          teamLinks: 1,
+          sourceFiles: 11,
+          versions: [23],
+          generatedAt: '2026-07-20T00:00:00.000Z',
+          sqliteVersion: '3.50.0',
+          status: 'available',
+        },
+      ],
       true,
     );
     await fixture.whenStable();
@@ -223,6 +226,8 @@ describe('PlayerFinder', () => {
     testable.loading.set(false);
     const testableResultRow: PlayerSearchRow = {
       key: 'internal-player-key',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       playerId: 123_456,
       name: 'Test Player',
@@ -256,7 +261,7 @@ describe('PlayerFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 3)).toEqual(['Player', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Player', 'Database', 'Original ID', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('123456');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
@@ -287,6 +292,8 @@ describe('PlayerFinder', () => {
     const suggestion = { key: 'arsenal', label: 'Arsenal', count: 1 };
     const row = {
       key: '23:1',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       playerId: 1,
       name: 'Test Player',
@@ -386,6 +393,8 @@ describe('PlayerFinder contextual routing', () => {
     }));
     const getTeam = vi.fn(async () => ({
       key: '23:1',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       teamId: 1,
       name: 'Arsenal',
@@ -426,11 +435,11 @@ describe('PlayerFinder contextual routing', () => {
     testable.retrySearch();
     await harness.fixture.whenStable();
 
-    expect(getTeam).toHaveBeenCalledWith({ version: 23, teamId: 1 });
+    expect(getTeam).toHaveBeenCalledWith({ databaseId: 'built-in', version: 23, teamId: 1 });
     expect(searchPlayers).toHaveBeenCalledWith(
       expect.objectContaining({
         versions: [23],
-        teamEdition: { version: 23, teamId: 1 },
+        teamEdition: { databaseId: 'built-in', version: 23, teamId: 1 },
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('Arsenal');

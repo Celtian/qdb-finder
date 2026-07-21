@@ -4,9 +4,6 @@
     <div class="brand">
       <img ngSrc="qdb-finder.png" width="24" height="24" alt="" priority />
       <span>QDB Finder</span>
-      @if (databaseInfo(); as database) {
-        <span class="database-name" aria-label="Active database">· {{ database.name }}</span>
-      }
     </div>
   </div>
   @if (desktop && !desktop.nativeControls) {

@@ -107,6 +107,8 @@ describe('RefereeFinder', () => {
   it('renders the original referee ID as a non-sortable column after the name', async () => {
     const row: RefereeEditionRow = {
       key: 'internal-referee-key',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       refereeId: 270_317,
       name: 'Test Referee',
@@ -142,7 +144,7 @@ describe('RefereeFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 3)).toEqual(['Referee', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Referee', 'Database', 'Original ID', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('270317');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
@@ -160,6 +162,8 @@ describe('RefereeFinder', () => {
     };
     const row = {
       key: '23:1',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       refereeId: 1,
       name: 'Test Referee',
@@ -276,11 +280,15 @@ describe('RefereeFinder contextual routing', () => {
     (component as unknown as { retrySearch(): void }).retrySearch();
     await harness.fixture.whenStable();
 
-    expect(getLeague).toHaveBeenCalledWith({ version: 23, leagueId: 13 });
+    expect(getLeague).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      leagueId: 13,
+    });
     expect(searchReferees).toHaveBeenCalledWith(
       expect.objectContaining({
         versions: [23],
-        leagueEdition: { version: 23, leagueId: 13 },
+        leagueEdition: { databaseId: 'built-in', version: 23, leagueId: 13 },
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('England Premier League (1)');

@@ -79,6 +79,8 @@ describe('StadiumFinder', () => {
   it('renders the original stadium ID as a non-sortable column after the name', async () => {
     const row: StadiumEditionRow = {
       key: 'internal-stadium-key',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       stadiumId: 1098,
       name: 'Test Stadium',
@@ -110,7 +112,7 @@ describe('StadiumFinder', () => {
     );
     const originalIdHeader = element.querySelector<HTMLElement>('th.cdk-column-originalId');
     const originalIdCell = element.querySelector<HTMLElement>('td.cdk-column-originalId');
-    expect(headers.slice(0, 3)).toEqual(['Stadium', 'Original ID', 'Edition']);
+    expect(headers.slice(0, 4)).toEqual(['Stadium', 'Database', 'Original ID', 'Edition']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('1098');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
@@ -128,6 +130,8 @@ describe('StadiumFinder', () => {
     };
     const row = {
       key: '23:1',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       stadiumId: 1,
       name: 'Old Trafford',
@@ -239,11 +243,15 @@ describe('StadiumFinder contextual routing', () => {
     (component as unknown as { retrySearch(): void }).retrySearch();
     await harness.fixture.whenStable();
 
-    expect(getTeam).toHaveBeenCalledWith({ version: 23, teamId: 11 });
+    expect(getTeam).toHaveBeenCalledWith({
+      databaseId: 'built-in',
+      version: 23,
+      teamId: 11,
+    });
     expect(searchStadiums).toHaveBeenCalledWith(
       expect.objectContaining({
         versions: [23],
-        teamEdition: { version: 23, teamId: 11 },
+        teamEdition: { databaseId: 'built-in', version: 23, teamId: 11 },
       }),
     );
     expect(harness.routeNativeElement?.textContent).toContain('Manchester United');

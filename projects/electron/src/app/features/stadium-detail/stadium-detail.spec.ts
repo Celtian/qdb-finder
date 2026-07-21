@@ -10,6 +10,8 @@ import { StadiumDetail } from './stadium-detail';
 
 const stadium: StadiumDetails = {
   key: '23:1',
+  databaseId: 'built-in',
+  databaseName: 'Built-in FIFA 11–23',
   version: 23,
   stadiumId: 1,
   name: 'Old Trafford',
@@ -26,6 +28,8 @@ const stadium: StadiumDetails = {
   teams: [
     {
       key: '23:11',
+      databaseId: 'built-in',
+      databaseName: 'Built-in FIFA 11–23',
       version: 23,
       teamId: 11,
       name: 'Manchester United',
@@ -76,7 +80,7 @@ describe('StadiumDetail', () => {
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
-    ).toBe('FIFA 23 stadium · Original ID 1');
+    ).toBe('FIFA 23 stadium · Built-in FIFA 11–23 · Original ID 1');
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {
@@ -96,7 +100,7 @@ describe('StadiumDetail', () => {
 
   it('opens the exact stadium team context', async () => {
     await (component as unknown as { viewTeams(): Promise<void> }).viewTeams();
-    expect(TestBed.inject(Router).url).toBe('/teams?version=23&stadiumId=1');
+    expect(TestBed.inject(Router).url).toBe('/teams?databaseId=built-in&version=23&stadiumId=1');
     expect(close).toHaveBeenCalledOnce();
   });
 });

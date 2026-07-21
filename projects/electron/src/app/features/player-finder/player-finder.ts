@@ -20,6 +20,8 @@ import { scoreBadgeClass } from '../../core/attribute-value';
 import { Qdb } from '../../core/qdb';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
+import { DatabaseFilter } from '../../core/database-filter/database-filter';
+import { databaseVersions } from '../../core/database-filter/database-filter-options';
 import {
   defaultSearchRequest,
   type FilterKind,
@@ -82,6 +84,7 @@ const validId = (value: string | null): number | undefined => {
   imports: [
     FormField,
     CountryFlag,
+    DatabaseFilter,
     MatAutocompleteModule,
     MatButtonModule,
     MatChipsModule,
@@ -122,6 +125,7 @@ export class PlayerFinder {
   protected readonly contextKind = signal<'team' | 'league' | undefined>(undefined);
   protected readonly columns = [
     'name',
+    'database',
     'originalId',
     'version',
     'nationality',
@@ -132,11 +136,9 @@ export class PlayerFinder {
     'potential',
     'bestRating',
   ];
+  protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
-    [
-      ...(this.databaseContext.info()?.versions ??
-        Array.from({ length: 13 }, (_, index) => 23 - index)),
-    ].sort((left, right) => right - left),
+    databaseVersions(this.databases(), this.request().databaseIds),
   );
   protected readonly positions = [
     'GK',
@@ -204,6 +206,7 @@ export class PlayerFinder {
     const value = this.request();
     return Boolean(
       value.text ||
+      value.databaseIds.length ||
       value.versions.length ||
       value.gender !== undefined ||
       value.nationalities.length ||
@@ -241,6 +244,21 @@ export class PlayerFinder {
     this.request.update((value) => ({ ...value, versions, offset: 0 }));
     void this.search();
   }
+  protected setDatabases(databaseIds: string[]): void {
+    const availableVersions = databaseVersions(this.databases(), databaseIds);
+    this.request.update((value) => ({
+      ...value,
+      databaseIds,
+      versions: value.versions.filter((version) => availableVersions.includes(version)),
+      teamEdition: undefined,
+      leagueEdition: undefined,
+      offset: 0,
+    }));
+    this.context.set(undefined);
+    this.contextKind.set(undefined);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    void this.search();
+  }
   protected setGender(gender: GenderFilter): void {
     this.request.update((value) => ({
       ...value,
@@ -273,6 +291,7 @@ export class PlayerFinder {
   protected async suggest(kind: FilterKind, event: Event): Promise<void> {
     const text = (event.target as HTMLInputElement).value;
     const options = await this.qdb.suggestFilters({
+      databaseIds: this.request().databaseIds,
       kind,
       text,
       versions: this.request().versions,
@@ -370,12 +389,25 @@ export class PlayerFinder {
   private initialRequest() {
     const request = defaultSearchRequest();
     const params = this.route.snapshot.queryParamMap;
+    const databaseId = params.get('databaseId') ?? 'built-in';
     const version = validVersion(params.get('version'));
     const teamId = validId(params.get('teamId'));
     const leagueId = validId(params.get('leagueId'));
     if (!version || Boolean(teamId) === Boolean(leagueId)) return request;
-    if (teamId) return { ...request, versions: [version], teamEdition: { version, teamId } };
-    if (leagueId) return { ...request, versions: [version], leagueEdition: { version, leagueId } };
+    if (teamId)
+      return {
+        ...request,
+        databaseIds: [databaseId],
+        versions: [version],
+        teamEdition: { databaseId, version, teamId },
+      };
+    if (leagueId)
+      return {
+        ...request,
+        databaseIds: [databaseId],
+        versions: [version],
+        leagueEdition: { databaseId, version, leagueId },
+      };
     return request;
   }
 

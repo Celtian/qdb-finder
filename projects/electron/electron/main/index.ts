@@ -46,6 +46,7 @@ const useWslWindowControls =
   Boolean(process.env['WSL_DISTRO_NAME'] || process.env['WSL_INTEROP']);
 
 app.disableHardwareAcceleration();
+app.setName('QDB Finder');
 
 const sendMaximizedState = (window: BrowserWindow): void =>
   window.webContents.send('qdb:window:maximized-change', window.isMaximized());

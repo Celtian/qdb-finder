@@ -49,6 +49,20 @@ describe('Home', () => {
     expect(component).toBeTruthy();
   });
 
+  it('renders the compact page header and keeps the introduction in the content', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const header = element.querySelector('header.page-heading');
+    const lead = element.querySelector('main > .lead');
+
+    expect(header?.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(header?.querySelector('.eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      '1 searchable database',
+    );
+    expect(header?.querySelector('h1')?.textContent?.trim()).toBe('Explore every edition');
+    expect(header?.querySelector('.lead')).toBeNull();
+    expect(lead?.textContent).toContain('Browse players, teams, leagues, referees and stadiums');
+  });
+
   it('renders all database-backed entity links', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();

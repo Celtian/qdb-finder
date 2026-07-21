@@ -15,6 +15,11 @@ interface NavigationLink {
   exact?: boolean;
 }
 
+interface NavigationGroup {
+  id: string;
+  links: readonly NavigationLink[];
+}
+
 @Component({
   selector: 'app-navigation',
   imports: [
@@ -32,14 +37,30 @@ export class AppNavigation {
   private readonly dialog = inject(MatDialog);
   protected readonly navigation = inject(AppNavigationState);
 
-  protected readonly links: readonly NavigationLink[] = [
-    { path: '/', icon: 'home', label: 'Home', exact: true },
-    { path: '/players', icon: 'groups', label: 'Players' },
-    { path: '/teams', icon: 'shield', label: 'Teams' },
-    { path: '/leagues', icon: 'emoji_events', label: 'Leagues' },
-    { path: '/referees', icon: 'sports', label: 'Referees' },
-    { path: '/stadiums', icon: 'stadium', label: 'Stadiums' },
-    { path: '/databases', icon: 'storage', label: 'Databases' },
+  protected readonly groups: readonly NavigationGroup[] = [
+    {
+      id: 'home',
+      links: [{ path: '/', icon: 'home', label: 'Home', exact: true }],
+    },
+    {
+      id: 'football',
+      links: [
+        { path: '/leagues', icon: 'emoji_events', label: 'Leagues' },
+        { path: '/teams', icon: 'shield', label: 'Teams' },
+        { path: '/players', icon: 'groups', label: 'Players' },
+      ],
+    },
+    {
+      id: 'venues-and-officials',
+      links: [
+        { path: '/referees', icon: 'sports', label: 'Referees' },
+        { path: '/stadiums', icon: 'stadium', label: 'Stadiums' },
+      ],
+    },
+    {
+      id: 'management',
+      links: [{ path: '/databases', icon: 'storage', label: 'Databases' }],
+    },
   ];
 
   protected openAbout(): void {

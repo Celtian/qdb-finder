@@ -122,6 +122,18 @@ describe('Databases', () => {
 
   afterEach(() => TestBed.inject(MatDialog).closeAll());
 
+  it('renders the compact page header and keeps the introduction in the content', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const header = element.querySelector('header.page-heading');
+    const lead = element.querySelector('main > .lead');
+
+    expect(header?.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(header?.querySelector('.eyebrow')?.textContent?.trim()).toBe('Database library');
+    expect(header?.querySelector('h1')?.textContent?.trim()).toBe('Manage FIFA databases');
+    expect(header?.querySelector('.lead')).toBeNull();
+    expect(lead?.textContent).toContain('Import a folder containing one FIFA edition');
+  });
+
   it('initially shows only the source folder field', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();

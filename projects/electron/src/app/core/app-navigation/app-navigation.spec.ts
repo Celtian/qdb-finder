@@ -51,24 +51,40 @@ describe('AppNavigation', () => {
 
   afterEach(() => TestBed.inject(MatDialog).closeAll());
 
-  it('renders the brand, seven destinations and separated About action', () => {
+  it('renders logically grouped destinations and a separated About action', () => {
     const element = fixture.nativeElement as HTMLElement;
+    const navigation = element.querySelector('nav');
     const links = [...element.querySelectorAll<HTMLAnchorElement>('nav a')];
     const icons = links.map((link) => link.querySelector('mat-icon')?.textContent?.trim());
+    const items = [...(navigation?.children ?? [])].map((item) =>
+      item.matches('mat-divider')
+        ? 'divider'
+        : item.querySelector('.mdc-button__label span')?.textContent?.trim(),
+    );
 
     expect(element.querySelector('.brand')?.textContent).toContain('QDB Finder');
-    expect(
-      links.map((link) => link.querySelector('.mdc-button__label span')?.textContent?.trim()),
-    ).toEqual(['Home', 'Players', 'Teams', 'Leagues', 'Referees', 'Stadiums', 'Databases']);
+    expect(items).toEqual([
+      'Home',
+      'divider',
+      'Leagues',
+      'Teams',
+      'Players',
+      'divider',
+      'Referees',
+      'Stadiums',
+      'divider',
+      'Databases',
+    ]);
     expect(icons).toEqual([
       'home',
-      'groups',
-      'shield',
       'emoji_events',
+      'shield',
+      'groups',
       'sports',
       'stadium',
       'storage',
     ]);
+    expect(navigation?.querySelectorAll('mat-divider')).toHaveLength(3);
     expect(element.querySelector('.about-action mat-divider')).toBeTruthy();
     expect(element.querySelector('.about-action button')?.textContent).toContain('About');
   });

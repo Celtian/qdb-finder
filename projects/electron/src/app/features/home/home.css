@@ -2,8 +2,6 @@
   display: block;
   height: 100%;
   overflow: auto;
-  background:
-    radial-gradient(circle at top right, rgb(35 86 168 / 12%), transparent 35rem), #f7f8fc;
 }
 
 main {
@@ -12,30 +10,26 @@ main {
   padding: clamp(2rem, 5vw, 5rem);
 }
 
-header {
-  max-width: 780px;
-  margin-bottom: 2.5rem;
-}
-
 .page-heading {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e2e5ef;
+  background: #fff;
 }
 
 .page-heading > div {
   min-width: 0;
 }
 
-h1,
-p {
-  margin-top: 0;
+.page-heading p,
+.page-heading h1 {
+  margin: 0;
 }
 
-h1 {
-  margin-bottom: 0.75rem;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1.05;
+.page-heading h1 {
+  font-size: 1.4rem;
 }
 
 .eyebrow {
@@ -47,6 +41,8 @@ h1 {
 }
 
 .lead {
+  max-width: 780px;
+  margin: 0 0 2.5rem;
   color: #5e6472;
   font-size: 1.1rem;
   line-height: 1.6;
@@ -60,6 +56,7 @@ h1 {
 
 .browse-tile {
   min-width: 0;
+  color: inherit;
   text-decoration: none;
 }
 
@@ -124,6 +121,10 @@ mat-card-actions {
 }
 
 @media (max-width: 900px) {
+  .page-heading {
+    padding: 1rem;
+  }
+
   .tile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

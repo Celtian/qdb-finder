@@ -22,7 +22,8 @@ mat-sidenav {
   height: 100%;
   min-width: 0;
   min-height: 0;
-  background: #f7f8fc;
+  background:
+    radial-gradient(circle at top right, rgb(35 86 168 / 12%), transparent 35rem), #f7f8fc;
   overflow: hidden;
 }
 

@@ -53,6 +53,8 @@ describe('TeamFinder', () => {
     fixture = TestBed.createComponent(TeamFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    await vi.waitFor(() => expect(searchTeams).toHaveBeenCalledOnce());
+    await fixture.whenStable();
   });
 
   afterEach(() => TestBed.inject(MatDialog).closeAll());

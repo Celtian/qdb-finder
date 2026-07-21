@@ -1,4 +1,5 @@
 import { BreakpointObserver, type BreakpointState } from '@angular/cdk/layout';
+import { ComponentHarness, TestKey } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
@@ -10,6 +11,14 @@ import { BehaviorSubject } from 'rxjs';
 import { VERSION_INFO } from '../../../version-info';
 import { App } from './app';
 import { APP_NAVIGATION_BREAKPOINT, AppNavigationState } from './core/app-navigation-state';
+
+class SidenavKeyboardHarness extends ComponentHarness {
+  static hostSelector = 'mat-sidenav';
+
+  async pressEscape(): Promise<void> {
+    await (await this.host()).sendKeys(TestKey.ESCAPE);
+  }
+}
 
 describe('App', () => {
   let breakpoint: BehaviorSubject<BreakpointState>;
@@ -86,7 +95,9 @@ describe('App', () => {
   it('closes the mobile drawer with Escape', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const sidenav = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatSidenavHarness);
+    const loader = TestbedHarnessEnvironment.loader(fixture);
+    const sidenav = await loader.getHarness(MatSidenavHarness);
+    const keyboard = await loader.getHarness(SidenavKeyboardHarness);
     const navigation = TestBed.inject(AppNavigationState);
     const trigger = document.createElement('button');
     document.body.append(trigger);
@@ -97,15 +108,11 @@ describe('App', () => {
     await fixture.whenStable();
     navigation.open(trigger);
     await fixture.whenStable();
+    await vi.waitFor(async () => expect(await sidenav.isOpen()).toBe(true));
 
-    const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
-    Object.defineProperty(escape, 'keyCode', { value: 27 });
-    (fixture.nativeElement as HTMLElement)
-      .querySelector<HTMLElement>('mat-sidenav')
-      ?.dispatchEvent(escape);
-    await fixture.whenStable();
+    await keyboard.pressEscape();
+    await vi.waitFor(() => expect(navigation.mobileOpen()).toBe(false));
 
-    expect(navigation.mobileOpen()).toBe(false);
     expect(await sidenav.isOpen()).toBe(false);
     trigger.remove();
   });

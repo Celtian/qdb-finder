@@ -57,6 +57,8 @@ describe('PlayerFinder', () => {
     fixture = TestBed.createComponent(PlayerFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    await vi.waitFor(() => expect(searchPlayers).toHaveBeenCalledOnce());
+    await fixture.whenStable();
   });
 
   afterEach(() => TestBed.inject(MatDialog).closeAll());

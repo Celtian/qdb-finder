@@ -7,6 +7,7 @@
     [autoFocus]="navigation.isSmallScreen() ? '.primary-navigation-link' : false"
     (openedChange)="navigation.drawerStateChanged($event)"
     (backdropClick)="navigation.dismiss()"
+    (keydown.escape)="navigation.dismiss()"
     (closed)="navigation.drawerClosed()"
   >
     <app-navigation />

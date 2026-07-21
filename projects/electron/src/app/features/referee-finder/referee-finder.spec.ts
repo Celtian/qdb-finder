@@ -52,6 +52,8 @@ describe('RefereeFinder', () => {
     fixture = TestBed.createComponent(RefereeFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    await vi.waitFor(() => expect(searchReferees).toHaveBeenCalledOnce());
+    await fixture.whenStable();
     suggestEntityFacets.mockClear();
     getReferee.mockClear();
   });

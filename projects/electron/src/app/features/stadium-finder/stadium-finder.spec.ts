@@ -52,6 +52,8 @@ describe('StadiumFinder', () => {
     fixture = TestBed.createComponent(StadiumFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    await vi.waitFor(() => expect(searchStadiums).toHaveBeenCalledOnce());
+    await fixture.whenStable();
     suggestEntityFacets.mockClear();
     getStadium.mockClear();
   });

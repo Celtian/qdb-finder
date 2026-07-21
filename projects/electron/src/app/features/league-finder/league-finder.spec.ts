@@ -48,6 +48,8 @@ describe('LeagueFinder', () => {
     fixture = TestBed.createComponent(LeagueFinder);
     component = fixture.componentInstance;
     await fixture.whenStable();
+    await vi.waitFor(() => expect(searchLeagues).toHaveBeenCalledOnce());
+    await fixture.whenStable();
   });
 
   afterEach(() => TestBed.inject(MatDialog).closeAll());

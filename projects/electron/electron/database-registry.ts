@@ -106,6 +106,8 @@ const playerComparator =
           return row.name;
         case 'version':
           return row.version;
+        case 'birthDate':
+          return row.birthDate;
         case 'age':
           return row.age;
         case 'overall':
@@ -178,6 +180,8 @@ const refereeComparator =
           return row.version;
         case 'nationality':
           return row.nationalityName;
+        case 'birthDate':
+          return row.birthDate;
         case 'age':
           return row.age;
         case 'height':

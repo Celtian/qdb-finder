@@ -4,6 +4,8 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
+import type { FinderColumnKey } from '../../core/finder-columns';
+import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
 import type {
   EntityFacetOption,
   RefereeDetails,
@@ -26,6 +28,7 @@ describe('RefereeFinder', () => {
   const getReferee = vi.fn(async (): Promise<RefereeDetails> => ({}) as RefereeDetails);
 
   beforeEach(async () => {
+    window.localStorage.clear();
     searchReferees.mockClear();
     await TestBed.configureTestingModule({
       imports: [RefereeFinder],
@@ -74,6 +77,41 @@ describe('RefereeFinder', () => {
     expect(searchReferees).toHaveBeenCalledWith(
       expect.objectContaining({ isReal: true, age: { min: 30 } }),
     );
+  });
+
+  it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
+    const testable = component as unknown as {
+      columns(): readonly FinderColumnKey[];
+      request: {
+        (): RefereeSearchRequest;
+        update(update: (value: RefereeSearchRequest) => RefereeSearchRequest): void;
+      };
+      applyColumns(columns: readonly FinderColumnKey[]): void;
+    };
+    testable.request.update((value) => ({ ...value, nationalityIds: [14], offset: 50 }));
+    searchReferees.mockClear();
+
+    testable.applyColumns(['name', 'birthDate']);
+    await fixture.whenStable();
+
+    expect(testable.columns()).toEqual(['name', 'birthDate']);
+    expect(testable.request()).toMatchObject({
+      nationalityIds: [14],
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    });
+    expect(searchReferees).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nationalityIds: [14],
+        sort: 'name',
+        direction: 'asc',
+        offset: 0,
+      }),
+    );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('referees')) ?? ''),
+    ).toEqual(['name', 'birthDate']);
   });
 
   it('filters gender immediately and resets pagination without changing editions', async () => {
@@ -148,6 +186,16 @@ describe('RefereeFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('270317');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe(
+      '1 Jan 1980',
+    );
+    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
+      'Choose columns, 0 hidden',
+    );
+
+    testable.result.set({ rows: [{ ...row, birthDate: null }], total: 1, offset: 0, pageSize: 50 });
+    await fixture.whenStable();
+    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe('—');
   });
 
   it('supports the complete facet, paging, sorting and detail workflow', async () => {

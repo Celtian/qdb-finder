@@ -58,6 +58,7 @@ const team: TeamDetails = {
       teams: ['Arsenal'],
       leagues: ['England Premier League (1)'],
       positions: ['ST'],
+      birthDate: '1998-01-01',
       age: 25,
       overall: 80,
       potential: 82,

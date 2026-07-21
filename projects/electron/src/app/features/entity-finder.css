@@ -138,9 +138,31 @@ main {
   box-shadow: 0 8px 30px rgb(35 45 75 / 6%);
 }
 
-.result-count {
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid #e2e5ef;
+}
+
+.column-button {
+  flex: 0 0 auto;
+}
+
+.column-count {
+  display: inline-flex;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 .table-scroll {

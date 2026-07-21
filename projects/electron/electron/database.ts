@@ -39,6 +39,7 @@ type Row = Record<string, string | number | null>;
 const sortColumns: Record<SearchRequest['sort'], string> = {
   name: 'p.display_name COLLATE NOCASE',
   version: 'p.version',
+  birthDate: 'p.birth_date',
   age: 'p.age',
   overall: 'p.overall',
   potential: 'p.potential',
@@ -66,6 +67,7 @@ const refereeSortColumns: Record<RefereeSearchRequest['sort'], string> = {
   name: 'r.referee_name COLLATE NOCASE',
   version: 'r.version',
   nationality: 'r.nationality_name COLLATE NOCASE',
+  birthDate: 'r.birth_date',
   age: 'r.age',
   height: 'r.height',
   leagueCount: 'r.league_count',
@@ -649,6 +651,7 @@ export class PlayerDatabase {
         row['league_names'] === null ? null : String(row['league_names']).replaceAll(',', '|'),
       ),
       positions: parseList(String(row['positions'] ?? '')),
+      birthDate: row['birth_date'] === null ? null : String(row['birth_date']),
       age: row['age'] === null ? null : Number(row['age']),
       overall: Number(row['overall']),
       potential: Number(row['potential']),

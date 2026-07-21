@@ -129,6 +129,24 @@ integration('player queries', () => {
     expect(database.search({ ...request, text: "Messi' OR 1=1 --" }).total).toBe(0);
   });
 
+  it('returns player birth dates and sorts them chronologically', () => {
+    const messi = database.search({ ...request, text: '158023', versions: [23] }).rows[0];
+    const rows = database.search({
+      ...request,
+      versions: [23],
+      sort: 'birthDate',
+      direction: 'asc',
+      pageSize: 200,
+    }).rows;
+
+    expect(messi?.birthDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(rows.map(({ birthDate }) => birthDate)).toEqual(
+      [...rows]
+        .sort((left, right) => (left.birthDate ?? '').localeCompare(right.birthDate ?? ''))
+        .map(({ birthDate }) => birthDate),
+    );
+  });
+
   it('keeps same-name team editions distinct and returns nullable legacy ratings', () => {
     const arsenal = database.searchTeams({
       ...defaultTeamSearchRequest(),
@@ -176,6 +194,22 @@ integration('player queries', () => {
       leagueId: 13,
     });
     expect(legacyLeague.rows[0]?.isWomen).toBeNull();
+  });
+
+  it('sorts referee birth dates chronologically', () => {
+    const rows = database.searchReferees({
+      ...defaultRefereeSearchRequest(),
+      versions: [23],
+      sort: 'birthDate',
+      direction: 'asc',
+      pageSize: 200,
+    }).rows;
+
+    expect(rows.map(({ birthDate }) => birthDate)).toEqual(
+      [...rows]
+        .sort((left, right) => (left.birthDate ?? '').localeCompare(right.birthDate ?? ''))
+        .map(({ birthDate }) => birthDate),
+    );
   });
 
   it('keeps entity pagination stable and treats injection-shaped names as text', () => {

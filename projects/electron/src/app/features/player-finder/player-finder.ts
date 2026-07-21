@@ -23,6 +23,14 @@ import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
 import {
+  defaultFinderColumns,
+  finderColumns,
+  isFinderSortVisible,
+  type FinderColumnKey,
+} from '../../core/finder-columns';
+import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { FinderColumnPreferences } from '../../core/finder-column-preferences';
+import {
   defaultSearchRequest,
   type FilterKind,
   type FilterSuggestion,
@@ -36,6 +44,7 @@ import {
 import { PlayerDetail } from '../player-detail/player-detail';
 import { map } from 'rxjs';
 import { positionBadgeClass } from '../../core/position';
+import { formatDateOnly } from '../../core/player-profile-value';
 
 type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
 type GenderFilter = 'all' | Gender;
@@ -57,6 +66,7 @@ interface PlayerSearchDisplay extends PlayerSearchRow {
   overallClass: string;
   potentialClass: string;
   bestRatingClass: string;
+  birthDateLabel: string;
 }
 
 const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
@@ -69,6 +79,7 @@ const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay => ({
   overallClass: scoreBadgeClass(row.overall),
   potentialClass: scoreBadgeClass(row.potential),
   bestRatingClass: `rating ${positionBadgeClass(row.bestPosition)}`,
+  birthDateLabel: formatDateOnly(row.birthDate),
 });
 const validVersion = (value: string | null): number | undefined => {
   const version = Number(value);
@@ -105,6 +116,7 @@ export class PlayerFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
+  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -123,19 +135,13 @@ export class PlayerFinder {
   protected readonly error = signal('');
   protected readonly context = signal<TeamDetails | LeagueDetails | undefined>(undefined);
   protected readonly contextKind = signal<'team' | 'league' | undefined>(undefined);
-  protected readonly columns = [
-    'name',
-    'database',
-    'originalId',
-    'version',
-    'nationality',
-    'teams',
-    'positions',
-    'age',
-    'overall',
-    'potential',
-    'bestRating',
-  ];
+  protected readonly columnDefinitions = finderColumns.players;
+  protected readonly columns = signal<readonly FinderColumnKey[]>(
+    this.columnPreferences.load('players'),
+  );
+  protected readonly hiddenColumnCount = computed(
+    () => this.columnDefinitions.length - this.columns().length,
+  );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
     databaseVersions(this.databases(), this.request().databaseIds),
@@ -222,6 +228,8 @@ export class PlayerFinder {
   });
 
   constructor() {
+    if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
+      this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
     effect(() => {
       const text = this.model().text;
       clearTimeout(this.debounceId);
@@ -375,6 +383,33 @@ export class PlayerFinder {
     }));
     void this.search();
   }
+  protected openColumns(): void {
+    this.dialog
+      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnKey[]>(FinderColumnDrawer, {
+        ariaLabelledBy: 'finder-column-title',
+        ariaModal: true,
+        autoFocus: 'first-tabbable',
+        data: {
+          finder: 'players',
+          columns: this.columnDefinitions,
+          defaultColumns: defaultFinderColumns('players'),
+          visibleColumns: this.columns(),
+        },
+        delayFocusTrap: false,
+        disableClose: false,
+        height: '100vh',
+        maxHeight: '100vh',
+        maxWidth: '100vw',
+        panelClass: 'finder-column-drawer-panel',
+        position: { right: '0', top: '0' },
+        restoreFocus: true,
+        width: '28rem',
+      })
+      .afterClosed()
+      .subscribe((columns) => {
+        if (columns) this.applyColumns(columns);
+      });
+  }
   protected async openPlayer(row: PlayerSearchRow): Promise<void> {
     const player = await this.qdb.getPlayer(row);
     this.dialog.open(PlayerDetail, {
@@ -384,6 +419,19 @@ export class PlayerFinder {
       maxHeight: '92vh',
       autoFocus: 'dialog',
     });
+  }
+
+  private applyColumns(columns: readonly FinderColumnKey[]): void {
+    this.columnPreferences.save('players', columns);
+    this.columns.set(columns);
+    if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
+    this.request.update((value) => ({
+      ...value,
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    }));
+    void this.search();
   }
 
   private initialRequest() {

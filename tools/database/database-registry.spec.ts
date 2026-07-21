@@ -13,6 +13,7 @@ interface TestPlayer {
   id: number;
   name: string;
   overall: number;
+  birthDate?: string | null;
   nationality?: string;
 }
 
@@ -81,7 +82,7 @@ const createDatabase = (
   const insert = database.prepare(
     `INSERT INTO player_edition VALUES (
       ?, 23, ?, ?, ?, ?, 'gb-eng', 'ST', 25, ?, ?, 'ST', ?,
-      '', '', '', '', NULL, '2022-09-01', NULL, NULL, '', '', '', '{}', '{}', '{}'
+      '', '', '', '', ?, '2022-09-01', NULL, NULL, '', '', '', '{}', '{}', '{}'
     )`,
   );
   for (const player of players) {
@@ -95,6 +96,7 @@ const createDatabase = (
       player.overall,
       player.overall,
       player.overall,
+      player.birthDate ?? null,
     );
   }
   database.close();
@@ -109,12 +111,12 @@ describe('database registry', () => {
     directories.push(root);
     const builtInPath = join(root, 'built-in.sqlite');
     createDatabase(builtInPath, 'built-in', 'Built-in', 'built-in', [
-      { id: 1, name: 'Shared Player', overall: 90 },
-      { id: 2, name: 'Built-in Player', overall: 80 },
+      { id: 1, name: 'Shared Player', overall: 90, birthDate: '1990-01-01' },
+      { id: 2, name: 'Built-in Player', overall: 80, birthDate: '2000-01-01' },
     ]);
     const library = new DatabaseLibrary(builtInPath, root);
     createDatabase(library.pathFor(CUSTOM_ID), CUSTOM_ID, 'Custom', 'custom', [
-      { id: 1, name: 'Modified Player', overall: 95 },
+      { id: 1, name: 'Modified Player', overall: 95, birthDate: '1985-01-01' },
     ]);
     return { library, registry: new DatabaseRegistry(library) };
   };
@@ -156,6 +158,25 @@ describe('database registry', () => {
     expect(
       registry.searchPlayers({ ...defaultSearchRequest(), databaseIds: ['missing'] }),
     ).toMatchObject({ total: 0, rows: [] });
+    registry.close();
+  });
+
+  it('sorts and paginates birth dates globally across databases', () => {
+    const { registry } = setup();
+    const request = {
+      ...defaultSearchRequest(),
+      sort: 'birthDate' as const,
+      direction: 'asc' as const,
+      pageSize: 2,
+    };
+
+    expect(registry.searchPlayers(request).rows.map(({ birthDate }) => birthDate)).toEqual([
+      '1985-01-01',
+      '1990-01-01',
+    ]);
+    expect(
+      registry.searchPlayers({ ...request, offset: 2 }).rows.map(({ birthDate }) => birthDate),
+    ).toEqual(['2000-01-01']);
     registry.close();
   });
 

@@ -5,6 +5,8 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import { DatabaseContext } from '../../core/database-context';
+import type { FinderColumnKey } from '../../core/finder-columns';
+import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
 import type {
   FilterSuggestion,
   PlayerDetails,
@@ -27,6 +29,7 @@ describe('PlayerFinder', () => {
   const getPlayer = vi.fn(async (): Promise<PlayerDetails> => ({}) as PlayerDetails);
 
   beforeEach(async () => {
+    window.localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [PlayerFinder],
       providers: [
@@ -66,6 +69,57 @@ describe('PlayerFinder', () => {
     };
 
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
+  });
+
+  it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
+    const testable = component as unknown as {
+      columns(): readonly FinderColumnKey[];
+      hiddenColumnCount(): number;
+      request: {
+        (): SearchRequest;
+        update(update: (value: SearchRequest) => SearchRequest): void;
+      };
+      applyColumns(columns: readonly FinderColumnKey[]): void;
+    };
+    testable.request.update((value) => ({ ...value, versions: [23], offset: 50 }));
+    searchPlayers.mockClear();
+
+    testable.applyColumns(['name', 'birthDate']);
+    await fixture.whenStable();
+
+    expect(testable.columns()).toEqual(['name', 'birthDate']);
+    expect(testable.hiddenColumnCount()).toBe(10);
+    expect(testable.request()).toMatchObject({
+      versions: [23],
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    });
+    expect(searchPlayers).toHaveBeenCalledWith(
+      expect.objectContaining({ versions: [23], sort: 'name', direction: 'asc', offset: 0 }),
+    );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('players')) ?? ''),
+    ).toEqual(['name', 'birthDate']);
+  });
+
+  it('restores persisted columns and reconciles a hidden default sort on creation', async () => {
+    fixture.destroy();
+    window.localStorage.setItem(
+      finderColumnPreferenceKey('players'),
+      JSON.stringify(['name', 'birthDate']),
+    );
+
+    const restoredFixture = TestBed.createComponent(PlayerFinder);
+    await restoredFixture.whenStable();
+    const restored = restoredFixture.componentInstance as unknown as {
+      columns(): readonly FinderColumnKey[];
+      request(): SearchRequest;
+    };
+
+    expect(restored.columns()).toEqual(['name', 'birthDate']);
+    expect(restored.request()).toMatchObject({ sort: 'name', direction: 'asc' });
+    restoredFixture.destroy();
   });
 
   it('refreshes against a changed database catalog without clearing filters', async () => {
@@ -236,6 +290,7 @@ describe('PlayerFinder', () => {
       teams: [],
       leagues: [],
       positions: ['ST'],
+      birthDate: '2004-02-29',
       age: 20,
       overall: 80,
       potential: 85,
@@ -265,6 +320,12 @@ describe('PlayerFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('123456');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe(
+      '29 Feb 2004',
+    );
+    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
+      'Choose columns, 0 hidden',
+    );
     expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
     expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
     expect(
@@ -273,6 +334,15 @@ describe('PlayerFinder', () => {
     expect(
       element.querySelector('td.cdk-column-bestRating .data-badge.position-attacker'),
     ).toBeTruthy();
+
+    testable.result.set({
+      rows: [{ ...testableResultRow, birthDate: null }],
+      total: 1,
+      offset: 0,
+      pageSize: 50,
+    });
+    await fixture.whenStable();
+    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe('—');
 
     testable.result.set({
       rows: [{ ...testableResultRow, nationality: 'Unknown nation', nationalityCode: '' }],
@@ -302,6 +372,7 @@ describe('PlayerFinder', () => {
       teams: ['Arsenal'],
       leagues: ['Premier League'],
       positions: ['ST'],
+      birthDate: '2004-02-29',
       age: 20,
       overall: 80,
       potential: 85,

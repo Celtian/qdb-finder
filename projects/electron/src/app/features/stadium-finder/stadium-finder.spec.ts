@@ -4,6 +4,8 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
+import type { FinderColumnKey } from '../../core/finder-columns';
+import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
 import type {
   EntityFacetOption,
   StadiumDetails,
@@ -26,6 +28,7 @@ describe('StadiumFinder', () => {
   const getStadium = vi.fn(async (): Promise<StadiumDetails> => ({}) as StadiumDetails);
 
   beforeEach(async () => {
+    window.localStorage.clear();
     searchStadiums.mockClear();
     await TestBed.configureTestingModule({
       imports: [StadiumFinder],
@@ -76,6 +79,36 @@ describe('StadiumFinder', () => {
     );
   });
 
+  it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
+    const testable = component as unknown as {
+      columns(): readonly FinderColumnKey[];
+      request: {
+        (): StadiumSearchRequest;
+        update(update: (value: StadiumSearchRequest) => StadiumSearchRequest): void;
+      };
+      applyColumns(columns: readonly FinderColumnKey[]): void;
+    };
+    testable.request.update((value) => ({ ...value, countryIds: [14], offset: 50 }));
+    searchStadiums.mockClear();
+
+    testable.applyColumns(['name', 'capacity']);
+    await fixture.whenStable();
+
+    expect(testable.columns()).toEqual(['name', 'capacity']);
+    expect(testable.request()).toMatchObject({
+      countryIds: [14],
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    });
+    expect(searchStadiums).toHaveBeenCalledWith(
+      expect.objectContaining({ countryIds: [14], sort: 'name', direction: 'asc', offset: 0 }),
+    );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('stadiums')) ?? ''),
+    ).toEqual(['name', 'capacity']);
+  });
+
   it('renders the original stadium ID as a non-sortable column after the name', async () => {
     const row: StadiumEditionRow = {
       key: 'internal-stadium-key',
@@ -116,6 +149,9 @@ describe('StadiumFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('1098');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
+      'Choose columns, 0 hidden',
+    );
   });
 
   it('supports the complete facet, paging, sorting and detail workflow', async () => {

@@ -30,6 +30,44 @@ mat-sidenav.filters .mat-drawer-inner-container {
   overflow-x: hidden;
 }
 
+.finder-column-drawer-panel {
+  --mat-dialog-container-shape: 0;
+
+  animation: finder-column-drawer-enter 250ms ease-out;
+}
+
+.finder-column-drawer-panel .mat-mdc-dialog-container,
+.finder-column-drawer-panel .mat-mdc-dialog-inner-container,
+.finder-column-drawer-panel .mat-mdc-dialog-surface {
+  height: 100%;
+}
+
+.finder-column-drawer-panel .mat-mdc-dialog-surface {
+  overflow: hidden;
+}
+
+@keyframes finder-column-drawer-enter {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 520px) {
+  .finder-column-drawer-panel {
+    width: 100vw !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finder-column-drawer-panel {
+    animation: none;
+  }
+}
+
 .original-id {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

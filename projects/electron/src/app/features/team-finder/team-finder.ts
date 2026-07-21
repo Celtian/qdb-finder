@@ -22,6 +22,14 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import {
+  defaultFinderColumns,
+  finderColumns,
+  isFinderSortVisible,
+  type FinderColumnKey,
+} from '../../core/finder-columns';
+import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { FinderColumnPreferences } from '../../core/finder-column-preferences';
 import { Qdb } from '../../core/qdb';
 import {
   defaultTeamSearchRequest,
@@ -94,6 +102,7 @@ export class TeamFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
+  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -113,19 +122,13 @@ export class TeamFinder {
   protected readonly contextPlayer = signal<PlayerDetails | undefined>(undefined);
   protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
   protected readonly contextStadium = signal<StadiumEditionRow | undefined>(undefined);
-  protected readonly columns = [
-    'name',
-    'database',
-    'originalId',
-    'version',
-    'country',
-    'league',
-    'squadSize',
-    'overall',
-    'attack',
-    'midfield',
-    'defence',
-  ];
+  protected readonly columnDefinitions = finderColumns.teams;
+  protected readonly columns = signal<readonly FinderColumnKey[]>(
+    this.columnPreferences.load('teams'),
+  );
+  protected readonly hiddenColumnCount = computed(
+    () => this.columnDefinitions.length - this.columns().length,
+  );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
     databaseVersions(this.databases(), this.request().databaseIds),
@@ -179,6 +182,8 @@ export class TeamFinder {
   });
 
   constructor() {
+    if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
+      this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
     effect(() => {
       const text = this.model().text;
       clearTimeout(this.debounceId);
@@ -332,6 +337,34 @@ export class TeamFinder {
     void this.search();
   }
 
+  protected openColumns(): void {
+    this.dialog
+      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnKey[]>(FinderColumnDrawer, {
+        ariaLabelledBy: 'finder-column-title',
+        ariaModal: true,
+        autoFocus: 'first-tabbable',
+        data: {
+          finder: 'teams',
+          columns: this.columnDefinitions,
+          defaultColumns: defaultFinderColumns('teams'),
+          visibleColumns: this.columns(),
+        },
+        delayFocusTrap: false,
+        disableClose: false,
+        height: '100vh',
+        maxHeight: '100vh',
+        maxWidth: '100vw',
+        panelClass: 'finder-column-drawer-panel',
+        position: { right: '0', top: '0' },
+        restoreFocus: true,
+        width: '28rem',
+      })
+      .afterClosed()
+      .subscribe((columns) => {
+        if (columns) this.applyColumns(columns);
+      });
+  }
+
   protected async openTeam(row: TeamEditionRow): Promise<void> {
     const team = await this.qdb.getTeam(row);
     this.dialog.open(TeamDetail, {
@@ -341,6 +374,19 @@ export class TeamFinder {
       maxHeight: '92vh',
       autoFocus: 'dialog',
     });
+  }
+
+  private applyColumns(columns: readonly FinderColumnKey[]): void {
+    this.columnPreferences.save('teams', columns);
+    this.columns.set(columns);
+    if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
+    this.request.update((value) => ({
+      ...value,
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    }));
+    void this.search();
   }
 
   private initialRequest(): TeamSearchRequest {

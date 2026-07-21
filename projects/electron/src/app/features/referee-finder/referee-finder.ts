@@ -21,6 +21,15 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import {
+  defaultFinderColumns,
+  finderColumns,
+  isFinderSortVisible,
+  type FinderColumnKey,
+} from '../../core/finder-columns';
+import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { FinderColumnPreferences } from '../../core/finder-column-preferences';
+import { formatDateOnly } from '../../core/player-profile-value';
 import { Qdb } from '../../core/qdb';
 import {
   defaultRefereeSearchRequest,
@@ -45,6 +54,7 @@ interface FilterDisplay {
 }
 
 interface RefereeDisplay extends RefereeEditionRow {
+  birthDateLabel: string;
   leagueText: string;
 }
 
@@ -83,6 +93,7 @@ export class RefereeFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
+  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -100,17 +111,13 @@ export class RefereeFinder {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly contextLeague = signal<LeagueEditionRow | undefined>(undefined);
-  protected readonly columns = [
-    'name',
-    'database',
-    'originalId',
-    'version',
-    'nationality',
-    'leagues',
-    'age',
-    'height',
-    'real',
-  ];
+  protected readonly columnDefinitions = finderColumns.referees;
+  protected readonly columns = signal<readonly FinderColumnKey[]>(
+    this.columnPreferences.load('referees'),
+  );
+  protected readonly hiddenColumnCount = computed(
+    () => this.columnDefinitions.length - this.columns().length,
+  );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
     databaseVersions(this.databases(), this.request().databaseIds),
@@ -136,7 +143,11 @@ export class RefereeFinder {
     ),
   );
   protected readonly rows = computed<RefereeDisplay[]>(() =>
-    this.result().rows.map((row) => ({ ...row, leagueText: row.leagues.join(', ') })),
+    this.result().rows.map((row) => ({
+      ...row,
+      birthDateLabel: formatDateOnly(row.birthDate),
+      leagueText: row.leagues.join(', '),
+    })),
   );
   protected readonly isNarrow = toSignal(
     this.breakpoint.observe('(max-width: 900px)').pipe(map((state) => state.matches)),
@@ -158,6 +169,8 @@ export class RefereeFinder {
   });
 
   constructor() {
+    if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
+      this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
     effect(() => {
       const text = this.model().text;
       clearTimeout(this.debounceId);
@@ -319,6 +332,34 @@ export class RefereeFinder {
     void this.search();
   }
 
+  protected openColumns(): void {
+    this.dialog
+      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnKey[]>(FinderColumnDrawer, {
+        ariaLabelledBy: 'finder-column-title',
+        ariaModal: true,
+        autoFocus: 'first-tabbable',
+        data: {
+          finder: 'referees',
+          columns: this.columnDefinitions,
+          defaultColumns: defaultFinderColumns('referees'),
+          visibleColumns: this.columns(),
+        },
+        delayFocusTrap: false,
+        disableClose: false,
+        height: '100vh',
+        maxHeight: '100vh',
+        maxWidth: '100vw',
+        panelClass: 'finder-column-drawer-panel',
+        position: { right: '0', top: '0' },
+        restoreFocus: true,
+        width: '28rem',
+      })
+      .afterClosed()
+      .subscribe((columns) => {
+        if (columns) this.applyColumns(columns);
+      });
+  }
+
   protected async openReferee(row: RefereeEditionRow): Promise<void> {
     const referee = await this.qdb.getReferee(row);
     this.dialog.open(RefereeDetail, {
@@ -328,6 +369,19 @@ export class RefereeFinder {
       maxHeight: '92vh',
       autoFocus: 'dialog',
     });
+  }
+
+  private applyColumns(columns: readonly FinderColumnKey[]): void {
+    this.columnPreferences.save('referees', columns);
+    this.columns.set(columns);
+    if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
+    this.request.update((value) => ({
+      ...value,
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    }));
+    void this.search();
   }
 
   private initialRequest(): RefereeSearchRequest {

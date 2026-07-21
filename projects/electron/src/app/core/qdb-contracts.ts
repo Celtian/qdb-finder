@@ -1,4 +1,11 @@
-export type SortField = 'name' | 'version' | 'age' | 'overall' | 'potential' | 'bestRating';
+export type SortField =
+  | 'name'
+  | 'version'
+  | 'birthDate'
+  | 'age'
+  | 'overall'
+  | 'potential'
+  | 'bestRating';
 export type SortDirection = 'asc' | 'desc';
 export type Gender = 'men' | 'women';
 export type TeamSortField =
@@ -21,6 +28,7 @@ export type RefereeSortField =
   | 'name'
   | 'version'
   | 'nationality'
+  | 'birthDate'
   | 'age'
   | 'height'
   | 'leagueCount';
@@ -96,6 +104,7 @@ export interface PlayerSearchRow extends PlayerEditionKey {
   teams: string[];
   leagues: string[];
   positions: string[];
+  birthDate: string | null;
   age: number | null;
   overall: number;
   potential: number;
@@ -296,7 +305,6 @@ export interface PlayerDetails extends PlayerSearchRow {
   lastName: string;
   commonName: string;
   jerseyName: string;
-  birthDate: string | null;
   snapshotDate: string;
   height: number | null;
   weight: number | null;

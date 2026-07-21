@@ -145,8 +145,23 @@
         </div>
       } @else {
         <section class="results" aria-live="polite">
-          <div class="result-count">
-            <strong>{{ result().total.toLocaleString() }}</strong> league editions
+          <div class="result-header">
+            <div class="result-count">
+              <strong>{{ result().total.toLocaleString() }}</strong> league editions
+            </div>
+            <button
+              class="column-button"
+              matButton="tonal"
+              type="button"
+              [attr.aria-label]="'Choose columns, ' + hiddenColumnCount() + ' hidden'"
+              (click)="openColumns()"
+            >
+              <mat-icon aria-hidden="true">view_column</mat-icon>
+              Columns
+              @if (hiddenColumnCount()) {
+                <span class="column-count" aria-hidden="true">{{ hiddenColumnCount() }}</span>
+              }
+            </button>
           </div>
           <div class="table-scroll">
             <table
@@ -200,8 +215,12 @@
                 <th *matHeaderCellDef mat-header-cell mat-sort-header="playerCount">Players</th>
                 <td *matCellDef="let row" mat-cell>{{ row.playerCount }}</td>
               </ng-container>
-              <tr *matHeaderRowDef="columns; sticky: true" mat-header-row></tr>
-              <tr *matRowDef="let row; columns: columns" mat-row (dblclick)="openLeague(row)"></tr>
+              <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
+              <tr
+                *matRowDef="let row; columns: columns()"
+                mat-row
+                (dblclick)="openLeague(row)"
+              ></tr>
             </table>
           </div>
           <mat-paginator

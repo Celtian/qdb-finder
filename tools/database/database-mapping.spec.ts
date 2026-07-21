@@ -41,6 +41,7 @@ describe('database row mapping fallbacks', () => {
         team_names: null,
         league_names: null,
         positions: null,
+        birth_date: null,
         age: null,
         overall: 50,
         potential: 50,
@@ -53,6 +54,7 @@ describe('database row mapping fallbacks', () => {
       teams: [],
       leagues: [],
       positions: [],
+      birthDate: null,
       age: null,
     });
   });

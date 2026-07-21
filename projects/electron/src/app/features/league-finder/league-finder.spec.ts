@@ -4,6 +4,8 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
+import type { FinderColumnKey } from '../../core/finder-columns';
+import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
 import type {
   EntityFacetOption,
   LeagueDetails,
@@ -21,6 +23,7 @@ describe('LeagueFinder', () => {
   const getLeague = vi.fn(async (): Promise<LeagueDetails> => ({}) as LeagueDetails);
 
   beforeEach(async () => {
+    window.localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [LeagueFinder],
       providers: [
@@ -52,6 +55,36 @@ describe('LeagueFinder', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
     ).toContain('Search leagues or Original ID');
+  });
+
+  it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
+    const testable = component as unknown as {
+      columns(): readonly FinderColumnKey[];
+      request: {
+        (): LeagueSearchRequest;
+        update(update: (value: LeagueSearchRequest) => LeagueSearchRequest): void;
+      };
+      applyColumns(columns: readonly FinderColumnKey[]): void;
+    };
+    testable.request.update((value) => ({ ...value, levels: [1], offset: 50 }));
+    searchLeagues.mockClear();
+
+    testable.applyColumns(['name', 'level']);
+    await fixture.whenStable();
+
+    expect(testable.columns()).toEqual(['name', 'level']);
+    expect(testable.request()).toMatchObject({
+      levels: [1],
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    });
+    expect(searchLeagues).toHaveBeenCalledWith(
+      expect.objectContaining({ levels: [1], sort: 'name', direction: 'asc', offset: 0 }),
+    );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('leagues')) ?? ''),
+    ).toEqual(['name', 'level']);
   });
 
   it('searches immediately when league tiers change', async () => {
@@ -101,6 +134,9 @@ describe('LeagueFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('2216');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
+      'Choose columns, 0 hidden',
+    );
   });
 
   it('supports the complete country, paging, sorting and detail workflow', async () => {

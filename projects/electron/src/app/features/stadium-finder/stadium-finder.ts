@@ -21,6 +21,14 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
+import {
+  defaultFinderColumns,
+  finderColumns,
+  isFinderSortVisible,
+  type FinderColumnKey,
+} from '../../core/finder-columns';
+import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { FinderColumnPreferences } from '../../core/finder-column-preferences';
 import { Qdb } from '../../core/qdb';
 import {
   defaultStadiumSearchRequest,
@@ -90,6 +98,7 @@ export class StadiumFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
+  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly breakpoint = inject(BreakpointObserver);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -108,18 +117,13 @@ export class StadiumFinder {
   protected readonly loading = signal(true);
   protected readonly error = signal('');
   protected readonly contextTeam = signal<TeamEditionRow | undefined>(undefined);
-  protected readonly columns = [
-    'name',
-    'database',
-    'originalId',
-    'version',
-    'country',
-    'teams',
-    'capacity',
-    'built',
-    'pitch',
-    'licensed',
-  ];
+  protected readonly columnDefinitions = finderColumns.stadiums;
+  protected readonly columns = signal<readonly FinderColumnKey[]>(
+    this.columnPreferences.load('stadiums'),
+  );
+  protected readonly hiddenColumnCount = computed(
+    () => this.columnDefinitions.length - this.columns().length,
+  );
   protected readonly databases = this.databaseContext.available;
   protected readonly versions = computed(() =>
     databaseVersions(this.databases(), this.request().databaseIds),
@@ -163,6 +167,8 @@ export class StadiumFinder {
   });
 
   constructor() {
+    if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
+      this.request.update((value) => ({ ...value, sort: 'name', direction: 'asc', offset: 0 }));
     effect(() => {
       const text = this.model().text;
       clearTimeout(this.debounceId);
@@ -308,6 +314,33 @@ export class StadiumFinder {
     }));
     void this.search();
   }
+  protected openColumns(): void {
+    this.dialog
+      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnKey[]>(FinderColumnDrawer, {
+        ariaLabelledBy: 'finder-column-title',
+        ariaModal: true,
+        autoFocus: 'first-tabbable',
+        data: {
+          finder: 'stadiums',
+          columns: this.columnDefinitions,
+          defaultColumns: defaultFinderColumns('stadiums'),
+          visibleColumns: this.columns(),
+        },
+        delayFocusTrap: false,
+        disableClose: false,
+        height: '100vh',
+        maxHeight: '100vh',
+        maxWidth: '100vw',
+        panelClass: 'finder-column-drawer-panel',
+        position: { right: '0', top: '0' },
+        restoreFocus: true,
+        width: '28rem',
+      })
+      .afterClosed()
+      .subscribe((columns) => {
+        if (columns) this.applyColumns(columns);
+      });
+  }
   protected async openStadium(row: StadiumEditionRow): Promise<void> {
     const stadium = await this.qdb.getStadium(row);
     this.dialog.open(StadiumDetail, {
@@ -317,6 +350,19 @@ export class StadiumFinder {
       maxHeight: '92vh',
       autoFocus: 'dialog',
     });
+  }
+
+  private applyColumns(columns: readonly FinderColumnKey[]): void {
+    this.columnPreferences.save('stadiums', columns);
+    this.columns.set(columns);
+    if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
+    this.request.update((value) => ({
+      ...value,
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    }));
+    void this.search();
   }
 
   private initialRequest(): StadiumSearchRequest {

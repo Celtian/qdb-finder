@@ -4,6 +4,8 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
+import type { FinderColumnKey } from '../../core/finder-columns';
+import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
 import type {
   EntityFacetOption,
   TeamDetails,
@@ -21,6 +23,7 @@ describe('TeamFinder', () => {
   const getTeam = vi.fn(async (): Promise<TeamDetails> => ({}) as TeamDetails);
 
   beforeEach(async () => {
+    window.localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TeamFinder],
       providers: [
@@ -52,6 +55,36 @@ describe('TeamFinder', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
     ).toContain('Search teams or Original ID');
+  });
+
+  it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
+    const testable = component as unknown as {
+      columns(): readonly FinderColumnKey[];
+      request: {
+        (): TeamSearchRequest;
+        update(update: (value: TeamSearchRequest) => TeamSearchRequest): void;
+      };
+      applyColumns(columns: readonly FinderColumnKey[]): void;
+    };
+    testable.request.update((value) => ({ ...value, countryIds: [14], offset: 50 }));
+    searchTeams.mockClear();
+
+    testable.applyColumns(['name', 'country']);
+    await fixture.whenStable();
+
+    expect(testable.columns()).toEqual(['name', 'country']);
+    expect(testable.request()).toMatchObject({
+      countryIds: [14],
+      sort: 'name',
+      direction: 'asc',
+      offset: 0,
+    });
+    expect(searchTeams).toHaveBeenCalledWith(
+      expect.objectContaining({ countryIds: [14], sort: 'name', direction: 'asc', offset: 0 }),
+    );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('teams')) ?? ''),
+    ).toEqual(['name', 'country']);
   });
 
   it('searches immediately when a rating range changes', async () => {
@@ -109,6 +142,9 @@ describe('TeamFinder', () => {
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('116009');
     expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
+      'Choose columns, 0 hidden',
+    );
   });
 
   it('supports the complete interactive filter, paging, sorting and detail workflow', async () => {

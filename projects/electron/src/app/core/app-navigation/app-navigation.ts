@@ -59,10 +59,7 @@ export class AppNavigation {
     },
     {
       id: 'management',
-      links: [
-        { path: '/databases', icon: 'storage', label: 'Databases' },
-        { path: '/settings', icon: 'settings', label: 'Settings' },
-      ],
+      links: [{ path: '/databases', icon: 'storage', label: 'Databases' }],
     },
   ];
 

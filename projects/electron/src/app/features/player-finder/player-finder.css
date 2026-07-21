@@ -150,6 +150,7 @@ table {
 .mat-column-originalId,
 .mat-column-database,
 .mat-column-birthDate,
+.mat-column-contractValidUntil,
 .mat-column-preferredFoot {
   white-space: nowrap;
 }

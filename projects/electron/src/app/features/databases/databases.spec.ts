@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import type { WritableSignal } from '@angular/core';
+import axe from 'axe-core';
 import { Qdb } from '../../core/qdb';
 import type {
   DatabaseDescriptor,
@@ -145,6 +146,19 @@ describe('Databases', () => {
     expect(element.textContent).not.toContain('FIFA version');
     expect(element.querySelector('button[type="submit"]')).toBeNull();
     expect(validationProgressListener).toBeTypeOf('function');
+  });
+
+  it('presents installed database details without an empty action area', () => {
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.database-grid mat-card');
+    const summary = card?.querySelector('.database-summary');
+    const stats = card?.querySelectorAll('dl > div');
+
+    expect(summary?.textContent).toContain('Built-in');
+    expect(summary?.textContent).toContain('13 editions');
+    expect(summary?.textContent).toContain('FIFA 11–23');
+    expect(stats).toHaveLength(4);
+    expect(card?.querySelector('.database-date')?.textContent).toContain('Updated');
+    expect(card?.querySelector('mat-card-actions')).toBeNull();
   });
 
   it('requires successful source validation before importing', async () => {
@@ -323,5 +337,11 @@ describe('Databases', () => {
 
   it('does not expose activation controls', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Activate');
+  });
+
+  it('has no detectable AXE violations', async () => {
+    const results = await axe.run(fixture.nativeElement as HTMLElement);
+
+    expect(results.violations).toEqual([]);
   });
 });

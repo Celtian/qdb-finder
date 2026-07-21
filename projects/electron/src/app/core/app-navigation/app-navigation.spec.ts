@@ -33,6 +33,7 @@ describe('AppNavigation', () => {
           { path: 'referees', children: [] },
           { path: 'stadiums', children: [] },
           { path: 'databases', children: [] },
+          { path: 'settings', children: [] },
         ]),
         {
           provide: BreakpointObserver,
@@ -74,7 +75,6 @@ describe('AppNavigation', () => {
       'Stadiums',
       'divider',
       'Databases',
-      'Settings',
     ]);
     expect(icons).toEqual([
       'home',
@@ -84,11 +84,15 @@ describe('AppNavigation', () => {
       'sports',
       'stadium',
       'storage',
-      'settings',
     ]);
     expect(navigation?.querySelectorAll('mat-divider')).toHaveLength(3);
-    expect(element.querySelector('.about-action mat-divider')).toBeTruthy();
-    expect(element.querySelector('.about-action button')?.textContent).toContain('About');
+    expect(element.querySelector('.utility-actions mat-divider')).toBeTruthy();
+    expect(
+      [...element.querySelectorAll<HTMLElement>('.utility-actions a, .utility-actions button')].map(
+        (item) => item.querySelector('.mdc-button__label span')?.textContent?.trim(),
+      ),
+    ).toEqual(['Settings', 'About']);
+    expect(element.querySelector('.utility-actions button')?.textContent).toContain('About');
   });
 
   it('navigates and marks only the active destination as the current page', async () => {
@@ -98,6 +102,10 @@ describe('AppNavigation', () => {
 
     expect(element.querySelector('a[href="/players"]')?.getAttribute('aria-current')).toBe('page');
     expect(element.querySelector('a[href="/"]')?.hasAttribute('aria-current')).toBe(false);
+
+    await router.navigateByUrl('/settings');
+    await fixture.whenStable();
+    expect(element.querySelector('a[href="/settings"]')?.getAttribute('aria-current')).toBe('page');
 
     breakpoint.next({
       matches: true,
@@ -124,7 +132,7 @@ describe('AppNavigation', () => {
     navigation.open(trigger);
 
     (fixture.nativeElement as HTMLElement)
-      .querySelector<HTMLButtonElement>('.about-action button')
+      .querySelector<HTMLButtonElement>('.utility-actions button')
       ?.click();
     await fixture.whenStable();
     expect(navigation.mobileOpen()).toBe(false);

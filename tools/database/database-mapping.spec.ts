@@ -62,7 +62,32 @@ describe('database row mapping fallbacks', () => {
       height: null,
       weight: null,
       preferredFoot: '',
+      contractValidUntil: null,
     });
+
+    expect(
+      mapper.toSearchRow({
+        key: '23:1',
+        version: 23,
+        player_id: 1,
+        display_name: 'Current Player',
+        nationality_name: 'England',
+        nationality_code: 'gb-eng',
+        team_names: null,
+        league_names: null,
+        positions: 'ST',
+        birth_date: '2000-01-01',
+        age: 23,
+        height: 180,
+        weight: 75,
+        preferred_foot: '1',
+        overall: 80,
+        potential: 82,
+        best_position: 'ST',
+        best_rating: 81,
+        raw_json: '{"contractvaliduntil":2027}',
+      }),
+    ).toMatchObject({ contractValidUntil: 2027 });
   });
 
   it('maps nullable team and league fields', () => {

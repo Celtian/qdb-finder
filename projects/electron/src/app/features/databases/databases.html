@@ -123,16 +123,22 @@
       <p class="loading" aria-live="polite">Loading database library…</p>
     } @else {
       <div class="database-grid">
-        @for (database of databases(); track database.id) {
+        @for (database of databaseCards(); track database.id) {
           <mat-card [class.incompatible]="database.status === 'incompatible'">
             <mat-card-header>
-              <div mat-card-avatar class="database-icon"><mat-icon>storage</mat-icon></div>
+              <div mat-card-avatar class="database-icon">
+                <mat-icon aria-hidden="true">storage</mat-icon>
+              </div>
               <mat-card-title>{{ database.name }}</mat-card-title>
-              <mat-card-subtitle>
-                {{ database.kind === 'built-in' ? 'Built-in' : 'Custom' }} ·
-                @for (version of database.versions; track version; let last = $last) {
-                  FIFA {{ version }}{{ last ? '' : ', ' }}
-                }
+              <mat-card-subtitle class="database-summary">
+                <span class="database-kind">
+                  {{ database.kind === 'built-in' ? 'Built-in' : 'Custom' }}
+                </span>
+                <span>
+                  {{ database.versions.length }}
+                  {{ database.versions.length === 1 ? 'edition' : 'editions' }}
+                </span>
+                <span>{{ database.versionLabel }}</span>
               </mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
@@ -152,18 +158,21 @@
                     <dt>Leagues</dt>
                     <dd>{{ database.leagueEditions.toLocaleString() }}</dd>
                   </div>
-                  <div>
-                    <dt>Imported</dt>
+                  <div class="database-date">
+                    <dt>
+                      <mat-icon aria-hidden="true">calendar_today</mat-icon>
+                      {{ database.kind === 'built-in' ? 'Updated' : 'Imported' }}
+                    </dt>
                     <dd>{{ database.generatedAt | date: 'medium' }}</dd>
                   </div>
                 </dl>
               }
             </mat-card-content>
-            <mat-card-actions align="end">
-              @if (database.kind === 'custom') {
+            @if (database.kind === 'custom') {
+              <mat-card-actions align="end">
                 <button type="button" mat-button (click)="remove(database)">Remove</button>
-              }
-            </mat-card-actions>
+              </mat-card-actions>
+            }
           </mat-card>
         }
       </div>

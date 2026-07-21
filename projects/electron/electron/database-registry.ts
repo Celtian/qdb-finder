@@ -108,6 +108,8 @@ const playerComparator =
           return row.version;
         case 'birthDate':
           return row.birthDate;
+        case 'contractValidUntil':
+          return row.contractValidUntil;
         case 'age':
           return row.age;
         case 'height':

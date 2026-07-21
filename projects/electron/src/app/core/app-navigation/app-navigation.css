@@ -32,24 +32,28 @@ nav mat-divider {
 }
 
 nav a,
-.about-action button {
+.utility-actions a,
+.utility-actions button {
   width: 100%;
   justify-content: flex-start;
   color: inherit;
 }
 
-nav a.active {
+nav a.active,
+.utility-actions a.active {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
 }
 
-.about-action {
+.utility-actions {
   margin-top: auto;
   padding-top: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
 }
 
-.about-action mat-divider {
-  margin-bottom: 0.75rem;
+.utility-actions mat-divider {
+  margin-bottom: 0.5rem;
 }
 
 a:focus-visible,

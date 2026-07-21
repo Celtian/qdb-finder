@@ -32,6 +32,7 @@ integration('player queries', () => {
       height: 169,
       weight: 67,
       preferredFoot: '2',
+      contractValidUntil: 2023,
     });
   });
 

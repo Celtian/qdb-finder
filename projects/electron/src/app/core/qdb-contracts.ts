@@ -2,6 +2,7 @@ export type SortField =
   | 'name'
   | 'version'
   | 'birthDate'
+  | 'contractValidUntil'
   | 'age'
   | 'height'
   | 'weight'
@@ -109,6 +110,7 @@ export interface PlayerSearchRow extends PlayerEditionKey {
   leagues: string[];
   positions: string[];
   birthDate: string | null;
+  contractValidUntil: number | null;
   age: number | null;
   height: number | null;
   weight: number | null;

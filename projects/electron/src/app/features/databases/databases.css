@@ -119,14 +119,16 @@ section {
   gap: 1rem;
 }
 .database-grid mat-card {
-  display: grid;
-  grid-row: span 3;
-  grid-template-rows: subgrid;
-  row-gap: 0;
+  overflow: hidden;
   border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--mat-sys-shadow) 8%, transparent);
 }
 .database-grid mat-card.incompatible {
   border-color: var(--mat-sys-error);
+}
+.database-grid mat-card-header {
+  padding-bottom: 1.25rem;
 }
 .database-icon {
   display: grid;
@@ -135,23 +137,92 @@ section {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
 }
+.database-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  margin-top: 0.3rem;
+}
+.database-kind {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.database-summary > span:not(.database-kind) + span::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin: 0 0.65rem 0.2rem 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+.database-grid mat-card-content {
+  padding-bottom: 1.25rem;
+}
 dl {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.65rem 1rem;
-  margin-bottom: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
 }
 dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+}
+dl div + div:not(.database-date) {
+  border-left: 1px solid var(--mat-sys-outline-variant);
 }
 dt {
   color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 dd {
   margin: 0;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.database-date {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+.database-date dt {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.database-date mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+.database-date dd {
+  font-size: 0.875rem;
   font-weight: 600;
+  text-align: right;
+}
+.database-grid mat-card-actions {
+  min-height: auto;
+  padding-top: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
 }
 .compatibility-error {
   color: var(--mat-sys-error);

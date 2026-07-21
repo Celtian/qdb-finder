@@ -40,6 +40,8 @@ const sortColumns: Record<SearchRequest['sort'], string> = {
   name: 'p.display_name COLLATE NOCASE',
   version: 'p.version',
   birthDate: 'p.birth_date',
+  contractValidUntil:
+    "NULLIF(CAST(json_extract(p.raw_json, '$.contractvaliduntil') AS INTEGER), 0)",
   age: 'p.age',
   height: 'p.height',
   weight: 'p.weight',
@@ -92,6 +94,18 @@ const nullableNumber = (value: string | number | null): number | null =>
   value === null ? null : Number(value);
 const nullableBoolean = (value: string | number | null): boolean | null =>
   value === null ? null : Boolean(Number(value));
+const positiveRawNumber = (
+  value: string | number | null | undefined,
+  key: string,
+): number | null => {
+  try {
+    const parsed = parseObject<Record<string, unknown>>(value == null ? null : String(value));
+    const number = Number(parsed[key]);
+    return Number.isInteger(number) && number > 0 ? number : null;
+  } catch {
+    return null;
+  }
+};
 const genderFilterValue = (gender: Gender): 0 | 1 => (gender === 'women' ? 1 : 0);
 const normalizeSearchText = (value: string): string =>
   value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase('en').trim();
@@ -653,6 +667,7 @@ export class PlayerDatabase {
       ),
       positions: parseList(String(row['positions'] ?? '')),
       birthDate: row['birth_date'] === null ? null : String(row['birth_date']),
+      contractValidUntil: positiveRawNumber(row['raw_json'], 'contractvaliduntil'),
       age: row['age'] === null ? null : Number(row['age']),
       height: nullableNumber(row['height']),
       weight: nullableNumber(row['weight']),

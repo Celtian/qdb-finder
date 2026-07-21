@@ -65,6 +65,12 @@ export class Databases {
     readonly(path.folder);
   });
   protected readonly databases = signal<DatabaseDescriptor[]>([]);
+  protected readonly databaseCards = computed(() =>
+    this.databases().map((database) => ({
+      ...database,
+      versionLabel: this.formatVersionLabel(database.versions),
+    })),
+  );
   protected readonly loading = signal(true);
   protected readonly importing = signal(false);
   protected readonly validating = signal(false);
@@ -235,6 +241,18 @@ export class Databases {
 
   protected retry(): void {
     void this.load();
+  }
+
+  private formatVersionLabel(versions: number[]): string {
+    if (versions.length === 0) return 'No FIFA editions';
+    const sorted = [...versions].sort((left, right) => left - right);
+    if (sorted.length === 1) return `FIFA ${sorted[0]}`;
+    const isContinuous = sorted.every(
+      (version, index) => index === 0 || version === sorted[index - 1] + 1,
+    );
+    return isContinuous
+      ? `FIFA ${sorted[0]}–${sorted[sorted.length - 1]}`
+      : sorted.map((version) => `FIFA ${version}`).join(', ');
   }
 
   private async load(): Promise<void> {

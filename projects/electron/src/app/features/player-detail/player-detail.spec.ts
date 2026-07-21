@@ -30,6 +30,7 @@ const player: PlayerDetails = {
   commonName: '',
   jerseyName: '',
   birthDate: '2002-01-01',
+  contractValidUntil: 2027,
   snapshotDate: '2022-09-01',
   height: 180,
   weight: 75,

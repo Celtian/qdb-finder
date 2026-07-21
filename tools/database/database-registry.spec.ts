@@ -17,6 +17,7 @@ interface TestPlayer {
   height?: number | null;
   weight?: number | null;
   preferredFoot?: string;
+  contractValidUntil?: number | null;
   nationality?: string;
 }
 
@@ -85,7 +86,7 @@ const createDatabase = (
   const insert = database.prepare(
     `INSERT INTO player_edition VALUES (
       ?, 23, ?, ?, ?, ?, 'gb-eng', 'ST', 25, ?, ?, 'ST', ?,
-      '', '', '', '', ?, '2022-09-01', ?, ?, ?, '', '', '{}', '{}', '{}'
+      '', '', '', '', ?, '2022-09-01', ?, ?, ?, '', '', '{}', '{}', ?
     )`,
   );
   for (const player of players) {
@@ -103,6 +104,7 @@ const createDatabase = (
       player.height ?? null,
       player.weight ?? null,
       player.preferredFoot ?? '',
+      JSON.stringify({ contractvaliduntil: player.contractValidUntil ?? 0 }),
     );
   }
   database.close();
@@ -125,6 +127,7 @@ describe('database registry', () => {
         height: 180,
         weight: 80,
         preferredFoot: '1',
+        contractValidUntil: 2026,
       },
       {
         id: 2,
@@ -134,6 +137,7 @@ describe('database registry', () => {
         height: 170,
         weight: 70,
         preferredFoot: '1',
+        contractValidUntil: 2025,
       },
     ]);
     const library = new DatabaseLibrary(builtInPath, root);
@@ -146,6 +150,7 @@ describe('database registry', () => {
         height: 190,
         weight: 90,
         preferredFoot: '2',
+        contractValidUntil: 2027,
       },
     ]);
     return { library, registry: new DatabaseRegistry(library) };
@@ -240,6 +245,15 @@ describe('database registry', () => {
         })
         .rows.map(({ name }) => name),
     ).toEqual(['Modified Player', 'Built-in Player', 'Shared Player']);
+    expect(
+      registry
+        .searchPlayers({
+          ...defaultSearchRequest(),
+          sort: 'contractValidUntil',
+          direction: 'desc',
+        })
+        .rows.map(({ name }) => name),
+    ).toEqual(['Modified Player', 'Shared Player', 'Built-in Player']);
     registry.close();
   });
 

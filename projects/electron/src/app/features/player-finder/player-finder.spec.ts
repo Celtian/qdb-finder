@@ -170,7 +170,7 @@ describe('PlayerFinder', () => {
     await fixture.whenStable();
 
     expect(testable.columns()).toEqual(['name', 'birthDate']);
-    expect(testable.hiddenColumnCount()).toBe(13);
+    expect(testable.hiddenColumnCount()).toBe(14);
     expect(testable.request()).toMatchObject({
       versions: [23],
       sort: 'name',
@@ -398,6 +398,7 @@ describe('PlayerFinder', () => {
       leagues: [],
       positions: ['ST'],
       birthDate: '2004-02-29',
+      contractValidUntil: 2027,
       age: 20,
       height: 180,
       weight: 75,
@@ -436,12 +437,13 @@ describe('PlayerFinder', () => {
     expect(getComputedStyle(birthDateCell!).whiteSpace).toBe('nowrap');
     expect(element.querySelector('td.cdk-column-database')).toBeNull();
     expect(element.querySelector('td.cdk-column-teams')).toBeNull();
+    expect(element.querySelector('td.cdk-column-contractValidUntil')).toBeNull();
     expect(element.querySelector('td.cdk-column-age')).toBeNull();
     expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('180 cm');
     expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('75 kg');
     expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('Right');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 3 hidden',
+      'Choose columns, 4 hidden',
     );
     expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
     expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
@@ -484,11 +486,25 @@ describe('PlayerFinder', () => {
     expect(missingFlagCell?.textContent).toContain('Unknown nation');
     expect(missingFlagCell?.querySelector('app-country-flag')).toBeNull();
 
-    testable.columns.set(['name', 'originalId', 'database', 'birthDate']);
+    testable.columns.set(['name', 'originalId', 'database', 'birthDate', 'contractValidUntil']);
     await fixture.whenStable();
     const databaseCell = element.querySelector<HTMLElement>('td.cdk-column-database');
+    const contractCell = element.querySelector<HTMLElement>('td.cdk-column-contractValidUntil');
     expect(databaseCell?.textContent?.trim()).toBe('Built-in FIFA 11–23');
+    expect(contractCell?.textContent?.trim()).toBe('2027');
     expect(getComputedStyle(databaseCell!).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(contractCell!).whiteSpace).toBe('nowrap');
+
+    testable.result.set({
+      rows: [{ ...testableResultRow, contractValidUntil: null }],
+      total: 1,
+      offset: 0,
+      pageSize: 50,
+    });
+    await fixture.whenStable();
+    expect(
+      element.querySelector<HTMLElement>('td.cdk-column-contractValidUntil')?.textContent?.trim(),
+    ).toBe('—');
   });
 
   it('supports the complete filter, paging, sorting and detail workflow', async () => {
@@ -507,6 +523,7 @@ describe('PlayerFinder', () => {
       leagues: ['Premier League'],
       positions: ['ST'],
       birthDate: '2004-02-29',
+      contractValidUntil: 2027,
       age: 20,
       height: 180,
       weight: 75,

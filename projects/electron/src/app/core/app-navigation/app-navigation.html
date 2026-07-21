@@ -30,8 +30,18 @@
   }
 </nav>
 
-<div class="about-action">
+<div class="utility-actions">
   <mat-divider />
+  <a
+    matButton
+    routerLink="/settings"
+    routerLinkActive="active"
+    ariaCurrentWhenActive="page"
+    (click)="navigation.destinationSelected()"
+  >
+    <mat-icon>settings</mat-icon>
+    <span>Settings</span>
+  </a>
   <button type="button" matButton (click)="openAbout()">
     <mat-icon>info</mat-icon>
     <span>About</span>

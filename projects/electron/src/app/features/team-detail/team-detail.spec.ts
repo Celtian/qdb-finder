@@ -59,6 +59,7 @@ const team: TeamDetails = {
       leagues: ['England Premier League (1)'],
       positions: ['ST'],
       birthDate: '1998-01-01',
+      contractValidUntil: 2027,
       age: 25,
       height: 180,
       weight: 75,

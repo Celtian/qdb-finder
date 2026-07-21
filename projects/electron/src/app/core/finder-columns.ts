@@ -9,6 +9,7 @@ export type FinderColumnKey =
   | 'birthDate'
   | 'built'
   | 'capacity'
+  | 'contractValidUntil'
   | 'country'
   | 'database'
   | 'defence'
@@ -64,6 +65,7 @@ export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]
     defineColumn('teams', 'Teams'),
     defineColumn('positions', 'Positions'),
     defineColumn('birthDate', 'Birth date', 'birthDate'),
+    defineColumn('contractValidUntil', 'Contract valid until', 'contractValidUntil'),
     defineColumn('age', 'Age', 'age'),
     defineColumn('height', 'Height', 'height'),
     defineColumn('weight', 'Weight', 'weight'),

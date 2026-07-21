@@ -368,6 +368,12 @@
               ><th *matHeaderCellDef mat-header-cell mat-sort-header="birthDate">Birth date</th>
               <td *matCellDef="let row" mat-cell>{{ row.birthDateLabel }}</td></ng-container
             >
+            <ng-container matColumnDef="contractValidUntil">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="contractValidUntil">
+                Contract valid until
+              </th>
+              <td *matCellDef="let row" mat-cell>{{ row.contractValidUntil ?? '—' }}</td>
+            </ng-container>
             <ng-container matColumnDef="age"
               ><th *matHeaderCellDef mat-header-cell mat-sort-header="age">Age</th>
               <td *matCellDef="let row" mat-cell>{{ row.age ?? '—' }}</td></ng-container

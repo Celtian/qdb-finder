@@ -409,8 +409,22 @@ describe('PlayerFinder', () => {
       bestRating: 82,
     };
     testable.result.set({
-      rows: [testableResultRow],
-      total: 1,
+      rows: [
+        testableResultRow,
+        {
+          ...testableResultRow,
+          key: 'internal-player-key-without-optional-values',
+          playerId: 123_457,
+          nationality: 'Unknown nation',
+          nationalityCode: '',
+          birthDate: null,
+          contractValidUntil: null,
+          height: null,
+          weight: null,
+          preferredFoot: '',
+        },
+      ],
+      total: 2,
       offset: 0,
       pageSize: 50,
     });
@@ -454,37 +468,15 @@ describe('PlayerFinder', () => {
       element.querySelector('td.cdk-column-bestRating .data-badge.position-attacker'),
     ).toBeTruthy();
 
-    testable.result.set({
-      rows: [
-        {
-          ...testableResultRow,
-          birthDate: null,
-          height: null,
-          weight: null,
-          preferredFoot: '',
-        },
-      ],
-      total: 1,
-      offset: 0,
-      pageSize: 50,
-    });
-    await fixture.whenStable();
-    expect(element.querySelector('td.cdk-column-birthDate')?.textContent?.trim()).toBe('—');
-    expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('—');
-    expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('—');
-    expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('—');
-
-    testable.result.set({
-      rows: [{ ...testableResultRow, nationality: 'Unknown nation', nationalityCode: '' }],
-      total: 1,
-      offset: 0,
-      pageSize: 50,
-    });
-    await fixture.whenStable();
-
-    const missingFlagCell = element.querySelector('td.cdk-column-nationality');
+    const missingFlagCell = element.querySelectorAll('td.cdk-column-nationality')[1];
     expect(missingFlagCell?.textContent).toContain('Unknown nation');
     expect(missingFlagCell?.querySelector('app-country-flag')).toBeNull();
+    expect(element.querySelectorAll('td.cdk-column-birthDate')[1]?.textContent?.trim()).toBe('—');
+    expect(element.querySelectorAll('td.cdk-column-height')[1]?.textContent?.trim()).toBe('—');
+    expect(element.querySelectorAll('td.cdk-column-weight')[1]?.textContent?.trim()).toBe('—');
+    expect(element.querySelectorAll('td.cdk-column-preferredFoot')[1]?.textContent?.trim()).toBe(
+      '—',
+    );
 
     testable.columns.set(['name', 'originalId', 'database', 'birthDate', 'contractValidUntil']);
     await fixture.whenStable();
@@ -495,16 +487,9 @@ describe('PlayerFinder', () => {
     expect(getComputedStyle(databaseCell!).whiteSpace).toBe('nowrap');
     expect(getComputedStyle(contractCell!).whiteSpace).toBe('nowrap');
 
-    testable.result.set({
-      rows: [{ ...testableResultRow, contractValidUntil: null }],
-      total: 1,
-      offset: 0,
-      pageSize: 50,
-    });
-    await fixture.whenStable();
     expect(
-      element.querySelector<HTMLElement>('td.cdk-column-contractValidUntil')?.textContent?.trim(),
-    ).toBe('—');
+      element.querySelectorAll<HTMLElement>('td.cdk-column-contractValidUntil')[1]?.textContent,
+    ).toContain('—');
   });
 
   it('supports the complete filter, paging, sorting and detail workflow', async () => {

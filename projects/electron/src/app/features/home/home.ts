@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
-import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
+import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { Qdb } from '../../core/qdb';
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 
@@ -19,7 +19,7 @@ interface HomeTile {
 @Component({
   selector: 'app-home',
   imports: [
-    AppNavigationMenu,
+    AppNavigationTrigger,
     RouterLink,
     MatButtonModule,
     MatCardModule,

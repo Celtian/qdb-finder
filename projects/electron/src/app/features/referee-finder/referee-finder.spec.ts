@@ -58,7 +58,7 @@ describe('RefereeFinder', () => {
   it('renders the empty state after loading', async () => {
     expect(component).toBeTruthy();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+      (fixture.nativeElement as HTMLElement).querySelector('app-navigation-trigger'),
     ).toBeTruthy();
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,

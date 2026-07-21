@@ -20,7 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { firstValueFrom } from 'rxjs';
-import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
+import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { Qdb } from '../../core/qdb';
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 import { ConfirmDatabaseRemoval } from './confirm-database-removal';
@@ -30,7 +30,7 @@ import type { DatabaseSourceValidationReport } from '../../core/qdb-contracts';
 @Component({
   selector: 'app-databases',
   imports: [
-    AppNavigationMenu,
+    AppNavigationTrigger,
     DatePipe,
     FormField,
     MatButtonModule,

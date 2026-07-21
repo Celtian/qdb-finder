@@ -54,7 +54,7 @@ describe('LeagueFinder', () => {
 
     expect(component).toBeTruthy();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Open main navigation"]'),
+      (fixture.nativeElement as HTMLElement).querySelector('app-navigation-trigger'),
     ).toBeTruthy();
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
     expect(

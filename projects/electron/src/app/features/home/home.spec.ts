@@ -51,7 +51,7 @@ describe('Home', () => {
 
   it('renders all database-backed entity links', () => {
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('[aria-label="Open main navigation"]')).toBeTruthy();
+    expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
     const tiles = [...element.querySelectorAll<HTMLAnchorElement>('.browse-tile')];
 
     expect(tiles.map((tile) => tile.textContent)).toEqual([

@@ -28,7 +28,7 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
+import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
 import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
@@ -107,7 +107,7 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-player-finder',
   imports: [
-    AppNavigationMenu,
+    AppNavigationTrigger,
     FormField,
     CountryFlag,
     DatabaseFilter,

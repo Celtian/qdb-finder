@@ -1,0 +1,13 @@
+:host {
+  display: none;
+  flex: 0 0 auto;
+}
+
+:host.visible {
+  display: inline-flex;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--qdb-brand);
+  outline-offset: 2px;
+}

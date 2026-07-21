@@ -1,0 +1,12 @@
+@if (navigation.isSmallScreen()) {
+  <button
+    type="button"
+    mat-icon-button
+    aria-label="Open main navigation"
+    aria-controls="primary-navigation-drawer"
+    [attr.aria-expanded]="navigation.mobileOpen()"
+    (click)="open($event)"
+  >
+    <mat-icon>menu</mat-icon>
+  </button>
+}

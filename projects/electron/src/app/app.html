@@ -1,3 +1,19 @@
-<main class="app-content">
-  <router-outlet />
-</main>
+<mat-sidenav-container>
+  <mat-sidenav
+    id="primary-navigation-drawer"
+    aria-label="Primary navigation"
+    [mode]="navigation.isSmallScreen() ? 'over' : 'side'"
+    [opened]="navigation.expanded()"
+    [autoFocus]="navigation.isSmallScreen() ? '.primary-navigation-link' : false"
+    (openedChange)="navigation.drawerStateChanged($event)"
+    (backdropClick)="navigation.dismiss()"
+    (closed)="navigation.drawerClosed()"
+  >
+    <app-navigation />
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <main class="app-content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

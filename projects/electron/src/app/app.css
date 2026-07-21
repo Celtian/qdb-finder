@@ -5,6 +5,18 @@
   overflow: hidden;
 }
 
+mat-sidenav-container,
+mat-sidenav-content {
+  height: 100%;
+}
+
+mat-sidenav {
+  width: 15.5rem;
+  border-right: 1px solid var(--mat-sys-outline-variant, #c5c6d0);
+  border-radius: 0;
+  background: var(--mat-sys-surface-container-low, #f3f3fa);
+}
+
 .app-content {
   display: block;
   height: 100%;
@@ -12,4 +24,18 @@
   min-height: 0;
   background: #f7f8fc;
   overflow: hidden;
+}
+
+@media (width <= 760px) {
+  mat-sidenav {
+    width: min(15.5rem, calc(100vw - 2rem));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  mat-sidenav,
+  mat-sidenav-container,
+  mat-sidenav-content {
+    transition-duration: 0.01ms !important;
+  }
 }

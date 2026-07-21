@@ -22,7 +22,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AppNavigationMenu } from '../../core/app-navigation-menu/app-navigation-menu';
+import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
@@ -87,7 +87,7 @@ const validId = (value: string | null): number | undefined => {
 @Component({
   selector: 'app-team-finder',
   imports: [
-    AppNavigationMenu,
+    AppNavigationTrigger,
     FormField,
     CountryFlag,
     DatabaseFilter,

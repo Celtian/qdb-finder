@@ -1,0 +1,55 @@
+:host {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  padding: 1rem 0.75rem;
+  color: var(--mat-sys-on-surface, #1a1b20);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 1.25rem;
+  color: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.brand img {
+  border-radius: 7px;
+}
+
+nav {
+  display: grid;
+  gap: 0.25rem;
+}
+
+nav a,
+.about-action button {
+  width: 100%;
+  justify-content: flex-start;
+  color: inherit;
+}
+
+nav a.active {
+  background: var(--mat-sys-secondary-container, #dbe2f9);
+  color: var(--mat-sys-on-secondary-container, #101c35);
+}
+
+.about-action {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.about-action mat-divider {
+  margin-bottom: 0.75rem;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--qdb-brand);
+  outline-offset: 2px;
+}

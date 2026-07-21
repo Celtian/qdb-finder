@@ -72,6 +72,6 @@ export class App {
   }
 
   protected navigationChanged(opened: boolean): void {
-    if (this.compactNavigation()) this.mobileNavigationOpen.set(opened);
+    if (this.compactNavigation() && !opened) this.mobileNavigationOpen.set(false);
   }
 }

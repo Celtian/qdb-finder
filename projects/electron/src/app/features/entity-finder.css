@@ -65,7 +65,7 @@
 }
 
 .range label {
-  color: #555;
+  color: var(--mat-sys-on-surface-variant);
   font-size: 0.75rem;
 }
 
@@ -74,15 +74,15 @@
   width: 100%;
   min-width: 0;
   padding: 0.7rem;
-  border: 1px solid #abb2c2;
+  border: 1px solid var(--mat-sys-outline);
   border-radius: 8px;
   font: inherit;
 }
 
 .entity-topbar {
   padding: 1rem 2rem;
-  border-bottom: 1px solid #e2e5ef;
-  background: #fff;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
 }
 
 .entity-topbar h1 {
@@ -111,16 +111,16 @@ main {
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
   border-radius: 12px;
-  background: #e8efff;
-  color: #163f7a;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
 }
 
 .results {
   overflow: hidden;
-  border: 1px solid #e2e5ef;
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 8px 30px rgb(35 45 75 / 6%);
+  background: var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
 }
 
 .result-header {
@@ -130,7 +130,7 @@ main {
   gap: 1rem;
   flex-wrap: wrap;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e2e5ef;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .result-actions {
@@ -199,7 +199,7 @@ table {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #646b78;
+  color: var(--mat-sys-on-surface-variant);
   text-align: center;
 }
 
@@ -211,7 +211,7 @@ table {
 
 .state h2 {
   margin: 0.8rem 0 0.2rem;
-  color: #20232b;
+  color: var(--mat-sys-on-surface);
 }
 
 @media (max-width: 900px) {

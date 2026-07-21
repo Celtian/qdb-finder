@@ -13,6 +13,11 @@ export const routes: Routes = [
       import('./features/databases/databases').then((module) => module.Databases),
   },
   {
+    path: 'settings',
+    title: 'Settings · QDB Finder',
+    loadComponent: () => import('./features/settings/settings').then((module) => module.Settings),
+  },
+  {
     path: 'players',
     title: 'Players · QDB Finder',
     loadComponent: () =>

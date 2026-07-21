@@ -12,9 +12,9 @@ mat-sidenav-content {
 
 mat-sidenav {
   width: 15.5rem;
-  border-right: 1px solid var(--mat-sys-outline-variant, #c5c6d0);
+  border-right: 1px solid var(--mat-sys-outline-variant);
   border-radius: 0;
-  background: var(--mat-sys-surface-container-low, #f3f3fa);
+  background: var(--mat-sys-surface-container-low);
 }
 
 .app-content {
@@ -23,7 +23,12 @@ mat-sidenav {
   min-width: 0;
   min-height: 0;
   background:
-    radial-gradient(circle at top right, rgb(35 86 168 / 12%), transparent 35rem), #f7f8fc;
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--mat-sys-primary) 12%, transparent),
+      transparent 35rem
+    ),
+    var(--mat-sys-surface);
   overflow: hidden;
 }
 

@@ -5,7 +5,10 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type { FinderColumnKey } from '../../core/finder-columns';
-import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
+import {
+  finderColumnPreferenceKey,
+  finderFilterPreferenceKey,
+} from '../../core/finder-preferences';
 import type {
   EntityFacetOption,
   StadiumDetails,
@@ -89,6 +92,9 @@ describe('StadiumFinder', () => {
     expect(searchStadiums).toHaveBeenLastCalledWith(
       expect.objectContaining({ isLicensed: true, capacity: { min: 50_000 } }),
     );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('stadiums')) ?? '').filters,
+    ).toMatchObject({ isLicensed: true, capacity: { min: 50_000 } });
     expect(
       (fixture.nativeElement as HTMLElement)
         .querySelector('.filter-button')

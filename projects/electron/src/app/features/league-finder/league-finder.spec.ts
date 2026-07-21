@@ -5,7 +5,10 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type { FinderColumnKey } from '../../core/finder-columns';
-import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
+import {
+  finderColumnPreferenceKey,
+  finderFilterPreferenceKey,
+} from '../../core/finder-preferences';
 import type {
   EntityFacetOption,
   LeagueDetails,
@@ -107,6 +110,10 @@ describe('LeagueFinder', () => {
     await fixture.whenStable();
 
     expect(searchLeagues).toHaveBeenCalledWith(expect.objectContaining({ levels: [1, 2] }));
+    expect(
+      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('leagues')) ?? '').filters
+        .levels,
+    ).toEqual([1, 2]);
     expect(
       (fixture.nativeElement as HTMLElement)
         .querySelector('.filter-button')

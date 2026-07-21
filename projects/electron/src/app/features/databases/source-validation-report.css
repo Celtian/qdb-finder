@@ -5,16 +5,16 @@
 
 .validation-report {
   padding: 1rem;
-  border: 1px solid #a8c7ae;
+  border: 1px solid var(--qdb-on-success-container);
   border-radius: 8px;
-  background: #e8f5ea;
-  color: #17451f;
+  background: var(--qdb-success-container);
+  color: var(--qdb-on-success-container);
 }
 
 .validation-report.invalid {
-  border-color: #ffb4ab;
-  background: #ffdad6;
-  color: #690005;
+  border-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
 }
 
 .summary {

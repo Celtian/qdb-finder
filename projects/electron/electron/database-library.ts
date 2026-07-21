@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, renameSync, unlinkSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { DatabaseDescriptor, DatabaseInfo, DatabaseKind } from '../src/app/core/qdb-contracts';
@@ -107,6 +108,43 @@ export class DatabaseLibrary {
     this.removeFiles(path);
   }
 
+  customDatabaseIds(): string[] {
+    this.ensureCustomDirectory();
+    return readdirSync(this.customDirectory).flatMap((file) => {
+      const match = customFilePattern.exec(file);
+      return match?.[1] ? [match[1]] : [];
+    });
+  }
+
+  removeCustomDatabases(): string[] {
+    const ids = this.customDatabaseIds();
+    const operationId = randomUUID();
+    const staged: { source: string; destination: string }[] = [];
+    try {
+      for (const id of ids) {
+        const path = this.pathFor(id);
+        for (const source of [path, `${path}-wal`, `${path}-shm`]) {
+          if (!existsSync(source)) continue;
+          const destination = `${source}.deleting-${operationId}`;
+          renameSync(source, destination);
+          staged.push({ source, destination });
+        }
+      }
+    } catch (error) {
+      for (const { source, destination } of staged.reverse())
+        if (existsSync(destination)) renameSync(destination, source);
+      throw error;
+    }
+    for (const { destination } of staged) {
+      try {
+        unlinkSync(destination);
+      } catch {
+        // Staged files are no longer searchable and will be cleaned up on the next launch.
+      }
+    }
+    return ids;
+  }
+
   discardTemporary(id: string): void {
     this.removeFiles(this.temporaryPath(id));
   }
@@ -151,7 +189,11 @@ export class DatabaseLibrary {
   private cleanupTemporaryFiles(): void {
     this.ensureCustomDirectory();
     for (const file of readdirSync(this.customDirectory))
-      if (file.endsWith('.importing') || file.includes('.importing-'))
+      if (
+        file.endsWith('.importing') ||
+        file.includes('.importing-') ||
+        file.includes('.deleting-')
+      )
         this.removeFiles(join(this.customDirectory, file));
   }
 

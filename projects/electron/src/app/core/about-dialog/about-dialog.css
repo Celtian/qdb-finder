@@ -36,7 +36,7 @@
 
 .version {
   margin-top: 0.2rem !important;
-  color: #626978;
+  color: var(--mat-sys-on-surface-variant);
   font-variant-numeric: tabular-nums;
 }
 
@@ -54,7 +54,7 @@ mat-dialog-content {
 
 .legal {
   margin-top: 1rem;
-  color: #626978;
+  color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
 }
 

@@ -37,7 +37,7 @@ import {
   type FinderColumnKey,
 } from '../../core/finder-columns';
 import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
-import { FinderColumnPreferences } from '../../core/finder-column-preferences';
+import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import {
   defaultTeamSearchRequest,
@@ -111,16 +111,25 @@ export class TeamFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
-  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly preferences = inject(FinderPreferences);
+  private readonly routeRequest = this.initialContextRequest();
+  private readonly savedFilters = this.routeRequest
+    ? undefined
+    : this.preferences.loadFilters('teams');
+  private readonly initialRequestState = this.routeRequest ?? this.restoredRequest();
   private requestSequence = 0;
   private filterDialogRef?: MatDialogRef<unknown>;
   private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal<TeamSearchRequest>(this.initialRequest());
-  protected readonly draftRequest = signal<TeamSearchRequest>(this.initialRequest());
+  protected readonly request = signal<TeamSearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
+  protected readonly draftRequest = signal<TeamSearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
   protected readonly result = signal<TeamResultPage>({
     rows: [],
     total: 0,
@@ -134,7 +143,7 @@ export class TeamFinder {
   protected readonly contextStadium = signal<StadiumEditionRow | undefined>(undefined);
   protected readonly columnDefinitions = finderColumns.teams;
   protected readonly columns = signal<readonly FinderColumnKey[]>(
-    this.columnPreferences.load('teams'),
+    this.preferences.loadColumns('teams'),
   );
   protected readonly hiddenColumnCount = computed(
     () => this.columnDefinitions.length - this.columns().length,
@@ -153,13 +162,12 @@ export class TeamFinder {
     league: [],
     country: [],
   });
-  protected readonly labels = signal<Record<'league' | 'country', Record<string, FilterDisplay>>>({
-    league: {},
-    country: {},
-  });
+  protected readonly labels = signal<Record<'league' | 'country', Record<string, FilterDisplay>>>(
+    structuredClone(this.savedFilters?.labels ?? { league: {}, country: {} }),
+  );
   private appliedLabels: Record<'league' | 'country', Record<string, FilterDisplay>> = {
-    league: {},
-    country: {},
+    league: { ...(this.savedFilters?.labels.league ?? {}) },
+    country: { ...(this.savedFilters?.labels.country ?? {}) },
   };
   protected readonly selectedLeagues = computed(() =>
     this.draftRequest().leagueKeys.map(
@@ -312,6 +320,7 @@ export class TeamFinder {
     this.contextPlayer.set(undefined);
     this.contextLeague.set(undefined);
     this.contextStadium.set(undefined);
+    this.preferences.clearFilters('teams');
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
@@ -386,6 +395,7 @@ export class TeamFinder {
       league: { ...this.labels().league },
       country: { ...this.labels().country },
     };
+    this.persistFilters();
     if (databaseChanged || contextCleared) {
       this.contextPlayer.set(undefined);
       this.contextLeague.set(undefined);
@@ -436,7 +446,7 @@ export class TeamFinder {
   }
 
   private applyColumns(columns: readonly FinderColumnKey[]): void {
-    this.columnPreferences.save('teams', columns);
+    this.preferences.saveColumns('teams', columns);
     this.columns.set(columns);
     if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
     this.request.update((value) => ({
@@ -462,7 +472,7 @@ export class TeamFinder {
     };
   }
 
-  private initialRequest(): TeamSearchRequest {
+  private initialContextRequest(): TeamSearchRequest | undefined {
     const request = defaultTeamSearchRequest();
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
@@ -472,7 +482,7 @@ export class TeamFinder {
     const contextCount = [playerId, leagueId, stadiumId].filter(
       (value) => value !== undefined,
     ).length;
-    if (!version || contextCount !== 1) return request;
+    if (!version || contextCount !== 1) return undefined;
     if (playerId)
       return {
         ...request,
@@ -494,7 +504,38 @@ export class TeamFinder {
         versions: [version],
         stadiumEdition: { databaseId, version, stadiumId },
       };
-    return request;
+    return undefined;
+  }
+
+  private restoredRequest(): TeamSearchRequest {
+    const filters = this.savedFilters;
+    if (!filters) return defaultTeamSearchRequest();
+    return {
+      ...defaultTeamSearchRequest(),
+      databaseIds: [...filters.databaseIds],
+      versions: [...filters.versions],
+      leagueKeys: [...filters.leagueKeys],
+      countryIds: [...filters.countryIds],
+      overall: { ...filters.overall },
+      attack: { ...filters.attack },
+      midfield: { ...filters.midfield },
+      defence: { ...filters.defence },
+    };
+  }
+
+  private persistFilters(): void {
+    const request = this.request();
+    this.preferences.saveFilters('teams', {
+      databaseIds: [...request.databaseIds],
+      versions: [...request.versions],
+      leagueKeys: [...request.leagueKeys],
+      countryIds: [...request.countryIds],
+      overall: { ...request.overall },
+      attack: { ...request.attack },
+      midfield: { ...request.midfield },
+      defence: { ...request.defence },
+      labels: structuredClone(this.appliedLabels),
+    });
   }
 
   private async loadContextPlayer(

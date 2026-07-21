@@ -4,7 +4,7 @@
   min-height: 0;
   flex-direction: column;
   padding: 1rem 0.75rem;
-  color: var(--mat-sys-on-surface, #1a1b20);
+  color: var(--mat-sys-on-surface);
 }
 
 .brand {
@@ -39,8 +39,8 @@ nav a,
 }
 
 nav a.active {
-  background: var(--mat-sys-secondary-container, #dbe2f9);
-  color: var(--mat-sys-on-secondary-container, #101c35);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
 }
 
 .about-action {

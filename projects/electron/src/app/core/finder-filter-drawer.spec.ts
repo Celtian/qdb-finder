@@ -48,7 +48,7 @@ describe('FinderFilterDrawer', () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
-  it('uses a full-height left-side dialog configuration', () => {
+  it('uses a full-height right-side dialog configuration', () => {
     expect(finderFilterDialogConfig('filter-title')).toMatchObject({
       ariaLabelledBy: 'filter-title',
       ariaModal: true,
@@ -57,7 +57,7 @@ describe('FinderFilterDrawer', () => {
       maxHeight: '100vh',
       maxWidth: '100vw',
       panelClass: 'finder-filter-drawer-panel',
-      position: { left: '0', top: '0' },
+      position: { right: '0', top: '0' },
       restoreFocus: true,
       width: '28rem',
     });

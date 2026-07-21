@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Remove all custom databases?</h2>
+<mat-dialog-content>
+  <p>
+    The following {{ data.length }} {{ data.length === 1 ? 'database' : 'databases' }} and their
+    generated SQLite files will be permanently removed. Original FIFA text folders will not be
+    changed.
+  </p>
+  <ul>
+    @for (database of data; track database.id) {
+      <li>{{ database.name }}</li>
+    }
+  </ul>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button type="button" mat-button mat-dialog-close>Cancel</button>
+  <button type="button" mat-flat-button color="warn" [mat-dialog-close]="true">Remove all</button>
+</mat-dialog-actions>

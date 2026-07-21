@@ -113,6 +113,11 @@ export class Qdb {
     await this.api.removeDatabase(id);
     await this.refreshDatabaseCatalog(true);
   }
+  async removeCustomDatabases(): Promise<string[]> {
+    const removedIds = await this.api.removeCustomDatabases();
+    await this.refreshDatabaseCatalog(true);
+    return removedIds;
+  }
   onDatabaseSourceValidationProgress(
     listener: (progress: DatabaseSourceValidationProgress) => void,
   ): () => void {

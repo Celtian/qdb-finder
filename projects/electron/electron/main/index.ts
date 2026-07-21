@@ -390,6 +390,17 @@ app.whenReady().then(async () => {
     databaseLibrary.remove(id);
     databaseRegistry.refresh();
   });
+  ipcMain.handle('qdb:databases:remove-custom', () => {
+    if (imports.size || validations.size)
+      throw new Error('Another database task is running. Wait for it to finish and try again.');
+    const ids = databaseLibrary.customDatabaseIds();
+    for (const id of ids) databaseRegistry.closeDatabase(id);
+    try {
+      return databaseLibrary.removeCustomDatabases();
+    } finally {
+      databaseRegistry.refresh();
+    }
+  });
   if (app.isPackaged) updateElectronApp();
   await createWindow();
   app.on('activate', () => {

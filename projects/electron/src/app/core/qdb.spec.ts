@@ -26,6 +26,7 @@ describe('Qdb', () => {
     importDatabase: vi.fn(),
     cancelDatabaseImport: vi.fn(),
     removeDatabase: vi.fn(async () => undefined),
+    removeCustomDatabases: vi.fn(async (): Promise<string[]> => []),
     onDatabaseSourceValidationProgress: vi.fn(),
     onDatabaseImportProgress: vi.fn(),
   };
@@ -160,5 +161,15 @@ describe('Qdb', () => {
     const context = TestBed.inject(DatabaseContext);
     expect(context.databases()).toEqual([database]);
     expect(context.revision()).toBe(1);
+  });
+
+  it('removes custom databases through one bridge call and refreshes the catalog once', async () => {
+    api.removeCustomDatabases.mockResolvedValueOnce(['custom-one', 'custom-two']);
+    api.listDatabases.mockResolvedValueOnce([]);
+
+    await expect(service.removeCustomDatabases()).resolves.toEqual(['custom-one', 'custom-two']);
+
+    expect(api.removeCustomDatabases).toHaveBeenCalledOnce();
+    expect(TestBed.inject(DatabaseContext).revision()).toBe(1);
   });
 });

@@ -22,6 +22,7 @@ const api: QdbApi = {
   importDatabase: (request) => ipcRenderer.invoke('qdb:databases:import', request),
   cancelDatabaseImport: (requestId) => ipcRenderer.invoke('qdb:databases:cancel-import', requestId),
   removeDatabase: (id) => ipcRenderer.invoke('qdb:databases:remove', id),
+  removeCustomDatabases: () => ipcRenderer.invoke('qdb:databases:remove-custom'),
   onDatabaseSourceValidationProgress: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof listener>[0]) =>
       listener(progress);

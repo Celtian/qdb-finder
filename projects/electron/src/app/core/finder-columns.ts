@@ -1,4 +1,6 @@
-export type FinderKind = 'players' | 'teams' | 'leagues' | 'referees' | 'stadiums';
+export const finderKinds = ['players', 'teams', 'leagues', 'referees', 'stadiums'] as const;
+
+export type FinderKind = (typeof finderKinds)[number];
 
 export type FinderColumnKey =
   | 'age'

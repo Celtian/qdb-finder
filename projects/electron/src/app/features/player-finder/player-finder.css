@@ -53,26 +53,26 @@
 }
 .range label {
   font-size: 0.75rem;
-  color: #555;
+  color: var(--mat-sys-on-surface-variant);
 }
 .range input {
   display: block;
   width: 100%;
   padding: 0.7rem;
-  border: 1px solid #abb2c2;
+  border: 1px solid var(--mat-sys-outline);
   border-radius: 8px;
   font: inherit;
   min-width: 0;
 }
 .filter-note {
   font-size: 0.8rem;
-  color: #656b79;
+  color: var(--mat-sys-on-surface-variant);
   line-height: 1.45;
 }
 .topbar {
   padding: 1rem 2rem;
-  background: #fff;
-  border-bottom: 1px solid #e2e5ef;
+  background: var(--mat-sys-surface-container-lowest);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 .topbar h1 {
   font-size: 1.4rem;
@@ -99,15 +99,15 @@ main {
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
   border-radius: 12px;
-  background: #e8efff;
-  color: #163f7a;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
 }
 .results {
-  background: #fff;
-  border: 1px solid #e2e5ef;
+  background: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 30px rgb(35 45 75 / 6%);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
 }
 .result-header {
   display: flex;
@@ -116,7 +116,7 @@ main {
   gap: 1rem;
   flex-wrap: wrap;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e2e5ef;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 .result-actions {
   display: flex;
@@ -149,7 +149,8 @@ table {
 }
 .mat-column-originalId,
 .mat-column-database,
-.mat-column-birthDate {
+.mat-column-birthDate,
+.mat-column-preferredFoot {
   white-space: nowrap;
 }
 .player-link {
@@ -183,7 +184,7 @@ table {
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #646b78;
+  color: var(--mat-sys-on-surface-variant);
 }
 .state mat-icon {
   width: 54px;
@@ -191,11 +192,11 @@ table {
   font-size: 54px;
 }
 .state h2 {
-  color: #20232b;
+  color: var(--mat-sys-on-surface);
   margin: 0.8rem 0 0.2rem;
 }
 .state.error mat-icon {
-  color: #b3261e;
+  color: var(--mat-sys-error);
 }
 @media (max-width: 900px) {
   main {

@@ -1,10 +1,29 @@
 :root {
-  --qdb-brand: #2356a8;
-  --qdb-accent: #006b5f;
-  --qdb-panel: #f8f9ff;
-  --mat-sys-primary: #2356a8;
-  --mat-sys-secondary: #006b5f;
-  --mat-sys-surface-container: #f1f3fa;
+  --qdb-brand: var(--mat-sys-primary);
+  --qdb-accent: var(--mat-sys-tertiary);
+  --qdb-panel: var(--mat-sys-surface-container-low);
+  --qdb-success-container: light-dark(#d7f5df, #0d3b1b);
+  --qdb-on-success-container: light-dark(#145c2b, #b9f6ca);
+  --qdb-pitch: light-dark(#edf7ee, #17351d);
+  --qdb-pitch-line: light-dark(rgb(80 137 87 / 30%), rgb(153 207 159 / 42%));
+  --qdb-position-attacker: light-dark(#d7e5ff, #193b61);
+  --qdb-on-position-attacker: light-dark(#003b73, #d7e5ff);
+  --qdb-position-midfielder: light-dark(#ccebdc, #174c36);
+  --qdb-on-position-midfielder: light-dark(#064c35, #ccebdc);
+  --qdb-position-defender: light-dark(#ffefb0, #514613);
+  --qdb-on-position-defender: light-dark(#594600, #ffefb0);
+  --qdb-position-goalkeeper: light-dark(#ffdcc2, #613817);
+  --qdb-on-position-goalkeeper: light-dark(#713600, #ffdcc2);
+  --qdb-score-red: light-dark(#fde7e9, #5c2524);
+  --qdb-on-score-red: light-dark(#8c1d18, #ffd9d7);
+  --qdb-score-orange: light-dark(#ffeadf, #5d2f18);
+  --qdb-on-score-orange: light-dark(#8a3800, #ffdbca);
+  --qdb-score-yellow: light-dark(#fff4c2, #514615);
+  --qdb-on-score-yellow: light-dark(#604b00, #ffefad);
+  --qdb-score-lime: light-dark(#e7f3c5, #344615);
+  --qdb-on-score-lime: light-dark(#365e00, #d9f5a5);
+  --qdb-score-green: light-dark(#ccebdc, #174c36);
+  --qdb-on-score-green: light-dark(#064c35, #ccebdc);
 }
 
 html,
@@ -14,9 +33,8 @@ body {
 
 body {
   margin: 0;
-  color-scheme: light;
-  background: var(--mat-sys-surface, #fafafa);
-  color: var(--mat-sys-on-surface, #1a1b20);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
@@ -70,7 +88,7 @@ body {
 
 @keyframes finder-filter-drawer-enter {
   from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
   }
 
   to {
@@ -118,23 +136,23 @@ body {
 }
 
 .position-attacker {
-  background: #d7e5ff;
-  color: #003b73;
+  background: var(--qdb-position-attacker);
+  color: var(--qdb-on-position-attacker);
 }
 
 .position-midfielder {
-  background: #ccebdc;
-  color: #064c35;
+  background: var(--qdb-position-midfielder);
+  color: var(--qdb-on-position-midfielder);
 }
 
 .position-defender {
-  background: #ffefb0;
-  color: #594600;
+  background: var(--qdb-position-defender);
+  color: var(--qdb-on-position-defender);
 }
 
 .position-goalkeeper {
-  background: #ffdcc2;
-  color: #713600;
+  background: var(--qdb-position-goalkeeper);
+  color: var(--qdb-on-position-goalkeeper);
 }
 
 .score-badge {
@@ -142,26 +160,26 @@ body {
 }
 
 .score-red {
-  background: #fde7e9;
-  color: #8c1d18;
+  background: var(--qdb-score-red);
+  color: var(--qdb-on-score-red);
 }
 
 .score-orange {
-  background: #ffeadf;
-  color: #8a3800;
+  background: var(--qdb-score-orange);
+  color: var(--qdb-on-score-orange);
 }
 
 .score-yellow {
-  background: #fff4c2;
-  color: #604b00;
+  background: var(--qdb-score-yellow);
+  color: var(--qdb-on-score-yellow);
 }
 
 .score-lime {
-  background: #e7f3c5;
-  color: #365e00;
+  background: var(--qdb-score-lime);
+  color: var(--qdb-on-score-lime);
 }
 
 .score-green {
-  background: #ccebdc;
-  color: #064c35;
+  background: var(--qdb-score-green);
+  color: var(--qdb-on-score-green);
 }

@@ -5,7 +5,10 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type { FinderColumnKey } from '../../core/finder-columns';
-import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
+import {
+  finderColumnPreferenceKey,
+  finderFilterPreferenceKey,
+} from '../../core/finder-preferences';
 import type {
   EntityFacetOption,
   RefereeDetails,
@@ -89,6 +92,9 @@ describe('RefereeFinder', () => {
     expect(searchReferees).toHaveBeenCalledWith(
       expect.objectContaining({ isReal: true, age: { min: 30 } }),
     );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('referees')) ?? '').filters,
+    ).toMatchObject({ isReal: true, age: { min: 30 } });
     expect(
       (fixture.nativeElement as HTMLElement)
         .querySelector('.filter-button')

@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { FinderColumnPreferences, finderColumnPreferenceKey } from './finder-column-preferences';
+import {
+  FinderPreferences,
+  finderColumnPreferenceKey,
+  finderFilterPreferenceKey,
+} from './finder-preferences';
 import {
   defaultFinderColumns,
   finderColumns,
@@ -88,16 +92,16 @@ describe('finder columns', () => {
   });
 
   it('normalizes and persists independent finder preferences', () => {
-    const preferences = TestBed.inject(FinderColumnPreferences);
+    const preferences = TestBed.inject(FinderPreferences);
     window.localStorage.setItem(
       finderColumnPreferenceKey('teams'),
       JSON.stringify(['defence', 'unknown', 'name', 'defence', 42]),
     );
 
-    expect(preferences.load('teams')).toEqual(['name', 'defence']);
-    expect(preferences.load('leagues')).toEqual(defaultFinderColumns('leagues'));
+    expect(preferences.loadColumns('teams')).toEqual(['name', 'defence']);
+    expect(preferences.loadColumns('leagues')).toEqual(defaultFinderColumns('leagues'));
 
-    preferences.save('players', ['birthDate', 'name', 'birthDate']);
+    preferences.saveColumns('players', ['birthDate', 'name', 'birthDate']);
     expect(
       JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('players')) ?? ''),
     ).toEqual(['name', 'birthDate']);
@@ -105,20 +109,124 @@ describe('finder columns', () => {
   });
 
   it('falls back to defaults for malformed or unavailable storage', () => {
-    const preferences = TestBed.inject(FinderColumnPreferences);
+    const preferences = TestBed.inject(FinderPreferences);
     window.localStorage.setItem(finderColumnPreferenceKey('stadiums'), '{invalid');
-    expect(preferences.load('stadiums')).toEqual(defaultFinderColumns('stadiums'));
+    expect(preferences.loadColumns('stadiums')).toEqual(defaultFinderColumns('stadiums'));
 
     const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('Storage unavailable');
     });
-    expect(preferences.load('players')).toEqual(defaultFinderColumns('players'));
+    expect(preferences.loadColumns('players')).toEqual(defaultFinderColumns('players'));
     getItem.mockRestore();
 
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('Storage unavailable');
     });
-    expect(() => preferences.save('players', ['name'])).not.toThrow();
+    expect(() => preferences.saveColumns('players', ['name'])).not.toThrow();
     setItem.mockRestore();
+  });
+
+  it('round-trips validated filter state and display metadata for every finder', () => {
+    const preferences = TestBed.inject(FinderPreferences);
+    preferences.saveFilters('players', {
+      databaseIds: ['custom'],
+      versions: [23],
+      gender: 'women',
+      nationalities: ['France'],
+      teams: ['1'],
+      leagues: ['2'],
+      positions: ['ST'],
+      age: { min: 20 },
+      overall: { max: 90 },
+      potential: {},
+      labels: {
+        nationalities: { France: 'France' },
+        teams: { '1': 'Paris FC' },
+        leagues: { '2': 'Division 1' },
+      },
+      nationalityCodes: { France: 'fr' },
+    });
+    preferences.saveFilters('teams', {
+      databaseIds: [],
+      versions: [22],
+      leagueKeys: ['league'],
+      countryIds: [14],
+      overall: { min: 70 },
+      attack: {},
+      midfield: {},
+      defence: {},
+      labels: {
+        league: { league: { key: 'league', label: 'League' } },
+        country: { '14': { key: '14', label: 'England', countryCode: 'gb-eng' } },
+      },
+    });
+    preferences.saveFilters('leagues', {
+      databaseIds: [],
+      versions: [],
+      countryIds: [14],
+      levels: [1],
+      countryLabels: { '14': { key: '14', label: 'England' } },
+    });
+    preferences.saveFilters('referees', {
+      databaseIds: [],
+      versions: [],
+      gender: 'men',
+      nationalityIds: [14],
+      leagueKeys: ['league'],
+      age: { max: 50 },
+      isReal: true,
+      labels: { nationality: {}, league: {} },
+    });
+    preferences.saveFilters('stadiums', {
+      databaseIds: [],
+      versions: [],
+      countryIds: [14],
+      teamKeys: ['team'],
+      capacity: { min: 20_000 },
+      isLicensed: false,
+      labels: { country: {}, team: {} },
+    });
+
+    expect(preferences.loadFilters('players')).toMatchObject({
+      gender: 'women',
+      positions: ['ST'],
+    });
+    expect(preferences.loadFilters('teams').labels.country['14']?.label).toBe('England');
+    expect(preferences.loadFilters('leagues').levels).toEqual([1]);
+    expect(preferences.loadFilters('referees').isReal).toBe(true);
+    expect(preferences.loadFilters('stadiums')).toMatchObject({ isLicensed: false });
+  });
+
+  it('normalizes malformed filter storage and resets filter and column keys independently', () => {
+    const preferences = TestBed.inject(FinderPreferences);
+    window.localStorage.setItem(
+      finderFilterPreferenceKey('players'),
+      JSON.stringify({
+        version: 1,
+        filters: {
+          databaseIds: ['built-in', 3, 'built-in'],
+          versions: [23, '22', Number.NaN],
+          gender: 'unknown',
+          age: { min: 'young', max: 30 },
+        },
+      }),
+    );
+    window.localStorage.setItem(finderColumnPreferenceKey('players'), JSON.stringify(['name']));
+    window.localStorage.setItem(finderFilterPreferenceKey('teams'), '{}');
+
+    expect(preferences.loadFilters('players')).toMatchObject({
+      databaseIds: ['built-in'],
+      versions: [23],
+      age: { max: 30 },
+    });
+    expect(preferences.loadFilters('players').gender).toBeUndefined();
+    expect(preferences.loadFilters('teams').leagueKeys).toEqual([]);
+
+    preferences.resetFilters();
+    expect(window.localStorage.getItem(finderFilterPreferenceKey('players'))).toBeNull();
+    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).not.toBeNull();
+
+    preferences.resetAll();
+    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).toBeNull();
   });
 });

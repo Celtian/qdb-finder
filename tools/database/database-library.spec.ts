@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DatabaseLibrary } from '../../projects/electron/electron/database-library';
 
 const CUSTOM_ID = '11111111-1111-4111-8111-111111111111';
+const SECOND_CUSTOM_ID = '22222222-2222-4222-8222-222222222222';
 
 const createDatabase = (
   path: string,
@@ -62,6 +63,25 @@ describe('database library', () => {
       status: 'incompatible',
     });
     expect(() => library.remove('built-in')).toThrow(/cannot be removed/);
+  });
+
+  it('removes all managed custom databases while preserving the built-in database', () => {
+    const { library } = setup();
+    createDatabase(library.pathFor(CUSTOM_ID), CUSTOM_ID, 'Custom database', 'custom');
+    createDatabase(
+      library.pathFor(SECOND_CUSTOM_ID),
+      SECOND_CUSTOM_ID,
+      'Old database',
+      'custom',
+      0,
+    );
+
+    expect(new Set(library.removeCustomDatabases())).toEqual(
+      new Set([CUSTOM_ID, SECOND_CUSTOM_ID]),
+    );
+    expect(library.list().map(({ id }) => id)).toEqual(['built-in']);
+    expect(existsSync(library.pathFor(CUSTOM_ID))).toBe(false);
+    expect(existsSync(library.pathFor(SECOND_CUSTOM_ID))).toBe(false);
   });
 
   it('recreates the managed directory if it is removed while the app is running', () => {

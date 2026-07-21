@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  height: 100%;
+  overflow: auto;
+}
+
+.page-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.page-heading > div {
+  min-width: 0;
+}
+
+.page-heading p,
+.page-heading h1 {
+  margin: 0;
+}
+
+.page-heading h1 {
+  font-size: 1.4rem;
+}
+
+.eyebrow {
+  color: var(--qdb-brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+main {
+  width: min(840px, 100%);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.lead {
+  margin: 0 0 2rem;
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.6;
+}
+
+section + section {
+  margin-top: 1rem;
+}
+
+mat-card {
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+mat-card-content {
+  padding-top: 1.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.55;
+}
+
+.section-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.section-icon.danger {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.danger-card {
+  border-color: var(--mat-sys-error);
+}
+
+.theme-options {
+  display: grid;
+  gap: 0.25rem;
+}
+
+mat-radio-button {
+  padding: 0.5rem 0;
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.option-content > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.option-content small {
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.35;
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--mat-sys-corner-small);
+}
+
+.message.error {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.message.success {
+  background: var(--qdb-success-container);
+  color: var(--qdb-on-success-container);
+}
+
+.message button {
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  .page-heading {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 560px) {
+  main {
+    padding: 1.5rem 1rem;
+  }
+
+  .option-content {
+    align-items: flex-start;
+  }
+}

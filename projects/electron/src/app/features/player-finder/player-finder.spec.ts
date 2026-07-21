@@ -6,7 +6,10 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { Qdb } from '../../core/qdb';
 import { DatabaseContext } from '../../core/database-context';
 import type { FinderColumnKey } from '../../core/finder-columns';
-import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
+import {
+  finderColumnPreferenceKey,
+  finderFilterPreferenceKey,
+} from '../../core/finder-preferences';
 import type {
   FilterSuggestion,
   PlayerDetails,
@@ -137,6 +140,9 @@ describe('PlayerFinder', () => {
     expect(testable.request().versions).toEqual([]);
     expect(testable.request().nationalities).toEqual([]);
     expect(testable.columns()).toEqual(columns);
+    expect(
+      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('players')) ?? '').filters,
+    ).toMatchObject({ databaseIds: [], versions: [], nationalities: [] });
   });
 
   it('sorts the newest FIFA editions first by default', () => {
@@ -587,6 +593,13 @@ describe('PlayerFinder', () => {
 
 describe('PlayerFinder contextual routing', () => {
   it('applies an exact version and team ID from validated query parameters', async () => {
+    window.localStorage.setItem(
+      finderFilterPreferenceKey('players'),
+      JSON.stringify({
+        version: 1,
+        filters: { databaseIds: ['custom'], versions: [22], positions: ['ST'] },
+      }),
+    );
     const searchPlayers = vi.fn(async () => ({
       rows: [],
       total: 0,
@@ -645,7 +658,9 @@ describe('PlayerFinder contextual routing', () => {
     expect(getTeam).toHaveBeenCalledWith({ databaseId: 'built-in', version: 23, teamId: 1 });
     expect(searchPlayers).toHaveBeenCalledWith(
       expect.objectContaining({
+        databaseIds: ['built-in'],
         versions: [23],
+        positions: [],
         teamEdition: { databaseId: 'built-in', version: 23, teamId: 1 },
       }),
     );

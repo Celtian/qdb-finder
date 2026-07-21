@@ -497,6 +497,7 @@ export interface QdbApi {
   importDatabase(request: DatabaseImportRequest): Promise<DatabaseImportResult>;
   cancelDatabaseImport(requestId: string): Promise<boolean>;
   removeDatabase(id: string): Promise<void>;
+  removeCustomDatabases(): Promise<string[]>;
   onDatabaseSourceValidationProgress(
     listener: (progress: DatabaseSourceValidationProgress) => void,
   ): () => void;

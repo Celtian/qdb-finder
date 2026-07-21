@@ -36,7 +36,7 @@ import {
   type FinderColumnKey,
 } from '../../core/finder-columns';
 import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
-import { FinderColumnPreferences } from '../../core/finder-column-preferences';
+import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import {
   defaultStadiumSearchRequest,
@@ -107,16 +107,25 @@ export class StadiumFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
-  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly preferences = inject(FinderPreferences);
+  private readonly routeRequest = this.initialContextRequest();
+  private readonly savedFilters = this.routeRequest
+    ? undefined
+    : this.preferences.loadFilters('stadiums');
+  private readonly initialRequestState = this.routeRequest ?? this.restoredRequest();
   private requestSequence = 0;
   private filterDialogRef?: MatDialogRef<unknown>;
   private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal<StadiumSearchRequest>(this.initialRequest());
-  protected readonly draftRequest = signal<StadiumSearchRequest>(this.initialRequest());
+  protected readonly request = signal<StadiumSearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
+  protected readonly draftRequest = signal<StadiumSearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
   protected readonly result = signal<StadiumResultPage>({
     rows: [],
     total: 0,
@@ -129,7 +138,7 @@ export class StadiumFinder {
   protected readonly contextTeam = signal<TeamEditionRow | undefined>(undefined);
   protected readonly columnDefinitions = finderColumns.stadiums;
   protected readonly columns = signal<readonly FinderColumnKey[]>(
-    this.columnPreferences.load('stadiums'),
+    this.preferences.loadColumns('stadiums'),
   );
   protected readonly hiddenColumnCount = computed(
     () => this.columnDefinitions.length - this.columns().length,
@@ -138,18 +147,23 @@ export class StadiumFinder {
   protected readonly versions = computed(() =>
     databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
-  protected readonly availability = signal<AvailabilityFilter>('all');
+  protected readonly availability = signal<AvailabilityFilter>(
+    this.savedFilters?.isLicensed === undefined
+      ? 'all'
+      : this.savedFilters.isLicensed
+        ? 'licensed'
+        : 'generic',
+  );
   protected readonly suggestions = signal<Record<StadiumFacet, EntityFacetOption[]>>({
     country: [],
     team: [],
   });
-  protected readonly labels = signal<Record<StadiumFacet, Record<string, FilterDisplay>>>({
-    country: {},
-    team: {},
-  });
+  protected readonly labels = signal<Record<StadiumFacet, Record<string, FilterDisplay>>>(
+    structuredClone(this.savedFilters?.labels ?? { country: {}, team: {} }),
+  );
   private appliedLabels: Record<StadiumFacet, Record<string, FilterDisplay>> = {
-    country: {},
-    team: {},
+    country: { ...(this.savedFilters?.labels.country ?? {}) },
+    team: { ...(this.savedFilters?.labels.team ?? {}) },
   };
   protected readonly selectedCountries = computed(() =>
     this.draftRequest().countryIds.map((id): FilterDisplay => {
@@ -296,6 +310,7 @@ export class StadiumFinder {
     this.appliedLabels = { country: {}, team: {} };
     this.availability.set('all');
     this.contextTeam.set(undefined);
+    this.preferences.clearFilters('stadiums');
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
@@ -370,6 +385,7 @@ export class StadiumFinder {
       country: { ...this.labels().country },
       team: { ...this.labels().team },
     };
+    this.persistFilters();
     if (databaseChanged || contextCleared) {
       this.contextTeam.set(undefined);
       void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
@@ -416,7 +432,7 @@ export class StadiumFinder {
   }
 
   private applyColumns(columns: readonly FinderColumnKey[]): void {
-    this.columnPreferences.save('stadiums', columns);
+    this.preferences.saveColumns('stadiums', columns);
     this.columns.set(columns);
     if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
     this.request.update((value) => ({
@@ -439,7 +455,7 @@ export class StadiumFinder {
     };
   }
 
-  private initialRequest(): StadiumSearchRequest {
+  private initialContextRequest(): StadiumSearchRequest | undefined {
     const request = defaultStadiumSearchRequest();
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
@@ -451,7 +467,34 @@ export class StadiumFinder {
           versions: [version],
           teamEdition: { databaseId, version, teamId },
         }
-      : request;
+      : undefined;
+  }
+
+  private restoredRequest(): StadiumSearchRequest {
+    const filters = this.savedFilters;
+    if (!filters) return defaultStadiumSearchRequest();
+    return {
+      ...defaultStadiumSearchRequest(),
+      databaseIds: [...filters.databaseIds],
+      versions: [...filters.versions],
+      countryIds: [...filters.countryIds],
+      teamKeys: [...filters.teamKeys],
+      capacity: { ...filters.capacity },
+      isLicensed: filters.isLicensed,
+    };
+  }
+
+  private persistFilters(): void {
+    const request = this.request();
+    this.preferences.saveFilters('stadiums', {
+      databaseIds: [...request.databaseIds],
+      versions: [...request.versions],
+      countryIds: [...request.countryIds],
+      teamKeys: [...request.teamKeys],
+      capacity: { ...request.capacity },
+      isLicensed: request.isLicensed,
+      labels: structuredClone(this.appliedLabels),
+    });
   }
   private async loadContextTeam(
     key: NonNullable<StadiumSearchRequest['teamEdition']>,

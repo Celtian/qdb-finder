@@ -34,7 +34,7 @@
               "@fontsource/roboto/400.css",
               "@fontsource/roboto/500.css",
               "@fontsource/roboto/700.css",
-              "@angular/material/prebuilt-themes/azure-blue.css",
+              "projects/electron/src/theme.scss",
               "material-icons/iconfont/material-icons.css",
               "projects/electron/src/tailwind.css",
               "projects/electron/src/styles.css"

@@ -74,6 +74,7 @@ describe('AppNavigation', () => {
       'Stadiums',
       'divider',
       'Databases',
+      'Settings',
     ]);
     expect(icons).toEqual([
       'home',
@@ -83,6 +84,7 @@ describe('AppNavigation', () => {
       'sports',
       'stadium',
       'storage',
+      'settings',
     ]);
     expect(navigation?.querySelectorAll('mat-divider')).toHaveLength(3);
     expect(element.querySelector('.about-action mat-divider')).toBeTruthy();

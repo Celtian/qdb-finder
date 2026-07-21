@@ -5,7 +5,10 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import type { FinderColumnKey } from '../../core/finder-columns';
-import { finderColumnPreferenceKey } from '../../core/finder-column-preferences';
+import {
+  finderColumnPreferenceKey,
+  finderFilterPreferenceKey,
+} from '../../core/finder-preferences';
 import type {
   EntityFacetOption,
   TeamDetails,
@@ -116,6 +119,10 @@ describe('TeamFinder', () => {
     expect(searchTeams.mock.calls.filter(([request]) => request.overall.min === 80)).toHaveLength(
       1,
     );
+    expect(
+      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('teams')) ?? '').filters
+        .overall,
+    ).toEqual({ min: 80 });
     await fixture.whenStable();
     expect(
       (fixture.nativeElement as HTMLElement)

@@ -8,7 +8,7 @@
 .filter-drawer {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  background: var(--mat-sys-surface, #fff);
+  background: var(--mat-sys-surface);
 }
 
 .drawer-header,
@@ -21,7 +21,7 @@
 
 .drawer-header {
   justify-content: space-between;
-  border-bottom: 1px solid #e2e5ef;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .drawer-header p,
@@ -45,7 +45,7 @@
 }
 
 .drawer-footer {
-  border-top: 1px solid #e2e5ef;
+  border-top: 1px solid var(--mat-sys-outline-variant);
 }
 
 .drawer-footer span {

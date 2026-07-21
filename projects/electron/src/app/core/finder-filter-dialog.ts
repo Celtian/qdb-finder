@@ -10,7 +10,7 @@ export const finderFilterDialogConfig = (ariaLabelledBy: string): MatDialogConfi
   maxHeight: '100vh',
   maxWidth: '100vw',
   panelClass: 'finder-filter-drawer-panel',
-  position: { left: '0', top: '0' },
+  position: { right: '0', top: '0' },
   restoreFocus: true,
   width: '28rem',
 });

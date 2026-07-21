@@ -36,7 +36,7 @@ import {
   type FinderColumnKey,
 } from '../../core/finder-columns';
 import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
-import { FinderColumnPreferences } from '../../core/finder-column-preferences';
+import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import {
   defaultLeagueSearchRequest,
@@ -92,16 +92,25 @@ export class LeagueFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
-  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly preferences = inject(FinderPreferences);
+  private readonly routeRequest = this.initialContextRequest();
+  private readonly savedFilters = this.routeRequest
+    ? undefined
+    : this.preferences.loadFilters('leagues');
+  private readonly initialRequestState = this.routeRequest ?? this.restoredRequest();
   private requestSequence = 0;
   private filterDialogRef?: MatDialogRef<unknown>;
   private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal<LeagueSearchRequest>(this.initialRequest());
-  protected readonly draftRequest = signal<LeagueSearchRequest>(this.initialRequest());
+  protected readonly request = signal<LeagueSearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
+  protected readonly draftRequest = signal<LeagueSearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
   protected readonly contextReferee = signal<RefereeEditionRow | undefined>(undefined);
   protected readonly result = signal<LeagueResultPage>({
     rows: [],
@@ -113,7 +122,7 @@ export class LeagueFinder {
   protected readonly error = signal('');
   protected readonly columnDefinitions = finderColumns.leagues;
   protected readonly columns = signal<readonly FinderColumnKey[]>(
-    this.columnPreferences.load('leagues'),
+    this.preferences.loadColumns('leagues'),
   );
   protected readonly hiddenColumnCount = computed(
     () => this.columnDefinitions.length - this.columns().length,
@@ -124,8 +133,12 @@ export class LeagueFinder {
   );
   protected readonly levels = Array.from({ length: 7 }, (_, index) => index + 1);
   protected readonly countrySuggestions = signal<EntityFacetOption[]>([]);
-  protected readonly countryLabels = signal<Record<string, CountryDisplay>>({});
-  private appliedCountryLabels: Record<string, CountryDisplay> = {};
+  protected readonly countryLabels = signal<Record<string, CountryDisplay>>({
+    ...(this.savedFilters?.countryLabels ?? {}),
+  });
+  private appliedCountryLabels: Record<string, CountryDisplay> = {
+    ...(this.savedFilters?.countryLabels ?? {}),
+  };
   protected readonly selectedCountries = computed(() =>
     this.draftRequest().countryIds.map((id): CountryDisplay => {
       const key = String(id);
@@ -236,6 +249,7 @@ export class LeagueFinder {
     this.countryLabels.set({});
     this.appliedCountryLabels = {};
     this.contextReferee.set(undefined);
+    this.preferences.clearFilters('leagues');
     void this.router.navigate([], { queryParams: {}, replaceUrl: true });
     void this.search();
   }
@@ -300,6 +314,7 @@ export class LeagueFinder {
       offset: 0,
     });
     this.appliedCountryLabels = { ...this.countryLabels() };
+    this.persistFilters();
     if (databaseChanged || contextCleared) {
       this.contextReferee.set(undefined);
       void this.router.navigate([], { queryParams: {}, replaceUrl: true });
@@ -348,7 +363,7 @@ export class LeagueFinder {
   }
 
   private applyColumns(columns: readonly FinderColumnKey[]): void {
-    this.columnPreferences.save('leagues', columns);
+    this.preferences.saveColumns('leagues', columns);
     this.columns.set(columns);
     if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
     this.request.update((value) => ({
@@ -385,7 +400,7 @@ export class LeagueFinder {
     }
   }
 
-  private initialRequest(): LeagueSearchRequest {
+  private initialContextRequest(): LeagueSearchRequest | undefined {
     const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
     const refereeId = validId(this.route.snapshot.queryParamMap.get('refereeId'));
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
@@ -396,7 +411,30 @@ export class LeagueFinder {
           versions: [version],
           refereeEdition: { databaseId, version, refereeId },
         }
-      : defaultLeagueSearchRequest();
+      : undefined;
+  }
+
+  private restoredRequest(): LeagueSearchRequest {
+    const filters = this.savedFilters;
+    if (!filters) return defaultLeagueSearchRequest();
+    return {
+      ...defaultLeagueSearchRequest(),
+      databaseIds: [...filters.databaseIds],
+      versions: [...filters.versions],
+      countryIds: [...filters.countryIds],
+      levels: [...filters.levels],
+    };
+  }
+
+  private persistFilters(): void {
+    const request = this.request();
+    this.preferences.saveFilters('leagues', {
+      databaseIds: [...request.databaseIds],
+      versions: [...request.versions],
+      countryIds: [...request.countryIds],
+      levels: [...request.levels],
+      countryLabels: structuredClone(this.appliedCountryLabels),
+    });
   }
 
   private async loadContextReferee(): Promise<void> {

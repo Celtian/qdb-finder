@@ -38,7 +38,7 @@ import {
   type FinderColumnKey,
 } from '../../core/finder-columns';
 import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
-import { FinderColumnPreferences } from '../../core/finder-column-preferences';
+import { FinderPreferences } from '../../core/finder-preferences';
 import {
   defaultSearchRequest,
   type FilterKind,
@@ -131,16 +131,23 @@ export class PlayerFinder {
   private readonly qdb = inject(Qdb);
   private readonly databaseContext = inject(DatabaseContext);
   private readonly dialog = inject(MatDialog);
-  private readonly columnPreferences = inject(FinderColumnPreferences);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly preferences = inject(FinderPreferences);
+  private readonly routeRequest = this.initialContextRequest();
+  private readonly savedFilters = this.routeRequest
+    ? undefined
+    : this.preferences.loadFilters('players');
+  private readonly initialRequestState = this.routeRequest ?? this.restoredRequest();
   private requestSequence = 0;
   private filterDialogRef?: MatDialogRef<unknown>;
   private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
-  protected readonly request = signal<SearchRequest>(this.initialRequest());
-  protected readonly draftRequest = signal<SearchRequest>(this.initialRequest());
+  protected readonly request = signal<SearchRequest>(this.cloneRequest(this.initialRequestState));
+  protected readonly draftRequest = signal<SearchRequest>(
+    this.cloneRequest(this.initialRequestState),
+  );
   protected readonly result = signal<SearchResultPage>({
     rows: [],
     total: 0,
@@ -153,7 +160,7 @@ export class PlayerFinder {
   protected readonly contextKind = signal<'team' | 'league' | undefined>(undefined);
   protected readonly columnDefinitions = finderColumns.players;
   protected readonly columns = signal<readonly FinderColumnKey[]>(
-    this.columnPreferences.load('players'),
+    this.preferences.loadColumns('players'),
   );
   protected readonly hiddenColumnCount = computed(
     () => this.columnDefinitions.length - this.columns().length,
@@ -186,18 +193,20 @@ export class PlayerFinder {
     team: [],
     league: [],
   });
-  protected readonly filterLabels = signal<Record<ExactFilterField, Record<string, string>>>({
-    nationalities: {},
-    teams: {},
-    leagues: {},
-  });
+  protected readonly filterLabels = signal<Record<ExactFilterField, Record<string, string>>>(
+    structuredClone(this.savedFilters?.labels ?? { nationalities: {}, teams: {}, leagues: {} }),
+  );
   private appliedFilterLabels: Record<ExactFilterField, Record<string, string>> = {
-    nationalities: {},
-    teams: {},
-    leagues: {},
+    nationalities: { ...(this.savedFilters?.labels.nationalities ?? {}) },
+    teams: { ...(this.savedFilters?.labels.teams ?? {}) },
+    leagues: { ...(this.savedFilters?.labels.leagues ?? {}) },
   };
-  protected readonly nationalityCodes = signal<Record<string, string>>({});
-  private appliedNationalityCodes: Record<string, string> = {};
+  protected readonly nationalityCodes = signal<Record<string, string>>({
+    ...(this.savedFilters?.nationalityCodes ?? {}),
+  });
+  private appliedNationalityCodes: Record<string, string> = {
+    ...(this.savedFilters?.nationalityCodes ?? {}),
+  };
   protected readonly selectedNationalities = computed<FilterDisplay[]>(() =>
     this.draftRequest().nationalities.map((key) => ({
       key,
@@ -383,6 +392,7 @@ export class PlayerFinder {
     this.appliedNationalityCodes = {};
     this.context.set(undefined);
     this.contextKind.set(undefined);
+    this.preferences.clearFilters('players');
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     void this.search();
   }
@@ -452,6 +462,7 @@ export class PlayerFinder {
       leagues: { ...this.filterLabels().leagues },
     };
     this.appliedNationalityCodes = { ...this.nationalityCodes() };
+    this.persistFilters();
     if (databaseChanged || contextCleared) {
       this.context.set(undefined);
       this.contextKind.set(undefined);
@@ -499,7 +510,7 @@ export class PlayerFinder {
   }
 
   private applyColumns(columns: readonly FinderColumnKey[]): void {
-    this.columnPreferences.save('players', columns);
+    this.preferences.saveColumns('players', columns);
     this.columns.set(columns);
     if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
     this.request.update((value) => ({
@@ -526,14 +537,14 @@ export class PlayerFinder {
     };
   }
 
-  private initialRequest() {
+  private initialContextRequest(): SearchRequest | undefined {
     const request = defaultSearchRequest();
     const params = this.route.snapshot.queryParamMap;
     const databaseId = params.get('databaseId') ?? 'built-in';
     const version = validVersion(params.get('version'));
     const teamId = validId(params.get('teamId'));
     const leagueId = validId(params.get('leagueId'));
-    if (!version || Boolean(teamId) === Boolean(leagueId)) return request;
+    if (!version || Boolean(teamId) === Boolean(leagueId)) return undefined;
     if (teamId)
       return {
         ...request,
@@ -548,7 +559,43 @@ export class PlayerFinder {
         versions: [version],
         leagueEdition: { databaseId, version, leagueId },
       };
-    return request;
+    return undefined;
+  }
+
+  private restoredRequest(): SearchRequest {
+    const filters = this.savedFilters;
+    if (!filters) return defaultSearchRequest();
+    return {
+      ...defaultSearchRequest(),
+      databaseIds: [...filters.databaseIds],
+      versions: [...filters.versions],
+      gender: filters.gender,
+      nationalities: [...filters.nationalities],
+      teams: [...filters.teams],
+      leagues: [...filters.leagues],
+      positions: [...filters.positions],
+      age: { ...filters.age },
+      overall: { ...filters.overall },
+      potential: { ...filters.potential },
+    };
+  }
+
+  private persistFilters(): void {
+    const request = this.request();
+    this.preferences.saveFilters('players', {
+      databaseIds: [...request.databaseIds],
+      versions: [...request.versions],
+      gender: request.gender,
+      nationalities: [...request.nationalities],
+      teams: [...request.teams],
+      leagues: [...request.leagues],
+      positions: [...request.positions],
+      age: { ...request.age },
+      overall: { ...request.overall },
+      potential: { ...request.potential },
+      labels: structuredClone(this.appliedFilterLabels),
+      nationalityCodes: { ...this.appliedNationalityCodes },
+    });
   }
 
   private async loadContext(): Promise<void> {

@@ -42,6 +42,12 @@ export interface FinderColumnDefinition {
   sortKey?: string;
 }
 
+export interface FinderColumnPreference {
+  readonly version: 2;
+  readonly order: readonly FinderColumnKey[];
+  readonly visible: readonly FinderColumnKey[];
+}
+
 export type FinderColumnVisibility = Record<FinderColumnKey, boolean>;
 
 const defineColumn = (
@@ -182,6 +188,17 @@ const allColumnKeys = [
 export const defaultFinderColumns = (finder: FinderKind): FinderColumnKey[] => [
   ...defaultVisibleFinderColumns[finder],
 ];
+
+export const defaultFinderColumnPreference = (finder: FinderKind): FinderColumnPreference => ({
+  version: 2,
+  order: finderColumns[finder].map(({ key }) => key),
+  visible: defaultFinderColumns(finder),
+});
+
+export const visibleFinderColumns = (preference: FinderColumnPreference): FinderColumnKey[] => {
+  const visible = new Set(preference.visible);
+  return preference.order.filter((column) => visible.has(column));
+};
 
 export const toFinderColumnVisibility = (
   visibleColumns: readonly FinderColumnKey[],

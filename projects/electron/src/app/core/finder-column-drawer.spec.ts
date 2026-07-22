@@ -142,6 +142,28 @@ describe('FinderColumnDrawer', () => {
     );
   });
 
+  it('announces when a keyboard reorder reaches either list boundary', async () => {
+    const loader = TestbedHarnessEnvironment.loader(fixture);
+    const firstHandle = await loader.getHarness(
+      MatButtonHarness.with({ selector: 'button[aria-label="Reorder Player column"]' }),
+    );
+    const lastHandle = await loader.getHarness(
+      MatButtonHarness.with({ selector: 'button[aria-label="Reorder Best column"]' }),
+    );
+
+    await (await firstHandle.host()).sendKeys(TestKey.UP_ARROW);
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Player is already the first column.',
+    );
+
+    await (await lastHandle.host()).sendKeys(TestKey.DOWN_ARROW);
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Best is already the last column.',
+    );
+  });
+
   it('has no detectable AXE violations when opened as a side drawer', async () => {
     (fixture.nativeElement as HTMLElement).remove();
     TestBed.inject(MatDialog).open(FinderColumnDrawer, {

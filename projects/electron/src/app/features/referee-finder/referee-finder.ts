@@ -30,9 +30,10 @@ import { databaseVersions } from '../../core/database-filter/database-filter-opt
 import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
 import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import {
-  defaultFinderColumns,
   finderColumns,
   isFinderSortVisible,
+  visibleFinderColumns,
+  type FinderColumnPreference,
   type FinderColumnKey,
 } from '../../core/finder-columns';
 import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
@@ -405,29 +406,31 @@ export class RefereeFinder {
 
   protected openColumns(): void {
     this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnKey[]>(FinderColumnDrawer, {
-        ariaLabelledBy: 'finder-column-title',
-        ariaModal: true,
-        autoFocus: 'first-tabbable',
-        data: {
-          finder: 'referees',
-          columns: this.columnDefinitions,
-          defaultColumns: defaultFinderColumns('referees'),
-          visibleColumns: this.columns(),
+      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
+        FinderColumnDrawer,
+        {
+          ariaLabelledBy: 'finder-column-title',
+          ariaModal: true,
+          autoFocus: 'first-tabbable',
+          data: {
+            finder: 'referees',
+            columns: this.columnDefinitions,
+            preference: this.preferences.loadColumnPreference('referees'),
+          },
+          delayFocusTrap: false,
+          disableClose: false,
+          height: '100vh',
+          maxHeight: '100vh',
+          maxWidth: '100vw',
+          panelClass: 'finder-column-drawer-panel',
+          position: { right: '0', top: '0' },
+          restoreFocus: true,
+          width: '28rem',
         },
-        delayFocusTrap: false,
-        disableClose: false,
-        height: '100vh',
-        maxHeight: '100vh',
-        maxWidth: '100vw',
-        panelClass: 'finder-column-drawer-panel',
-        position: { right: '0', top: '0' },
-        restoreFocus: true,
-        width: '28rem',
-      })
+      )
       .afterClosed()
-      .subscribe((columns) => {
-        if (columns) this.applyColumns(columns);
+      .subscribe((preference) => {
+        if (preference) this.applyColumns(preference);
       });
   }
 
@@ -442,8 +445,9 @@ export class RefereeFinder {
     });
   }
 
-  private applyColumns(columns: readonly FinderColumnKey[]): void {
-    this.preferences.saveColumns('referees', columns);
+  private applyColumns(preference: FinderColumnPreference): void {
+    const columns = visibleFinderColumns(preference);
+    this.preferences.saveColumnPreference('referees', preference);
     this.columns.set(columns);
     if (isFinderSortVisible(this.columnDefinitions, columns, this.request().sort)) return;
     this.request.update((value) => ({

@@ -4,7 +4,11 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { FinderColumnKey } from '../../core/finder-columns';
+import {
+  defaultFinderColumnPreference,
+  type FinderColumnKey,
+  type FinderColumnPreference,
+} from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
@@ -111,12 +115,15 @@ describe('RefereeFinder', () => {
         (): RefereeSearchRequest;
         update(update: (value: RefereeSearchRequest) => RefereeSearchRequest): void;
       };
-      applyColumns(columns: readonly FinderColumnKey[]): void;
+      applyColumns(preference: FinderColumnPreference): void;
     };
     testable.request.update((value) => ({ ...value, nationalityIds: [14], offset: 50 }));
     searchReferees.mockClear();
 
-    testable.applyColumns(['name', 'birthDate']);
+    testable.applyColumns({
+      ...defaultFinderColumnPreference('referees'),
+      visible: ['name', 'birthDate'],
+    });
     await fixture.whenStable();
 
     expect(testable.columns()).toEqual(['name', 'birthDate']);
@@ -136,7 +143,10 @@ describe('RefereeFinder', () => {
     );
     expect(
       JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('referees')) ?? ''),
-    ).toEqual(['name', 'birthDate']);
+    ).toEqual({
+      ...defaultFinderColumnPreference('referees'),
+      visible: ['name', 'birthDate'],
+    });
   });
 
   it('stages gender and resets pagination on Apply without changing editions', async () => {

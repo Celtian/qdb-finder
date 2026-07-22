@@ -1,8 +1,10 @@
 import { Service } from '@angular/core';
 import {
+  defaultFinderColumnPreference,
   defaultFinderColumns,
   finderColumns,
   finderKinds,
+  type FinderColumnPreference,
   type FinderColumnKey,
   type FinderKind,
 } from './finder-columns';
@@ -281,20 +283,35 @@ const normalizeFilters = <K extends FinderKind>(
 
 @Service()
 export class FinderPreferences {
-  loadColumns(finder: FinderKind): FinderColumnKey[] {
-    const fallback = defaultFinderColumns(finder);
+  loadColumnPreference(finder: FinderKind): FinderColumnPreference {
+    const defaults = defaultFinderColumnPreference(finder);
     try {
       const stored = window.localStorage.getItem(finderColumnPreferenceKey(finder));
-      if (stored === null) return fallback;
+      if (stored === null) return defaults;
       const value: unknown = JSON.parse(stored);
-      return Array.isArray(value) ? this.normalizeColumns(finder, value) : fallback;
+      if (Array.isArray(value))
+        return this.normalizeColumnPreference(finder, defaults.order, value);
+      if (!this.isStoredColumnPreference(value)) return defaults;
+      return this.normalizeColumnPreference(finder, value.order, value.visible, true);
     } catch {
-      return fallback;
+      return defaults;
     }
   }
 
+  loadColumns(finder: FinderKind): FinderColumnKey[] {
+    return [...this.loadColumnPreference(finder).visible];
+  }
+
   saveColumns(finder: FinderKind, columns: readonly FinderColumnKey[]): void {
-    this.store(finderColumnPreferenceKey(finder), this.normalizeColumns(finder, columns));
+    const order = finderColumns[finder].map(({ key }) => key);
+    this.saveColumnPreference(finder, { version: 2, order, visible: columns });
+  }
+
+  saveColumnPreference(finder: FinderKind, preference: FinderColumnPreference): void {
+    this.store(
+      finderColumnPreferenceKey(finder),
+      this.normalizeColumnPreference(finder, preference.order, preference.visible, true),
+    );
   }
 
   loadFilters<K extends FinderKind>(finder: K): FinderFilterPreferenceMap[K] {
@@ -329,11 +346,57 @@ export class FinderPreferences {
     for (const finder of finderKinds) this.remove(finderColumnPreferenceKey(finder));
   }
 
-  private normalizeColumns(finder: FinderKind, values: readonly unknown[]): FinderColumnKey[] {
-    const selected = new Set(values.filter((value): value is string => typeof value === 'string'));
-    return finderColumns[finder]
-      .filter((column) => column.required || selected.has(column.key))
-      .map((column) => column.key);
+  private isStoredColumnPreference(
+    value: unknown,
+  ): value is { version: 2; order: unknown[]; visible: unknown[] } {
+    if (typeof value !== 'object' || value === null) return false;
+    const candidate = value as Record<string, unknown>;
+    return (
+      candidate['version'] === 2 &&
+      Array.isArray(candidate['order']) &&
+      Array.isArray(candidate['visible'])
+    );
+  }
+
+  private normalizeColumnPreference(
+    finder: FinderKind,
+    orderValues: readonly unknown[],
+    visibleValues: readonly unknown[],
+    showNewDefaults = false,
+  ): FinderColumnPreference {
+    const definitions = finderColumns[finder];
+    const validKeys = new Set(definitions.map(({ key }) => key));
+    const order: FinderColumnKey[] = [];
+    const ordered = new Set<FinderColumnKey>();
+
+    for (const value of orderValues) {
+      if (typeof value !== 'string' || !validKeys.has(value as FinderColumnKey)) continue;
+      const key = value as FinderColumnKey;
+      if (ordered.has(key)) continue;
+      ordered.add(key);
+      order.push(key);
+    }
+
+    const selected = new Set(
+      visibleValues.filter(
+        (value): value is FinderColumnKey =>
+          typeof value === 'string' && validKeys.has(value as FinderColumnKey),
+      ),
+    );
+    const defaultVisible = new Set(defaultFinderColumns(finder));
+    for (const column of definitions) {
+      if (!ordered.has(column.key)) {
+        order.push(column.key);
+        if (showNewDefaults && defaultVisible.has(column.key)) selected.add(column.key);
+      }
+      if (column.required) selected.add(column.key);
+    }
+
+    return {
+      version: 2,
+      order,
+      visible: order.filter((column) => selected.has(column)),
+    };
   }
 
   private store(key: string, value: unknown): void {

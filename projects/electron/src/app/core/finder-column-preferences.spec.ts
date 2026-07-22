@@ -5,6 +5,7 @@ import {
   finderFilterPreferenceKey,
 } from './finder-preferences';
 import {
+  defaultFinderColumnPreference,
   defaultFinderColumns,
   finderColumns,
   isFinderSortVisible,
@@ -16,6 +17,11 @@ describe('finder columns', () => {
   beforeEach(() => window.localStorage.clear());
 
   it('defines lean defaults separately from all columns in canonical order', () => {
+    expect(defaultFinderColumnPreference('teams')).toEqual({
+      version: 2,
+      order: finderColumns.teams.map(({ key }) => key),
+      visible: defaultFinderColumns('teams'),
+    });
     expect(defaultFinderColumns('players')).toEqual([
       'name',
       'originalId',
@@ -91,7 +97,7 @@ describe('finder columns', () => {
     expect(isFinderSortVisible(finderColumns.players, ['name', 'age'], 'version')).toBe(false);
   });
 
-  it('normalizes and persists independent finder preferences', () => {
+  it('migrates legacy arrays and persists ordered finder preferences independently', () => {
     const preferences = TestBed.inject(FinderPreferences);
     window.localStorage.setItem(
       finderColumnPreferenceKey('teams'),
@@ -99,12 +105,49 @@ describe('finder columns', () => {
     );
 
     expect(preferences.loadColumns('teams')).toEqual(['name', 'defence']);
+    expect(preferences.loadColumnPreference('teams')).toEqual({
+      version: 2,
+      order: finderColumns.teams.map(({ key }) => key),
+      visible: ['name', 'defence'],
+    });
     expect(preferences.loadColumns('leagues')).toEqual(defaultFinderColumns('leagues'));
 
-    preferences.saveColumns('players', ['birthDate', 'name', 'birthDate']);
+    preferences.saveColumnPreference('players', {
+      version: 2,
+      order: [
+        'birthDate',
+        'name',
+        ...defaultFinderColumnPreference('players').order.filter(
+          (column) => column !== 'birthDate' && column !== 'name',
+        ),
+      ],
+      visible: ['birthDate', 'name', 'birthDate'],
+    });
     expect(
       JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('players')) ?? ''),
-    ).toEqual(['name', 'birthDate']);
+    ).toEqual({
+      version: 2,
+      order: [
+        'birthDate',
+        'name',
+        'originalId',
+        'database',
+        'version',
+        'nationality',
+        'teams',
+        'positions',
+        'contractValidUntil',
+        'age',
+        'height',
+        'weight',
+        'preferredFoot',
+        'overall',
+        'potential',
+        'bestRating',
+      ],
+      visible: ['birthDate', 'name'],
+    });
+    expect(preferences.loadColumns('players')).toEqual(['birthDate', 'name']);
     expect(window.localStorage.getItem(finderColumnPreferenceKey('referees'))).toBeNull();
   });
 

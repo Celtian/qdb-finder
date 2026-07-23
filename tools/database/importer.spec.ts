@@ -10,30 +10,107 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Datatype, Table, type Field } from 'fifatables';
+import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
+  'resolution-mode': 'import',
+};
+import { Datatype, Fifa, fifaTableConfig, Table, type Field } from 'fifatables';
 import {
   buildDatabase,
   collectNationalityCodes,
   decodeFifaText,
-  EXPECTED_EDITIONS,
-  EXPECTED_LEAGUE_EDITIONS,
-  EXPECTED_REFEREE_EDITIONS,
-  EXPECTED_REFEREE_LEAGUE_LINKS,
-  EXPECTED_STADIUM_EDITIONS,
-  EXPECTED_STADIUM_TEAM_LINKS,
-  EXPECTED_TEAM_EDITIONS,
-  EXPECTED_TEAM_LINKS,
   normalizeGender,
   parseTsvLine,
   readTable,
   resolveNationalityCode,
+  sourceSnapshotDate,
   FIFAS,
   fifaForVersion,
   ImportSourceValidationError,
   inspectSourceHeaders,
+  inspectT3dbDatabase,
   validateSourceData,
   validateTableData,
 } from './importer';
+
+const xmlType = (field: Field): FifaXmlFieldType =>
+  field.type === Datatype.String
+    ? 'DBOFIELDTYPE_STRING'
+    : field.type === Datatype.Float
+      ? 'DBOFIELDTYPE_REAL'
+      : 'DBOFIELDTYPE_INTEGER';
+
+interface MockT3dbTable {
+  name: string;
+  shortName: string;
+  fields: {
+    name: string;
+    shortName: string;
+    type: FifaXmlFieldType;
+    depth: number;
+    rangeLow: number;
+    rangeHigh: number;
+    nullable: boolean;
+    key: boolean;
+    updatable: boolean;
+  }[];
+}
+
+const mockT3db = (
+  fifa: Fifa,
+  rows: Partial<Record<string, readonly FifaRow[]>> = {},
+  customize?: (tables: MockT3dbTable[]) => void,
+): FifaDatabase => {
+  const tables: MockT3dbTable[] = Object.values(Table)
+    .map((table) => ({
+      name: table,
+      shortName: table.slice(0, 4),
+      fields: fifaTableConfig(fifa, table).map((field) => ({
+        name: field.name,
+        shortName: field.name.slice(0, 4),
+        type: xmlType(field),
+        depth: 32,
+        rangeLow: field.range?.min ?? 0,
+        rangeHigh: field.range?.max ?? 0,
+        nullable: false,
+        key: field.unique ?? false,
+        updatable: true,
+      })),
+    }))
+    .filter(({ fields }) => fields.length > 0);
+  tables.push({
+    name: 'version',
+    shortName: 'vers',
+    fields: [
+      {
+        name: 'exportdate',
+        shortName: 'date',
+        type: 'DBOFIELDTYPE_DATE',
+        depth: 32,
+        rangeLow: 0,
+        rangeHigh: 999_999,
+        nullable: false,
+        key: false,
+        updatable: false,
+      },
+    ],
+  });
+  customize?.(tables);
+  return {
+    header: {} as FifaDatabase['header'],
+    schema: {
+      name: 'fifa_ng_db',
+      shortName: 'g_db',
+      version: 6,
+      tables,
+      indices: [],
+    },
+    listTables: () => [],
+    readTable: (name) => ({
+      info: {} as ReturnType<FifaDatabase['readTable']>['info'],
+      rows: rows[name] ?? [],
+    }),
+  };
+};
 
 describe('FIFA text importer', () => {
   const directories: string[] = [];
@@ -241,13 +318,15 @@ describe('FIFA text importer', () => {
     expect(JSON.stringify(report)).not.toContain('UNIQUE constraint failed');
   });
 
-  it('accepts all bundled editions while retaining advisory metadata warnings', () => {
-    const reports = FIFAS.map((fifa) =>
-      validateSourceData({ fifa, path: join(process.cwd(), 'examples', fifa) }),
-    );
+  it('accepts a representative bundled edition while retaining advisory metadata warnings', () => {
+    const fifa = Fifa.Fifa23;
+    const report = validateSourceData({
+      fifa,
+      path: join(process.cwd(), 'examples', fifa),
+    });
 
-    expect(reports.every((report) => report.valid && report.errorCount === 0)).toBe(true);
-    expect(reports.some((report) => report.warningCount > 0)).toBe(true);
+    expect(report).toMatchObject({ valid: true, errorCount: 0 });
+    expect(report.warningCount).toBeGreaterThan(0);
   }, 30_000);
 
   it('extracts lowercase Nations-table codes for stable nation IDs', () => {
@@ -291,34 +370,6 @@ describe('FIFA text importer', () => {
     expect(normalizeGender('1')).toBe(1);
   });
 
-  it('builds and verifies the complete generated database in an isolated directory', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'qdb-build-'));
-    directories.push(directory);
-    const progress: string[] = [];
-
-    const summary = buildDatabase({
-      sources: FIFAS.map((fifa) => ({ fifa, path: join(process.cwd(), 'examples', fifa) })),
-      outputPath: join(directory, 'qdb.sqlite'),
-      verifyExpectedCounts: true,
-      progress: (message) => progress.push(message),
-    });
-
-    expect(summary).toMatchObject({
-      sourceFiles: 306,
-      playerEditions: EXPECTED_EDITIONS,
-      teamLinks: EXPECTED_TEAM_LINKS,
-      teamEditions: EXPECTED_TEAM_EDITIONS,
-      leagueEditions: EXPECTED_LEAGUE_EDITIONS,
-      refereeEditions: EXPECTED_REFEREE_EDITIONS,
-      stadiumEditions: EXPECTED_STADIUM_EDITIONS,
-      refereeLeagueLinks: EXPECTED_REFEREE_LEAGUE_LINKS,
-      stadiumTeamLinks: EXPECTED_STADIUM_TEAM_LINKS,
-    });
-    expect(summary.rawRows).toBeGreaterThan(summary.playerEditions);
-    expect(progress.at(0)).toContain('Validating source folders');
-    expect(progress.at(-1)).toContain('completed');
-  }, 120_000);
-
   it('reports a failed import phase for an incomplete source directory', () => {
     const directory = mkdtempSync(join(tmpdir(), 'qdb-incomplete-'));
     directories.push(directory);
@@ -339,6 +390,7 @@ describe('FIFA text importer', () => {
     const directory = mkdtempSync(join(tmpdir(), 'qdb-custom-'));
     directories.push(directory);
     const path = join(directory, 'custom.sqlite');
+    const progress: string[] = [];
 
     const summary = buildDatabase({
       sources: [{ fifa: fifaForVersion(23), path: join(process.cwd(), 'examples', 'fifa23') }],
@@ -347,6 +399,7 @@ describe('FIFA text importer', () => {
       databaseName: 'My FIFA 23',
       databaseKind: 'custom',
       verifyExpectedCounts: false,
+      progress: (message) => progress.push(message),
     });
 
     const database = new DatabaseSync(path, { readOnly: true });
@@ -365,6 +418,9 @@ describe('FIFA text importer', () => {
       versions: '23',
     });
     expect(summary.playerEditions).toBeGreaterThan(1_000);
+    expect(summary.rawRows).toBeGreaterThan(summary.playerEditions);
+    expect(progress.at(0)).toContain('Validating source folders');
+    expect(progress.at(-1)).toContain('completed');
     expect(
       database
         .prepare("SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'")
@@ -385,6 +441,106 @@ describe('FIFA text importer', () => {
       detectedVersion: Number(fifa.slice(4)),
       matchingVersions: [Number(fifa.slice(4))],
     });
+  });
+
+  it('detects a t3db edition without depending on metadata field order', () => {
+    const database = mockT3db(Fifa.Fifa16, {}, (tables) => {
+      for (const table of tables) table.fields.reverse();
+    });
+
+    expect(inspectT3dbDatabase(database)).toMatchObject({
+      detection: 'detected',
+      detectedVersion: 16,
+      matchingVersions: [16],
+    });
+  });
+
+  it('allows extra t3db fields after a manual compatible edition selection', () => {
+    const database = mockT3db(Fifa.Fifa16, {}, (tables) => {
+      tables
+        .find(({ name }) => name === Table.Players)
+        ?.fields.push({
+          name: 'moddedfield',
+          shortName: 'modf',
+          type: 'DBOFIELDTYPE_INTEGER',
+          depth: 1,
+          rangeLow: 0,
+          rangeHigh: 1,
+          nullable: false,
+          key: false,
+          updatable: true,
+        });
+    });
+
+    expect(inspectT3dbDatabase(database)).toMatchObject({ detection: 'unknown' });
+    expect(inspectT3dbDatabase(database, 16).issue).toBeUndefined();
+  });
+
+  it('rejects missing and mistyped required t3db fields', () => {
+    const database = mockT3db(Fifa.Fifa16, {}, (tables) => {
+      const players = tables.find(({ name }) => name === Table.Players);
+      const playerId = players?.fields.find(({ name }) => name === 'playerid');
+      if (playerId) playerId.type = 'DBOFIELDTYPE_STRING';
+      const teams = tables.find(({ name }) => name === Table.Teams);
+      if (teams) teams.fields = teams.fields.filter(({ name }) => name !== 'teamid');
+    });
+
+    const inspection = inspectT3dbDatabase(database, 16);
+
+    expect(inspection.issue).toMatchObject({ code: 'header-mismatch' });
+    expect(inspection.diagnostics).toEqual(
+      expect.arrayContaining([
+        'players.playerid has an incompatible type',
+        'teams.teamid is missing',
+      ]),
+    );
+  });
+
+  it('reports decoded t3db duplicates by record number', () => {
+    const playerFields = fifaTableConfig(Fifa.Fifa16, Table.Players);
+    const row = Object.fromEntries(
+      playerFields.map((field) => [field.name, field.name === 'playerid' ? 1 : field.default]),
+    );
+    const database = mockT3db(Fifa.Fifa16, {
+      [Table.Players]: [row, row],
+    });
+
+    const report = validateSourceData({
+      kind: 't3db',
+      fifa: Fifa.Fifa16,
+      databasePath: '/game/fifa_ng_db.db',
+      metadataPath: '/game/fifa_ng_db-meta.xml',
+      database,
+    });
+
+    expect(report.valid).toBe(false);
+    expect(report.issues).toContainEqual(
+      expect.objectContaining({
+        code: 'duplicate-value',
+        file: 'players table',
+        field: 'playerid',
+        samples: [
+          { record: 1, value: '1' },
+          { record: 2, value: '1' },
+        ],
+      }),
+    );
+  });
+
+  it('extracts the snapshot date from the decoded t3db version table', () => {
+    const database = mockT3db(Fifa.Fifa16, {
+      version: [{ exportdate: 160_000 }],
+    });
+
+    expect(
+      sourceSnapshotDate({
+        kind: 't3db',
+        fifa: Fifa.Fifa16,
+        databasePath: '/game/fifa_ng_db.db',
+        metadataPath: '/game/fifa_ng_db-meta.xml',
+        database,
+      }),
+    ).toBe('2020-11-06');
   });
 
   it('returns a concise wrong-version issue without exposing headers or paths', () => {

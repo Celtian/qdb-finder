@@ -15,7 +15,11 @@ const api: QdbApi = {
   suggestEntityFacets: (request) => ipcRenderer.invoke('qdb:entity-facets', request),
   suggestFilters: (request) => ipcRenderer.invoke('qdb:suggest', request),
   listDatabases: () => ipcRenderer.invoke('qdb:databases:list'),
-  selectDatabaseSource: () => ipcRenderer.invoke('qdb:databases:select-source'),
+  selectTextDatabaseSource: () => ipcRenderer.invoke('qdb:databases:select-text-source'),
+  selectT3dbDatabaseFile: () => ipcRenderer.invoke('qdb:databases:select-t3db-database'),
+  selectT3dbMetadataFile: () => ipcRenderer.invoke('qdb:databases:select-t3db-metadata'),
+  prepareT3dbDatabaseSource: (request) =>
+    ipcRenderer.invoke('qdb:databases:prepare-t3db-source', request),
   validateDatabaseSource: (request) => ipcRenderer.invoke('qdb:databases:validate-source', request),
   cancelDatabaseSourceValidation: (requestId) =>
     ipcRenderer.invoke('qdb:databases:cancel-validation', requestId),

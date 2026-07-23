@@ -5,7 +5,8 @@ import type {
   DatabaseImportProgress,
   DatabaseImportRequest,
   DatabaseImportResult,
-  DatabaseSourceSelection,
+  DatabaseSourceFileSelection,
+  DatabaseSourcePreparationResult,
   DatabaseSourceValidationProgress,
   DatabaseSourceValidationRequest,
   DatabaseSourceValidationResult,
@@ -33,6 +34,8 @@ import type {
   TeamEditionKey,
   TeamResultPage,
   TeamSearchRequest,
+  TextDatabaseSourceSelection,
+  T3dbDatabaseSourcePreparationRequest,
 } from './qdb-contracts';
 
 @Service()
@@ -90,8 +93,19 @@ export class Qdb {
     this.context.set(databases);
     return databases;
   }
-  selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined> {
-    return this.api.selectDatabaseSource();
+  selectTextDatabaseSource(): Promise<TextDatabaseSourceSelection | undefined> {
+    return this.api.selectTextDatabaseSource();
+  }
+  selectT3dbDatabaseFile(): Promise<DatabaseSourceFileSelection | undefined> {
+    return this.api.selectT3dbDatabaseFile();
+  }
+  selectT3dbMetadataFile(): Promise<DatabaseSourceFileSelection | undefined> {
+    return this.api.selectT3dbMetadataFile();
+  }
+  prepareT3dbDatabaseSource(
+    request: T3dbDatabaseSourcePreparationRequest,
+  ): Promise<DatabaseSourcePreparationResult> {
+    return this.api.prepareT3dbDatabaseSource(request);
   }
   validateDatabaseSource(
     request: DatabaseSourceValidationRequest,

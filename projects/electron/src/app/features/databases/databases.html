@@ -7,102 +7,9 @@
 </header>
 <main>
   <p class="lead">
-    Import a folder containing one FIFA edition. QDB Finder creates a private searchable copy; your
-    source text files remain unchanged.
+    Import one FIFA edition from exported text tables or directly from a PC t3db database. QDB
+    Finder creates a private searchable copy and leaves the selected source unchanged.
   </p>
-
-  <mat-card class="import-card">
-    <mat-card-header>
-      <mat-card-title>Import custom database</mat-card-title>
-      <mat-card-subtitle
-        >Folders must match the exported FIFA 11–23 table format.</mat-card-subtitle
-      >
-    </mat-card-header>
-    <mat-card-content>
-      <form (submit)="$event.preventDefault(); import()">
-        <div class="folder-field">
-          <mat-form-field appearance="outline">
-            <mat-label>Source folder</mat-label>
-            <input matInput [formField]="importForm.folder" />
-            @if (importForm.folder().touched() && importForm.folder().invalid()) {
-              <mat-error>Select a FIFA text folder.</mat-error>
-            }
-          </mat-form-field>
-          <button type="button" mat-stroked-button [disabled]="busy()" (click)="selectFolder()">
-            <mat-icon>folder_open</mat-icon>
-            Browse
-          </button>
-        </div>
-
-        @if (sourceSelected()) {
-          <mat-form-field appearance="outline">
-            <mat-label>Database name</mat-label>
-            <input matInput autocomplete="off" [formField]="importForm.name" />
-            @if (importForm.name().touched() && importForm.name().invalid()) {
-              <mat-error>{{ importForm.name().errors()[0]?.message }}</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>FIFA version</mat-label>
-            <mat-select [formField]="importForm.version">
-              @for (version of supportedVersions; track version) {
-                <mat-option [value]="version">FIFA {{ version }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          @if (sourceStatus()) {
-            <p class="source-status" role="status">
-              <mat-icon>info</mat-icon>
-              <span>{{ sourceStatus() }}</span>
-            </p>
-          }
-
-          @if (validationReport(); as report) {
-            <app-source-validation-report [report]="report" />
-          }
-
-          @if (validating()) {
-            <div class="import-progress" aria-live="polite">
-              <mat-progress-bar mode="indeterminate" />
-              <p>{{ validationProgress() }}</p>
-            </div>
-          }
-
-          @if (importing()) {
-            <div class="import-progress" aria-live="polite">
-              <mat-progress-bar mode="indeterminate" />
-              <p>{{ progress() }}</p>
-            </div>
-          }
-
-          <div class="form-actions">
-            @if (validating()) {
-              <button type="button" mat-stroked-button (click)="cancelValidation()">
-                Cancel validation
-              </button>
-            } @else if (importing()) {
-              <button type="button" mat-stroked-button (click)="cancelImport()">
-                Cancel import
-              </button>
-            } @else {
-              <button type="button" mat-stroked-button (click)="validateSource()">
-                <mat-icon>fact_check</mat-icon>
-                {{ validationReport() ? 'Validate again' : 'Validate source' }}
-              </button>
-              @if (sourceValidated()) {
-                <button type="submit" mat-flat-button>
-                  <mat-icon>storage</mat-icon>
-                  Import
-                </button>
-              }
-            }
-          </div>
-        }
-      </form>
-    </mat-card-content>
-  </mat-card>
 
   @if (error()) {
     <div class="message error" role="alert">
@@ -117,6 +24,279 @@
     </div>
   }
 
+  <mat-card class="wizard-card">
+    <mat-card-header>
+      <mat-card-title>Import custom database</mat-card-title>
+      <mat-card-subtitle>Choose a source, validate it, and review the import.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-stepper class="qdb-wizard" linear aria-label="Database import wizard">
+        <ng-template let-index="index" matStepperIcon="number">
+          <span aria-hidden="true">{{ index + 1 }}</span>
+        </ng-template>
+        <ng-template let-index="index" matStepperIcon="edit">
+          <span aria-hidden="true">{{ index + 1 }}</span>
+        </ng-template>
+        <ng-template let-index="index" matStepperIcon="done">
+          <span aria-hidden="true">{{ index + 1 }}</span>
+        </ng-template>
+
+        <mat-step [completed]="true">
+          <ng-template matStepLabel>Format</ng-template>
+          <div class="step-content">
+            <div>
+              <h2>Choose the source format</h2>
+              <p>Both formats use the same validation and searchable database builder.</p>
+            </div>
+            <mat-radio-group
+              class="format-options"
+              aria-label="Database source format"
+              [value]="format()"
+              (change)="changeFormat($event.value)"
+            >
+              <mat-radio-button value="text-folder">
+                <span class="choice-label">
+                  <strong>Text-table folder</strong>
+                  <small>Import exported FIFA 11–23 files such as players.txt and teams.txt.</small>
+                </span>
+              </mat-radio-button>
+              <mat-radio-button value="t3db">
+                <span class="choice-label">
+                  <strong>t3db database</strong>
+                  <small>Import fifa_ng_db.db with its matching metadata XML schema.</small>
+                </span>
+              </mat-radio-button>
+            </mat-radio-group>
+            <div class="step-actions">
+              <button type="button" mat-flat-button matStepperNext>Next</button>
+            </div>
+          </div>
+        </mat-step>
+
+        <mat-step [completed]="sourcePrepared()">
+          <ng-template matStepLabel>Source</ng-template>
+          <div class="step-content">
+            <div>
+              <h2>Select the source</h2>
+              <p>
+                {{
+                  format() === 'text-folder'
+                    ? 'Choose the folder that directly contains the exported FIFA table files.'
+                    : 'Choose both the PC t3db database and the matching metadata XML file.'
+                }}
+              </p>
+            </div>
+
+            @if (format() === 'text-folder') {
+              <div class="source-field">
+                <mat-form-field appearance="outline">
+                  <mat-label>Source folder</mat-label>
+                  <input matInput readonly [value]="textSource()?.displayPath ?? ''" />
+                </mat-form-field>
+                <button
+                  type="button"
+                  mat-stroked-button
+                  [disabled]="busy()"
+                  (click)="selectTextSource()"
+                >
+                  <mat-icon>folder_open</mat-icon>
+                  Browse
+                </button>
+              </div>
+            } @else {
+              <div class="source-fields">
+                <div class="source-field">
+                  <mat-form-field appearance="outline">
+                    <mat-label>t3db database</mat-label>
+                    <input matInput readonly [value]="t3dbDatabaseFile()?.displayPath ?? ''" />
+                  </mat-form-field>
+                  <button
+                    type="button"
+                    mat-stroked-button
+                    [disabled]="busy()"
+                    (click)="selectT3dbDatabase()"
+                  >
+                    <mat-icon>storage</mat-icon>
+                    Browse
+                  </button>
+                </div>
+                <div class="source-field">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Metadata XML</mat-label>
+                    <input matInput readonly [value]="t3dbMetadataFile()?.displayPath ?? ''" />
+                  </mat-form-field>
+                  <button
+                    type="button"
+                    mat-stroked-button
+                    [disabled]="busy()"
+                    (click)="selectT3dbMetadata()"
+                  >
+                    <mat-icon>description</mat-icon>
+                    Browse
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (preparing()) {
+              <div class="import-progress" aria-live="polite">
+                <mat-progress-bar mode="indeterminate" aria-label="Inspecting t3db source" />
+                <p>Inspecting the t3db database and metadata schema…</p>
+              </div>
+            }
+
+            <div class="step-actions">
+              <button type="button" mat-button matStepperPrevious [disabled]="busy()">Back</button>
+              <button
+                type="button"
+                mat-flat-button
+                [disabled]="!sourceReady() || busy()"
+                (click)="continueSource()"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </mat-step>
+
+        <mat-step [completed]="sourceValidated()">
+          <ng-template matStepLabel>Validate</ng-template>
+          <div class="step-content">
+            <div>
+              <h2>Validate the source</h2>
+              <p>Confirm the edition and scan every imported table before creating output.</p>
+            </div>
+
+            <div class="details-fields">
+              <mat-form-field appearance="outline">
+                <mat-label>Database name</mat-label>
+                <input matInput autocomplete="off" [formField]="importForm.name" />
+                @if (importForm.name().touched() && importForm.name().invalid()) {
+                  <mat-error>{{ importForm.name().errors()[0]?.message }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>FIFA version</mat-label>
+                <mat-select [formField]="importForm.version">
+                  @for (version of supportedVersions; track version) {
+                    <mat-option [value]="version">FIFA {{ version }}</mat-option>
+                  }
+                </mat-select>
+                @if (importForm.version().touched() && importForm.version().invalid()) {
+                  <mat-error>Select the matching FIFA version.</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            @if (sourceStatus()) {
+              <p class="source-status" role="status">
+                <mat-icon>info</mat-icon>
+                <span>{{ sourceStatus() }}</span>
+              </p>
+            }
+
+            @if (validationReport(); as report) {
+              <app-source-validation-report [report]="report" />
+            }
+
+            @if (validating()) {
+              <div class="import-progress" aria-live="polite">
+                <mat-progress-bar mode="indeterminate" aria-label="Validating database source" />
+                <p>{{ validationProgress() }}</p>
+              </div>
+            }
+
+            <div class="step-actions">
+              <button type="button" mat-button matStepperPrevious [disabled]="busy()">Back</button>
+              @if (validating()) {
+                <button type="button" mat-stroked-button (click)="cancelValidation()">
+                  Cancel validation
+                </button>
+              } @else {
+                <button type="button" mat-stroked-button (click)="validateSource()">
+                  <mat-icon>fact_check</mat-icon>
+                  {{ validationReport() ? 'Validate again' : 'Validate source' }}
+                </button>
+                @if (sourceValidated()) {
+                  <button type="button" mat-flat-button (click)="continueToSummary()">
+                    Review import
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </mat-step>
+
+        <mat-step>
+          <ng-template matStepLabel>Summary</ng-template>
+          <div class="step-content">
+            <div>
+              <h2>Review the import</h2>
+              <p>No source files are changed. QDB Finder creates a separate searchable copy.</p>
+            </div>
+
+            <dl class="import-summary">
+              <div>
+                <dt>Name</dt>
+                <dd>{{ model().name.trim() }}</dd>
+              </div>
+              <div>
+                <dt>Format</dt>
+                <dd>{{ sourceKindLabel() }}</dd>
+              </div>
+              <div>
+                <dt>Edition</dt>
+                <dd>FIFA {{ model().version }}</dd>
+              </div>
+              <div>
+                <dt>Validation</dt>
+                <dd>
+                  {{ validationReport()?.warningCount ?? 0 }}
+                  {{ validationReport()?.warningCount === 1 ? 'warning' : 'warnings' }}
+                </dd>
+              </div>
+            </dl>
+            <div class="source-summary">
+              <h3>Selected source</h3>
+              <ul>
+                @for (path of sourcePaths(); track path) {
+                  <li>{{ path }}</li>
+                }
+              </ul>
+            </div>
+
+            @if (importing()) {
+              <div class="import-progress" aria-live="polite">
+                <mat-progress-bar mode="indeterminate" aria-label="Importing database" />
+                <p>{{ progress() }}</p>
+              </div>
+            }
+
+            <div class="step-actions">
+              <button type="button" mat-button matStepperPrevious [disabled]="busy()">Back</button>
+              @if (importing()) {
+                <button type="button" mat-stroked-button (click)="cancelImport()">
+                  Cancel import
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  mat-flat-button
+                  [disabled]="!sourceValidated()"
+                  (click)="import()"
+                >
+                  <mat-icon>storage</mat-icon>
+                  Import database
+                </button>
+              }
+            </div>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    </mat-card-content>
+  </mat-card>
+
   <section aria-labelledby="installed-heading">
     <h2 id="installed-heading">Installed databases</h2>
     @if (loading()) {
@@ -124,7 +304,10 @@
     } @else {
       <div class="database-grid">
         @for (database of databaseCards(); track database.id) {
-          <mat-card [class.incompatible]="database.status === 'incompatible'">
+          <mat-card
+            [class.custom]="database.kind === 'custom'"
+            [class.incompatible]="database.status === 'incompatible'"
+          >
             <mat-card-header>
               <div mat-card-avatar class="database-icon">
                 <mat-icon aria-hidden="true">storage</mat-icon>
@@ -141,6 +324,18 @@
                 <span>{{ database.versionLabel }}</span>
               </mat-card-subtitle>
             </mat-card-header>
+            @if (database.kind === 'custom') {
+              <button
+                class="remove-database"
+                type="button"
+                mat-icon-button
+                [attr.aria-label]="'Remove ' + database.name"
+                [attr.title]="'Remove ' + database.name"
+                (click)="remove(database)"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
             <mat-card-content>
               @if (database.status === 'incompatible') {
                 <p class="compatibility-error">{{ database.error }}</p>
@@ -168,11 +363,6 @@
                 </dl>
               }
             </mat-card-content>
-            @if (database.kind === 'custom') {
-              <mat-card-actions align="end">
-                <button type="button" mat-button (click)="remove(database)">Remove</button>
-              </mat-card-actions>
-            }
           </mat-card>
         }
       </div>

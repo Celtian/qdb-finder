@@ -11,6 +11,7 @@ export const routes: Routes = [
   page('overview', 'Documentation'),
   page('installation', 'Installation'),
   page('searching', 'Searching and filters'),
+  page('databases-and-settings', 'Databases and settings'),
   page('players', 'Players'),
   page('teams-and-leagues', 'Teams and leagues'),
   page('referees-and-stadiums', 'Referees and stadiums'),

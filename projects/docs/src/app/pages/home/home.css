@@ -52,8 +52,8 @@ ul {
 .note,
 .code-card {
   margin-top: 1.25rem;
-  border-color: #c9d5eb;
-  background: var(--qdb-panel);
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
 }
 
 .note mat-card-content {
@@ -76,8 +76,6 @@ ul {
 
 .code-card {
   overflow: hidden;
-  border-color: #27354f;
-  background: #101c35;
 }
 
 .code-card mat-card-content {
@@ -88,7 +86,7 @@ pre {
   overflow: auto;
   margin: 0;
   padding: 1.2rem;
-  color: #dae5ff;
+  color: var(--mat-sys-on-surface);
   font-size: 0.875rem;
   line-height: 1.6;
 }

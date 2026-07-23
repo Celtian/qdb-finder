@@ -63,6 +63,7 @@ main {
 .browse-tile mat-card {
   height: 100%;
   border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease;

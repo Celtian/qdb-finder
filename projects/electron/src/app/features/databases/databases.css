@@ -45,9 +45,14 @@ main {
 .wizard-card {
   margin-bottom: 1.5rem;
   overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
 }
 .wizard-card mat-card-content {
   padding-top: 1.5rem;
+}
+.qdb-wizard {
+  --mat-stepper-container-color: transparent;
 }
 .step-content {
   display: grid;
@@ -208,6 +213,10 @@ section {
 }
 .database-grid mat-card {
   position: relative;
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0;
   overflow: hidden;
   border: 1px solid var(--mat-sys-outline-variant);
   background: var(--mat-sys-surface-container-lowest);

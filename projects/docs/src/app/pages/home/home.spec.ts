@@ -4,6 +4,7 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatCardHarness } from '@angular/material/card/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import axe from 'axe-core';
 
 import { routes } from '../../app.routes';
 import { Home } from './home';
@@ -14,6 +15,18 @@ describe('Home', () => {
       providers: [provideRouter(routes)],
     }).compileComponents();
   });
+
+  it.each(['/installation', '/development'])(
+    'has no detectable accessibility violations at %s',
+    async (path) => {
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(path, Home);
+
+      const results = await axe.run(harness.routeNativeElement!);
+
+      expect(results.violations).toEqual([]);
+    },
+  );
 
   it.each([
     ['/databases-and-settings', 'Databases and settings', 'Import a custom database'],

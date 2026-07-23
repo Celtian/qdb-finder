@@ -77,6 +77,14 @@ describe('PlayerFinder', () => {
     );
   });
 
+  it('centers the search field', () => {
+    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.search');
+    const styles = getComputedStyle(search!);
+
+    expect(styles.display).toBe('flex');
+    expect(styles.marginInlineStart).toBe(styles.marginInlineEnd);
+  });
+
   it('keeps Filters and Columns available in loading, error, and empty states', async () => {
     const testable = component as unknown as {
       loading: { set(value: boolean): void };

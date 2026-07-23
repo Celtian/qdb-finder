@@ -74,8 +74,13 @@ yarn format:check
 yarn lint
 yarn test
 yarn build
+yarn db:build
 yarn db:validate
 ```
+
+`yarn test` runs the Electron renderer, documentation, and Node tools suites in parallel. The
+full FIFA 11–23 corpus gate remains `yarn db:build && yarn db:validate`; pull-request and release
+workflows run both commands before their test and packaging steps.
 
 ## 📦 Distribution
 

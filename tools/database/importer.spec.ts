@@ -429,6 +429,36 @@ describe('FIFA text importer', () => {
     database.close();
   }, 60_000);
 
+  it('resolves every player name field from dcplayernames when needed', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-dcplayernames-'));
+    directories.push(directory);
+    const path = join(directory, 'fifa22.sqlite');
+
+    buildDatabase({
+      sources: [{ fifa: Fifa.Fifa22, path: join(process.cwd(), 'examples', 'fifa22') }],
+      outputPath: path,
+      databaseName: 'FIFA 22 name lookup',
+      databaseKind: 'custom',
+      verifyExpectedCounts: false,
+    });
+
+    const database = new DatabaseSync(path, { readOnly: true });
+    const player = database
+      .prepare(
+        `SELECT first_name, last_name, common_name, jersey_name
+         FROM player_edition WHERE version = 22 AND player_id = 137809`,
+      )
+      .get();
+
+    expect(player).toEqual({
+      first_name: 'Vágner',
+      last_name: 'Silva de Souza',
+      common_name: 'Vágner Love',
+      jersey_name: 'Vagner Love',
+    });
+    database.close();
+  }, 60_000);
+
   it('rejects unsupported FIFA versions', () => {
     expect(() => fifaForVersion(24)).toThrow(/not supported/);
   });

@@ -1538,6 +1538,21 @@ const tableRows = (db: DatabaseSync, fifa: Fifa, table: Table): SqlRow[] =>
   db.prepare(`SELECT * FROM ${quote(rawTableName(fifa, table))}`).all() as SqlRow[];
 const mapBy = (rows: SqlRow[], key: string, value: string): Map<number, string> =>
   new Map(rows.map((row) => [asNumber(row[key]), asText(row[value])]));
+const optionalTableRows = (db: DatabaseSync, fifa: Fifa, table: Table): SqlRow[] => {
+  const tableName = rawTableName(fifa, table);
+  const exists = db
+    .prepare("SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = ?")
+    .get(tableName);
+  return exists ? tableRows(db, fifa, table) : [];
+};
+const playerNamesById = (db: DatabaseSync, fifa: Fifa): Map<number, string> => {
+  const names = mapBy(tableRows(db, fifa, Table.PlayerNames), 'nameid', 'name');
+  for (const row of optionalTableRows(db, fifa, Table.DcPlayerNames)) {
+    const nameId = asNumber(row['nameid']);
+    if (!names.has(nameId)) names.set(nameId, asText(row['name']));
+  }
+  return names;
+};
 export const sourceSnapshotDate = (source: ImportSource): string => {
   const { fifa } = source;
   if (fifa === Fifa.Fifa11) return '2010-10-01';
@@ -1629,7 +1644,7 @@ const buildCanonical = (
     const { fifa } = importSource;
     const version = Number(fifa.slice(4));
     const snapshot = sourceSnapshotDate(importSource);
-    const names = mapBy(tableRows(db, fifa, Table.PlayerNames), 'nameid', 'name');
+    const names = playerNamesById(db, fifa);
     const nationRows = tableRows(db, fifa, Table.Nations);
     const nations = mapBy(nationRows, 'nationid', 'nationname');
     const nationCodes = new Map(

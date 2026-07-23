@@ -54,8 +54,11 @@ describe('App', () => {
     expect((await toolbar.getRowsAsText())[0]).toContain('QDB Finder');
     expect(await sidenav.getMode()).toBe('side');
     expect(await sidenav.isOpen()).toBe(true);
-    expect(items).toHaveLength(11);
+    expect(items).toHaveLength(12);
     expect(await Promise.all(items.map((item) => item.getTitle()))).toContain('Players');
+    expect(await Promise.all(items.map((item) => item.getTitle()))).toContain(
+      'Databases & settings',
+    );
     expect(await projectAction.getText()).toContain('GitHub');
   });
 

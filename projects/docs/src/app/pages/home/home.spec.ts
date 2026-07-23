@@ -16,6 +16,7 @@ describe('Home', () => {
   });
 
   it.each([
+    ['/databases-and-settings', 'Databases and settings', 'Import a custom database'],
     ['/players', 'Players', 'Position matrix'],
     ['/teams-and-leagues', 'Teams and leagues', 'View all players'],
     ['/referees-and-stadiums', 'Referees and stadiums', 'Stadium finder'],
@@ -38,6 +39,35 @@ describe('Home', () => {
     expect(element.querySelector('a[href="/players"]')?.textContent).toContain('Player guide');
     expect(element.textContent).toContain('Contextual finders');
     expect(element.textContent).toContain('numeric Original ID');
+    expect(element.textContent).toContain('Changes are staged in the drawer');
+    expect(element.textContent).toContain('Apply runs one search');
+    expect(element.textContent).toContain('Cancel discards the draft');
+    expect(element.textContent).toContain('Clear all removes the draft filters');
+    expect(element.textContent).toContain('Columns opens a drawer');
+    expect(element.textContent).toContain('Applied filters are saved locally');
+    expect(element.textContent).toContain('exact-database');
+    expect(element.textContent).not.toContain('Filter changes search immediately');
+  });
+
+  it('covers database management, imports, themes and saved finder preferences', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/databases-and-settings', Home);
+    const element = harness.routeNativeElement!;
+    const text = element.textContent;
+
+    expect(element.querySelectorAll('section')).toHaveLength(4);
+    expect(element.querySelectorAll('ul')).toHaveLength(1);
+    expect(text).toContain('All databases');
+    expect(text).toContain('PC format version 8');
+    expect(text).toContain('Validation and import can be cancelled');
+    expect(text).toContain('source folder or files are never modified');
+    expect(text).toContain('system appearance');
+    expect(text).toContain('light or dark application theme');
+    expect(text).toContain('Reset filters and columns');
+    expect(text).toContain('remove all custom databases');
+    expect(element.querySelector('a[href="/database"]')?.textContent).toContain(
+      'Database generation for developers',
+    );
   });
 
   it('documents women data cutoffs for players and referees', async () => {

@@ -32,13 +32,13 @@ const guideLinks: readonly DocLink[] = [
 export const documentationPages: Readonly<Record<string, DocPage>> = {
   overview: {
     eyebrow: 'QDB Finder',
-    title: 'Search thirteen FIFA databases in one place',
-    lead: 'A fast, read-only FIFA browser built for detailed, edition-specific discovery.',
+    title: 'Explore FIFA 11 through FIFA 23 in one place',
+    lead: 'A fast, offline database explorer built for detailed, edition-specific discovery.',
     sections: [
       {
         title: 'Five connected finders',
         paragraphs: [
-          'Browse the supplied FIFA 11 through FIFA 23 databases without learning table names or source-field codes. Every result represents one entity in one FIFA edition.',
+          'Browse the bundled FIFA 11 through FIFA 23 editions without learning table names or source-field codes. Every result represents one entity in one installed database and one FIFA edition.',
         ],
         items: [
           'Players: names, nationalities, squads, positions, ratings and complete attribute details.',
@@ -52,14 +52,14 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Follow the relationships',
         paragraphs: [
-          'Detail dialogs link related records without losing the selected FIFA edition. Move from a player to every linked team, from a league to its players, teams or referees, and from a stadium to its teams.',
-          'Context banners explain why a finder is constrained. Ordinary filters can still be combined with that context, and Reset returns to an unconstrained finder.',
+          'Detail dialogs link related records without losing the selected database or FIFA edition. Move from a player to every linked team, from a league to its players, teams or referees, and from a stadium to its teams.',
+          'Context banners explain why a finder is constrained. Ordinary filters can still be combined with that context, and Clear returns to an unconstrained finder.',
         ],
       },
       {
         title: 'Local and inspectable',
         paragraphs: [
-          'The optimized SQLite database ships with the desktop application. Searching needs no account or network connection, and raw source fields remain available in the final tab of every detail dialog.',
+          'An optimized SQLite database ships with the desktop application, and compatible custom databases can be imported as isolated local copies. Searching needs no account or network connection, and raw source fields remain available in the final tab of every detail dialog.',
         ],
         links: [
           {
@@ -68,6 +68,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
             external: true,
           },
           { label: 'Installation guide', href: '/installation' },
+          { label: 'Databases and settings', href: '/databases-and-settings' },
         ],
       },
     ],
@@ -101,6 +102,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
           'No separate database download or setup is required. Open the application and select Players, Teams, Leagues, Referees or Stadiums from the home screen or navigation menu.',
         ],
         note: 'The packaged application is offline-first. GitHub is needed to download updates, not to search the database.',
+        links: [{ label: 'Manage databases and settings', href: '/databases-and-settings' }],
       },
       {
         title: 'Build from source',
@@ -121,31 +123,33 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
   searching: {
     eyebrow: 'User guide',
     title: 'Searching and filtering',
-    lead: 'Start broad, then narrow edition records with immediate, composable filters.',
+    lead: 'Search as you type, then apply a precise set of composable filters.',
     sections: [
       {
-        title: 'Edition records and original IDs',
+        title: 'Database and edition records',
         paragraphs: [
-          'A real-world player, team or venue can occur once in every supported game. QDB Finder therefore treats FIFA version and Original ID together as the stable identity of a result.',
-          'Enter a numeric Original ID by itself for an exact ID lookup, or use the main search box to find entity names and the additional text documented by each finder. Selecting a row opens the exact edition represented by that result.',
+          'A real-world player, team or venue can occur in several installed databases and FIFA editions. QDB Finder therefore keeps the database, FIFA version and Original ID together as the identity of a result.',
+          'Enter a numeric Original ID by itself for an exact ID lookup, or use the main search box to find entity names and the additional player text documented by the player guide. The search updates as you type, and opening a result preserves its database and edition.',
         ],
       },
       {
-        title: 'Text search and exact filters',
+        title: 'Apply exact filters',
         paragraphs: [
-          'Text search is useful for discovery. Autocomplete filters such as nationality, team, league and country resolve to exact database values and remain visible as removable selections.',
-          'Edition, category and numeric-range controls combine with text and exact selections. Filter changes search immediately, return to the first result page and never change another filter implicitly.',
+          'Open Filters to choose installed databases and FIFA editions or add category, autocomplete and numeric-range constraints. Autocomplete choices such as nationality, team, league and country resolve to exact database values and remain visible as removable selections.',
+          'Changes are staged in the drawer. Apply runs one search from the first result page, Cancel discards the draft, and Clear all removes the draft filters before they are applied. Applied filters are saved locally for that finder; search text is not saved.',
         ],
         note: 'Selecting Women with FIFA 11–15 is valid and produces an empty result. QDB Finder never changes the selected editions automatically.',
       },
       {
-        title: 'Sort, page and recover',
+        title: 'Columns, sorting and pagination',
         paragraphs: [
-          'Sortable column headers order results inside SQLite before pagination. The result count and paginator describe the complete filtered population rather than only the rows currently visible.',
+          'Columns opens a drawer containing every field available to that finder. The entity-name column remains visible, while other choices are saved locally and can be restored to their finder defaults.',
+          'Sortable visible column headers order results inside SQLite before pagination. The result count and paginator describe the complete filtered population rather than only the 25, 50 or 100 rows currently visible.',
         ],
         items: [
-          'Reset clears the current finder’s filters and returns to its default sort and first page.',
-          'An empty state distinguishes a broad search prompt from filters that have no matches.',
+          'Clearing the search box leaves applied filters and column choices unchanged.',
+          'Applying filters returns to the first page without changing search text, page size or sorting.',
+          'An empty state explains that no records match the current search and filters.',
           'Database errors show a retry action without discarding the current request.',
           'Wide result tables scroll horizontally on narrow windows instead of compressing values into overlapping columns.',
         ],
@@ -153,10 +157,55 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Contextual finders',
         paragraphs: [
-          'Actions in detail dialogs open another finder with an exact-edition relationship constraint. A banner names the source context while ordinary filters continue to work within it.',
-          'Reset removes both the relationship context and its URL parameters. Incomplete or conflicting contexts are rejected rather than producing ambiguous results.',
+          'Actions in detail dialogs open another finder with an exact-database, exact-edition relationship constraint. A banner names the source context while ordinary filters continue to work within it.',
+          'Clear on the context banner removes the relationship and applied filters while preserving search text, sort and page size. Changing the database filter also removes an incompatible context; incomplete or conflicting URL contexts are rejected.',
         ],
         links: guideLinks.slice(1),
+      },
+    ],
+  },
+  'databases-and-settings': {
+    eyebrow: 'User guide',
+    title: 'Databases and settings',
+    lead: 'Manage local data sources, finder preferences and the application appearance.',
+    sections: [
+      {
+        title: 'Search installed databases',
+        paragraphs: [
+          'The Databases page lists the protected built-in database and every custom database, including their supported FIFA editions, record totals and generated or imported date. Incompatible databases remain visible with an explanation but are excluded from search.',
+          'Compatible databases are searched together by default. Open Filters in any finder to select one database, several databases or All databases; results and detail headers identify the database that supplied each record.',
+        ],
+      },
+      {
+        title: 'Import a custom database',
+        paragraphs: [
+          'The four-step wizard chooses a format and source, validates the data, then shows a final summary before creating output. Import either a folder that directly contains FIFA 11–23 text tables or a PC fifa_ng_db.db file together with its matching metadata XML.',
+          'Direct t3db import supports PC format version 8. Xbox byte order, other binary versions, invalid metadata and incompatible schemas are rejected.',
+        ],
+        items: [
+          'A uniquely detected FIFA edition is selected automatically; uncertain sources require a manual edition before validation.',
+          'Validation scans structure, values, canonical identifiers, published ranges and relationships without creating output. Advisory metadata warnings remain importable.',
+          'Validation and import can be cancelled. Temporary output is removed, and the selected source folder or files are never modified.',
+          'A successful import creates an isolated SQLite file in the application-data directory and joins all-database searches immediately.',
+        ],
+      },
+      {
+        title: 'Remove custom data safely',
+        paragraphs: [
+          'Use the delete action on a Databases card to remove one custom database, or Settings to remove all custom databases after confirmation. The built-in database and every original source remain protected.',
+          'Removing all custom databases also clears saved finder filters so they cannot retain database identifiers that no longer exist. A custom database created with an incompatible future QDB schema must be re-imported from its original source.',
+        ],
+      },
+      {
+        title: 'Appearance and finder preferences',
+        paragraphs: [
+          'Settings can follow the operating system appearance or force the light or dark application theme. The selected theme is saved locally.',
+          'Each finder also saves its applied database and data filters plus its visible columns. Reset filters and columns clears those saved finder preferences after confirmation without changing search text, installed databases or the application theme.',
+        ],
+        links: [
+          { label: 'Searching and filters', href: '/searching' },
+          { label: 'Database generation for developers', href: '/database' },
+        ],
       },
     ],
   },
@@ -180,7 +229,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Read the results',
         paragraphs: [
-          'Each row shows the player name, Original ID, FIFA edition, nationality, linked teams, positions, age, overall, potential and best position rating.',
+          'Available columns cover the source database, Original ID, FIFA edition, nationality, linked teams, positions, birth date, contract end, age, height, weight, preferred foot, overall, potential and best position rating. Use Columns to choose which appear beside the required player name.',
           'Position pills keep their football-role colors. Rating pills use shared red-to-green value bands, making score comparisons consistent throughout the app.',
         ],
       },
@@ -217,7 +266,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Team finder',
         paragraphs: [
           'Search team names or an exact numeric Original ID, then filter by FIFA edition, exact league, country and overall, attack, midfield or defence rating ranges.',
-          'Results show Original ID, edition, country, league, squad size and the four sortable rating measures.',
+          'Available columns cover the source database, Original ID, edition, country, league, squad size and the four sortable rating measures. Use Columns to choose which appear beside the required team name.',
         ],
       },
       {
@@ -234,7 +283,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'League finder',
         paragraphs: [
-          'Search league names or an exact numeric Original ID and filter by FIFA edition, country and competition tier. Results include Original ID, edition, country, tier, team count and player count.',
+          'Search league names or an exact numeric Original ID and filter by FIFA edition, country and competition tier. Available columns include the source database, Original ID, edition, country, tier, team count and player count.',
           'League details identify men’s or women’s competition data and preview both top-rated teams and assigned referees before the Raw fields tab.',
         ],
       },
@@ -259,7 +308,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Referee finder',
         paragraphs: [
           'Search referee names or an exact numeric Original ID and filter by FIFA edition, gender, nationality, assigned league, age range and real or generic referee type.',
-          'Results show Original ID, edition, nationality, league assignments, age, height and whether the official represents a real person.',
+          'Available columns cover the source database, Original ID, edition, nationality, league assignments, birth date, age, height, weight and whether the official represents a real person. Use Columns to choose which appear beside the required referee name.',
         ],
         note: 'Women referee data is available from FIFA 16. FIFA 11–15 records are treated as Men because those source tables have no gender field.',
       },
@@ -273,7 +322,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Stadium finder',
         paragraphs: [
           'Search stadium names or an exact numeric Original ID and filter by FIFA edition, country, exact linked team, capacity range and licensed or generic stadium type.',
-          'Results show Original ID, edition, country, linked-team count, capacity, construction year, pitch dimensions and licensing status.',
+          'Available columns cover the source database, Original ID, edition, country, linked-team count, capacity, construction year, pitch dimensions and licensing status. Use Columns to choose which appear beside the required stadium name.',
         ],
       },
       {
@@ -297,7 +346,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Canonical searchable data',
         paragraphs: [
-          'The generated database validates 306 source files across 25 definitions and builds normalized, indexed records for the five searchable entity types.',
+          'The bundled database validates 306 source files across 25 definitions and builds normalized, indexed records for the five searchable entity types.',
         ],
         items: [
           '227,572 player editions and 241,640 team-player links.',
@@ -337,31 +386,29 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
     ],
   },
   database: {
-    eyebrow: 'Importer',
+    eyebrow: 'Development',
     title: 'Deterministic database generation',
     lead: 'Release builds generate SQLite from the checked-in UTF-16LE TSV files.',
     sections: [
       {
         title: 'Build and validate',
         paragraphs: [
-          'Headers, row structure, numeric values and canonical identifiers are checked against fifatables before raw tables, canonical indexes and FTS5 are generated. Published range and relationship anomalies remain visible as advisory warnings for modified databases. Integrity, foreign-key, ANALYZE and VACUUM checks finish the build.',
+          'Headers, row structure, numeric values and canonical identifiers are checked against fifatables before raw tables, canonical indexes and the FTS5 player-search index are generated. Published range and relationship anomalies remain visible as advisory warnings for modified databases. Integrity, foreign-key, ANALYZE and VACUUM checks finish the build.',
         ],
         code: 'yarn db:build\nyarn db:validate',
       },
       {
         title: 'Read-only runtime',
         paragraphs: [
-          'Electron opens the generated SQLite artifact read-only. Search values are parameterized, and the renderer reaches data only through the typed, sandboxed preload API.',
+          'Electron opens searchable SQLite files read-only. Search values are parameterized, sort and table choices are constrained in code, and the renderer reaches the main-process query and import services only through the typed, sandboxed preload API.',
         ],
       },
       {
-        title: 'Custom database library',
+        title: 'Desktop imports',
         paragraphs: [
-          'The desktop Databases wizard imports one FIFA 11–23 edition at a time from either an exported text-table folder or a PC fifa_ng_db.db file with its matching metadata XML. PC t3db format version 8 is decoded through fifa-t3db; Xbox and other binary formats are rejected.',
-          'QDB Finder automatically selects a uniquely detected FIFA edition or asks for a manual choice when detection is uncertain. Validate performs a cancellable read-only scan and reports corrupted text rows by line and t3db rows by record. Advisory metadata warnings do not block modified databases, but a manual edition choice never bypasses schema compatibility checks.',
-          'Every import becomes an isolated SQLite file in the application-data directory. The bundled database stays immutable, compatible databases are searched together by default, cancellation removes temporary output, and deleting an import never changes the selected source files.',
+          'The desktop application reuses the same validation and normalized database builder for user-selected text folders and decoded PC t3db sources. Import and validation run outside the renderer and write only to an isolated temporary output before installation.',
         ],
-        note: 'A generated database with an incompatible QDB schema remains listed but is excluded from search; re-import its original source with the current application version.',
+        links: [{ label: 'Custom database user guide', href: '/databases-and-settings' }],
       },
     ],
   },
@@ -399,7 +446,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Release flow',
         paragraphs: [
-          'A matching v* tag installs from yarn.lock, generates and validates SQLite, runs checks, creates Squirrel and ZIP artifacts and publishes a draft release. Stable tags also deploy this prerendered documentation to GitHub Pages.',
+          'A matching v* tag installs from yarn.lock, generates and validates SQLite, runs checks, uploads the Squirrel and ZIP artifacts to a draft release, and then publishes it. Non-beta tags also deploy this prerendered documentation to GitHub Pages.',
           `This documentation build identifies itself as ${siteMetadata.versionLabel} and links to the immutable source tag used to produce it.`,
         ],
         links: [

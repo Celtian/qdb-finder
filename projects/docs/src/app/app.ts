@@ -42,6 +42,7 @@ export class App {
     { path: '', label: 'Overview', icon: 'home' },
     { path: 'installation', label: 'Installation', icon: 'download' },
     { path: 'searching', label: 'Searching & filters', icon: 'search' },
+    { path: 'databases-and-settings', label: 'Databases & settings', icon: 'settings' },
     { path: 'players', label: 'Players', icon: 'groups' },
     { path: 'teams-and-leagues', label: 'Teams & leagues', icon: 'shield' },
     { path: 'referees-and-stadiums', label: 'Referees & stadiums', icon: 'sports' },

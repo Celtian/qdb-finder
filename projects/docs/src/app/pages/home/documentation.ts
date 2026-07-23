@@ -143,7 +143,8 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Columns, sorting and pagination',
         paragraphs: [
-          'Columns opens a drawer containing every field available to that finder. The entity-name column remains visible, while other choices are saved locally and can be restored to their finder defaults.',
+          'Columns opens a drawer containing every field available to that finder. Drag a column handle to change its position, or focus the handle and use the Up and Down arrow keys. The entity-name column remains visible.',
+          'Apply saves both column visibility and order locally for that finder. Reset to defaults restores the default visibility and order.',
           'Sortable visible column headers order results inside SQLite before pagination. The result count and paginator describe the complete filtered population rather than only the 25, 50 or 100 rows currently visible.',
         ],
         items: [
@@ -200,7 +201,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Appearance and finder preferences',
         paragraphs: [
           'Settings can follow the operating system appearance or force the light or dark application theme. The selected theme is saved locally.',
-          'Each finder also saves its applied database and data filters plus its visible columns. Reset filters and columns clears those saved finder preferences after confirmation without changing search text, installed databases or the application theme.',
+          'Each finder also saves its applied database and data filters plus its column visibility and order. Reset filters and columns clears those saved finder preferences, including the saved column order, after confirmation without changing search text, installed databases or the application theme.',
         ],
         links: [
           { label: 'Searching and filters', href: '/searching' },

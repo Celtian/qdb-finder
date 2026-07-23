@@ -44,6 +44,12 @@ describe('Home', () => {
     expect(element.textContent).toContain('Cancel discards the draft');
     expect(element.textContent).toContain('Clear all removes the draft filters');
     expect(element.textContent).toContain('Columns opens a drawer');
+    expect(element.textContent).toContain('Drag a column handle');
+    expect(element.textContent).toContain('Up and Down arrow keys');
+    expect(element.textContent).toContain('Apply saves both column visibility and order');
+    expect(element.textContent).toContain(
+      'Reset to defaults restores the default visibility and order',
+    );
     expect(element.textContent).toContain('Applied filters are saved locally');
     expect(element.textContent).toContain('exact-database');
     expect(element.textContent).not.toContain('Filter changes search immediately');
@@ -64,6 +70,8 @@ describe('Home', () => {
     expect(text).toContain('system appearance');
     expect(text).toContain('light or dark application theme');
     expect(text).toContain('Reset filters and columns');
+    expect(text).toContain('column visibility and order');
+    expect(text).toContain('including the saved column order');
     expect(text).toContain('remove all custom databases');
     expect(element.querySelector('a[href="/database"]')?.textContent).toContain(
       'Database generation for developers',

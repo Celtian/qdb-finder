@@ -19,7 +19,7 @@ QDB Finder is an offline desktop explorer for FIFA 11–23 databases. It combine
 - 🧭 Browse responsive home, player, team, league, referee, and stadium views with edition-specific details.
 - 🔎 Search names and related player text, or find players, teams, leagues, referees, and stadiums by exact Original ID.
 - 🎛️ Select one or more installed databases, then combine FIFA edition, gender, position, age, rating, team, league, country, and nationality filters; women player and referee data is available from FIFA 16.
-- 🧩 Customize visible result columns, retain applied finder filters between visits, and choose a system, light, or dark theme.
+- 🧩 Customize result column visibility and order, retain applied finder filters between visits, and choose a system, light, or dark theme.
 - ⚡ Page and sort results inside SQLite without loading the complete dataset into Angular.
 - 📊 Inspect player attributes, team squads and stadiums, league teams and referees, raw fields, and historical editions.
 - 🗃️ Rebuild the complete database deterministically from the supplied FIFA text files.

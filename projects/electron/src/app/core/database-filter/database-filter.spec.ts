@@ -8,7 +8,7 @@ const database = (id: string, name: string, kind: 'built-in' | 'custom'): Databa
   id,
   name,
   kind,
-  schemaVersion: 2,
+  schemaVersion: 3,
   editions: 1,
   teamEditions: 1,
   leagueEditions: 1,

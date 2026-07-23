@@ -241,7 +241,7 @@ describe('PlayerFinder', () => {
           id: 'custom-id',
           name: 'Custom FIFA 23',
           kind: 'custom',
-          schemaVersion: 2,
+          schemaVersion: 3,
           editions: 1,
           teamEditions: 1,
           leagueEditions: 1,

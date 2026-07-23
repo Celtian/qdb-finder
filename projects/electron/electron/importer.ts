@@ -35,7 +35,7 @@ export const FIFAS = Object.values(Fifa);
 export const SUPPORTED_FIFA_VERSIONS = FIFAS.map((fifa) => Number(fifa.slice(4))).sort(
   (left, right) => right - left,
 );
-export const DATABASE_SCHEMA_VERSION = 2;
+export const DATABASE_SCHEMA_VERSION = 3;
 export const TABLES = Object.values(Table);
 export const EXPECTED_EDITIONS = 227_572;
 export const EXPECTED_TEAM_LINKS = 241_640;
@@ -46,6 +46,7 @@ export const EXPECTED_STADIUM_EDITIONS = 1_371;
 export const EXPECTED_REFEREE_LEAGUE_LINKS = 3_001;
 export const EXPECTED_STADIUM_TEAM_LINKS = 8_890;
 export const POSITION_IDS = Object.values(Position);
+const NATIONAL_TEAM_LEAGUE_IDS = new Set([78, 2_136]);
 const positionById = Object.fromEntries(POSITION_IDS.map((position, index) => [index, position]));
 
 type RawRow = Record<string, string | number>;
@@ -1671,6 +1672,9 @@ const buildCanonical = (
     const teamLeagues = new Map<number, number>();
     for (const row of tableRows(db, fifa, Table.LeagueTeamLinks))
       teamLeagues.set(asNumber(row['teamid']), asNumber(row['leagueid']));
+    const rowTeamNations = new Map<number, number>();
+    for (const row of optionalTableRows(db, fifa, Table.RowTeamNationLinks))
+      rowTeamNations.set(asNumber(row['teamid']), asNumber(row['nationid']));
     const teamNations = new Map<number, number>();
     for (const row of optionalTableRows(db, fifa, Table.TeamNationLinks))
       teamNations.set(asNumber(row['teamid']), asNumber(row['nationid']));
@@ -1710,13 +1714,11 @@ const buildCanonical = (
         const leagueId = teamLeagues.get(teamId) ?? null;
         const league = leagueId === null ? undefined : leagueRowsById.get(leagueId);
         const leagueName = leagueId === null ? '' : (leagues.get(leagueId) ?? '');
-        const nationalCountryId = teamNations.get(teamId);
-        const isNational = nationalCountryId !== undefined;
-        const countryId = isNational
-          ? nationalCountryId
-          : league
-            ? optionalNumber(league['countryid'])
-            : null;
+        const rowCountryId = rowTeamNations.get(teamId);
+        const linkedCountryId = teamNations.get(teamId);
+        const isNational = leagueId !== null && NATIONAL_TEAM_LEAGUE_IDS.has(leagueId);
+        const countryId =
+          rowCountryId ?? linkedCountryId ?? (league ? optionalNumber(league['countryid']) : null);
         teamInsert.run(
           `${version}:${teamId}`,
           version,

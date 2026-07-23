@@ -30,7 +30,7 @@ const createDatabase = (
 ): void => {
   const database = new DatabaseSync(path);
   database.exec(`
-    PRAGMA user_version = 2;
+    PRAGMA user_version = 3;
     CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
     CREATE TABLE player_edition (
       key TEXT PRIMARY KEY,
@@ -78,7 +78,7 @@ const createDatabase = (
     database_id: id,
     database_name: name,
     database_kind: kind,
-    schema_version: 2,
+    schema_version: 3,
     player_editions: players.length,
     versions: '23',
   }))

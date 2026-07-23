@@ -74,10 +74,7 @@ export interface T3dbImportSource {
 export type ImportSource = TextImportSource | T3dbImportSource;
 
 export type ImportSourceIssueCode =
-  | 'version-mismatch'
-  | 'missing-files'
-  | 'header-mismatch'
-  | 'invalid-source';
+  'version-mismatch' | 'missing-files' | 'header-mismatch' | 'invalid-source';
 
 export interface ImportSourceIssue {
   code: ImportSourceIssueCode;

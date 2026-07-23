@@ -13,37 +13,13 @@ export type SortField =
 export type SortDirection = 'asc' | 'desc';
 export type Gender = 'men' | 'women';
 export type TeamSortField =
-  | 'name'
-  | 'version'
-  | 'league'
-  | 'squadSize'
-  | 'overall'
-  | 'attack'
-  | 'midfield'
-  | 'defence';
+  'name' | 'version' | 'league' | 'squadSize' | 'overall' | 'attack' | 'midfield' | 'defence';
 export type LeagueSortField =
-  | 'name'
-  | 'version'
-  | 'country'
-  | 'level'
-  | 'teamCount'
-  | 'playerCount';
+  'name' | 'version' | 'country' | 'level' | 'teamCount' | 'playerCount';
 export type RefereeSortField =
-  | 'name'
-  | 'version'
-  | 'nationality'
-  | 'birthDate'
-  | 'age'
-  | 'height'
-  | 'weight'
-  | 'leagueCount';
+  'name' | 'version' | 'nationality' | 'birthDate' | 'age' | 'height' | 'weight' | 'leagueCount';
 export type StadiumSortField =
-  | 'name'
-  | 'version'
-  | 'country'
-  | 'capacity'
-  | 'yearBuilt'
-  | 'teamCount';
+  'name' | 'version' | 'country' | 'capacity' | 'yearBuilt' | 'teamCount';
 
 export interface NumberRange {
   min?: number;

@@ -50,6 +50,9 @@ const sortColumns: Record<SearchRequest['sort'], string> = {
   potential: 'p.potential',
   bestRating: 'p.best_rating',
 };
+const teamRawIntegerSort = (key: string): string =>
+  `CASE WHEN json_type(t.raw_json, '$.${key}') IN ('integer', 'real')
+    THEN CAST(json_extract(t.raw_json, '$.${key}') AS INTEGER) END`;
 const teamSortColumns: Record<TeamSearchRequest['sort'], string> = {
   name: 't.team_name COLLATE NOCASE',
   version: 't.version',
@@ -59,6 +62,9 @@ const teamSortColumns: Record<TeamSearchRequest['sort'], string> = {
   attack: 't.attack',
   midfield: 't.midfield',
   defence: 't.defence',
+  domesticPrestige: teamRawIntegerSort('domesticprestige'),
+  internationalPrestige: teamRawIntegerSort('internationalprestige'),
+  budget: teamRawIntegerSort('transferbudget'),
 };
 const leagueSortColumns: Record<LeagueSearchRequest['sort'], string> = {
   name: 'l.league_name COLLATE NOCASE',
@@ -94,6 +100,10 @@ const nullableNumber = (value: string | number | null): number | null =>
   value === null ? null : Number(value);
 const nullableBoolean = (value: string | number | null): boolean | null =>
   value === null ? null : Boolean(Number(value));
+const rawInteger = (raw: Readonly<Record<string, unknown>>, key: string): number | null => {
+  const value = raw[key];
+  return typeof value === 'number' && Number.isSafeInteger(value) ? value : null;
+};
 const positiveRawNumber = (
   value: string | number | null | undefined,
   key: string,
@@ -202,6 +212,10 @@ export class PlayerDatabase {
     this.addListFilter('t.version', request.versions, where, values);
     this.addListFilter('t.league_key', request.leagueKeys, where, values);
     this.addListFilter('t.country_id', request.countryIds, where, values);
+    if (request.isNational !== undefined) {
+      where.push('t.is_national = ?');
+      values.push(Number(request.isNational));
+    }
     this.addRange('t.overall', request.overall, where, values);
     this.addRange('t.attack', request.attack, where, values);
     this.addRange('t.midfield', request.midfield, where, values);
@@ -680,6 +694,7 @@ export class PlayerDatabase {
   }
 
   private toTeamRow(row: Row): TeamEditionRow {
+    const raw = parseObject<Record<string, unknown>>(String(row['raw_json'] ?? '{}'));
     return {
       key: `${this.databaseInfo.id}:${String(row['key'])}`,
       databaseId: this.databaseInfo.id,
@@ -693,11 +708,15 @@ export class PlayerDatabase {
       countryId: nullableNumber(row['country_id']),
       countryName: String(row['country_name'] ?? ''),
       countryCode: String(row['country_code'] ?? ''),
+      isNational: Boolean(Number(row['is_national'])),
       squadSize: Number(row['squad_size']),
       overall: nullableNumber(row['overall']),
       attack: nullableNumber(row['attack']),
       midfield: nullableNumber(row['midfield']),
       defence: nullableNumber(row['defence']),
+      domesticPrestige: rawInteger(raw, 'domesticprestige'),
+      internationalPrestige: rawInteger(raw, 'internationalprestige'),
+      budget: rawInteger(raw, 'transferbudget'),
       foundationYear: nullableNumber(row['foundation_year']),
     };
   }

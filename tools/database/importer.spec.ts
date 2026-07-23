@@ -411,7 +411,7 @@ describe('FIFA text importer', () => {
         }[]
       ).map(({ key, value }) => [key, value]),
     );
-    expect(database.prepare('PRAGMA user_version').get()?.['user_version']).toBe(1);
+    expect(database.prepare('PRAGMA user_version').get()?.['user_version']).toBe(2);
     expect(metadata).toMatchObject({
       database_name: 'My FIFA 23',
       database_kind: 'custom',
@@ -426,6 +426,62 @@ describe('FIFA text importer', () => {
         .prepare("SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'")
         .get()?.['count'],
     ).toBeGreaterThan(0);
+    expect(
+      database
+        .prepare(
+          `SELECT is_national, country_id, country_name, country_code
+           FROM team_edition WHERE version = 23 AND team_id = 1330`,
+        )
+        .get(),
+    ).toEqual({
+      is_national: 1,
+      country_id: 12,
+      country_name: 'Czech Republic',
+      country_code: 'cz',
+    });
+    expect(
+      database
+        .prepare(
+          `SELECT is_national, country_id, country_name, country_code
+           FROM team_edition WHERE version = 23 AND team_id = 1`,
+        )
+        .get(),
+    ).toEqual({
+      is_national: 0,
+      country_id: 14,
+      country_name: 'England',
+      country_code: 'gb-eng',
+    });
+    database.close();
+  }, 60_000);
+
+  it('resolves every player name field from dcplayernames when needed', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-dcplayernames-'));
+    directories.push(directory);
+    const path = join(directory, 'fifa22.sqlite');
+
+    buildDatabase({
+      sources: [{ fifa: Fifa.Fifa22, path: join(process.cwd(), 'examples', 'fifa22') }],
+      outputPath: path,
+      databaseName: 'FIFA 22 name lookup',
+      databaseKind: 'custom',
+      verifyExpectedCounts: false,
+    });
+
+    const database = new DatabaseSync(path, { readOnly: true });
+    const player = database
+      .prepare(
+        `SELECT first_name, last_name, common_name, jersey_name
+         FROM player_edition WHERE version = 22 AND player_id = 137809`,
+      )
+      .get();
+
+    expect(player).toEqual({
+      first_name: 'Vágner',
+      last_name: 'Silva de Souza',
+      common_name: 'Vágner Love',
+      jersey_name: 'Vagner Love',
+    });
     database.close();
   }, 60_000);
 

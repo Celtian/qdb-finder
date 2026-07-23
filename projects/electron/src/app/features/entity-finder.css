@@ -102,7 +102,9 @@ main {
 }
 
 .entity-search {
+  display: flex;
   width: min(760px, 100%);
+  margin-inline: auto;
 }
 
 .context-banner {

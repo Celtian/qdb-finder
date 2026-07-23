@@ -7,19 +7,23 @@ export type FinderColumnKey =
   | 'attack'
   | 'bestRating'
   | 'birthDate'
+  | 'budget'
   | 'built'
   | 'capacity'
   | 'contractValidUntil'
   | 'country'
   | 'database'
   | 'defence'
+  | 'domesticPrestige'
   | 'height'
+  | 'internationalPrestige'
   | 'league'
   | 'leagues'
   | 'level'
   | 'licensed'
   | 'midfield'
   | 'name'
+  | 'national'
   | 'nationality'
   | 'originalId'
   | 'overall'
@@ -86,12 +90,16 @@ export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]
     defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('country', 'Country'),
+    defineColumn('national', 'National'),
     defineColumn('league', 'League', 'league'),
     defineColumn('squadSize', 'Squad', 'squadSize'),
     defineColumn('overall', 'OVR', 'overall'),
     defineColumn('attack', 'ATT', 'attack'),
     defineColumn('midfield', 'MID', 'midfield'),
     defineColumn('defence', 'DEF', 'defence'),
+    defineColumn('domesticPrestige', 'Domestic', 'domesticPrestige'),
+    defineColumn('internationalPrestige', 'International', 'internationalPrestige'),
+    defineColumn('budget', 'Budget', 'budget'),
   ],
   leagues: [
     defineColumn('name', 'League', 'name'),

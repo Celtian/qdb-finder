@@ -103,12 +103,14 @@ describe('database row mapping fallbacks', () => {
         country_id: null,
         country_name: null,
         country_code: null,
+        is_national: 0,
         squad_size: 0,
         overall: null,
         attack: null,
         midfield: null,
         defence: null,
         foundation_year: null,
+        raw_json: '{"domesticprestige":0,"internationalprestige":"invalid","transferbudget":0}',
       }),
     ).toMatchObject({
       leagueId: null,
@@ -117,8 +119,53 @@ describe('database row mapping fallbacks', () => {
       countryId: null,
       countryName: '',
       countryCode: '',
+      isNational: false,
       overall: null,
+      domesticPrestige: 0,
+      internationalPrestige: null,
+      budget: 0,
       foundationYear: null,
+    });
+    expect(
+      mapper.toTeamRow({
+        key: '22:1',
+        version: 22,
+        team_id: 1,
+        team_name: 'Current Team',
+        is_national: 1,
+        squad_size: 25,
+        overall: 80,
+        attack: 81,
+        midfield: 79,
+        defence: 78,
+        foundation_year: 1900,
+        raw_json: '{"domesticprestige":7,"internationalprestige":8,"transferbudget":75000000}',
+      }),
+    ).toMatchObject({
+      isNational: true,
+      domesticPrestige: 7,
+      internationalPrestige: 8,
+      budget: 75_000_000,
+    });
+    expect(
+      mapper.toTeamRow({
+        key: '23:1',
+        version: 23,
+        team_id: 1,
+        team_name: 'Current Team',
+        is_national: 0,
+        squad_size: 25,
+        overall: 80,
+        attack: 81,
+        midfield: 79,
+        defence: 78,
+        foundation_year: 1900,
+        raw_json: '{}',
+      }),
+    ).toMatchObject({
+      domesticPrestige: null,
+      internationalPrestige: null,
+      budget: null,
     });
     expect(
       mapper.toLeagueRow({
@@ -197,9 +244,9 @@ describe('database row mapping fallbacks', () => {
 });
 
 describe('database metadata fallbacks', () => {
-  it('returns safe defaults for an empty metadata table', () => {
-    const directory = mkdtempSync(join(tmpdir(), 'qdb-metadata-'));
-    const path = join(directory, 'empty.sqlite');
+  it('requires schema-one databases to be re-imported', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-old-schema-'));
+    const path = join(directory, 'old.sqlite');
     const writable = new DatabaseSync(path);
     writable.exec(
       'PRAGMA user_version = 1; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
@@ -207,12 +254,26 @@ describe('database metadata fallbacks', () => {
     writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '1');
     writable.close();
 
+    expect(() => new PlayerDatabase(path)).toThrow(/Re-import this database/);
+    rmSync(directory, { recursive: true });
+  });
+
+  it('returns safe defaults for an empty metadata table', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'qdb-metadata-'));
+    const path = join(directory, 'empty.sqlite');
+    const writable = new DatabaseSync(path);
+    writable.exec(
+      'PRAGMA user_version = 2; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+    );
+    writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '2');
+    writable.close();
+
     const database = new PlayerDatabase(path);
     expect(database.info()).toMatchObject({
       id: 'unknown',
       name: 'Unnamed database',
       kind: 'built-in',
-      schemaVersion: 1,
+      schemaVersion: 2,
       editions: 0,
       teamEditions: 0,
       leagueEditions: 0,

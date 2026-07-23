@@ -52,6 +52,7 @@ section + section {
 
 mat-card {
   border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest);
 }
 
 mat-card-content {

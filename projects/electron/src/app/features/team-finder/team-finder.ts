@@ -60,12 +60,15 @@ interface FilterDisplay {
 }
 
 type TeamFacet = 'league' | 'country';
+type NationalFilter = 'all' | 'yes' | 'no';
 
 interface TeamDisplay extends TeamEditionRow {
   overallClass: string;
   attackClass: string;
   midfieldClass: string;
   defenceClass: string;
+  budgetLabel: string;
+  national: string;
 }
 
 const scoreClass = (value: number | null): string => (value === null ? '' : scoreBadgeClass(value));
@@ -75,6 +78,8 @@ const teamDisplay = (row: TeamEditionRow): TeamDisplay => ({
   attackClass: scoreClass(row.attack),
   midfieldClass: scoreClass(row.midfield),
   defenceClass: scoreClass(row.defence),
+  budgetLabel: row.budget === null ? '—' : row.budget.toLocaleString(),
+  national: row.isNational ? 'Yes' : 'No',
 });
 const validVersion = (value: string | null): number | undefined => {
   const version = Number(value);
@@ -153,6 +158,13 @@ export class TeamFinder {
   protected readonly versions = computed(() =>
     databaseVersions(this.databases(), this.draftRequest().databaseIds),
   );
+  protected readonly nationalFilter = signal<NationalFilter>(
+    this.savedFilters?.isNational === undefined
+      ? 'all'
+      : this.savedFilters.isNational
+        ? 'yes'
+        : 'no',
+  );
   protected readonly ratingFilters = [
     { key: 'overall', label: 'Overall' },
     { key: 'attack', label: 'Attack' },
@@ -194,6 +206,7 @@ export class TeamFinder {
       request.versions.length > 0,
       request.leagueKeys.length > 0,
       request.countryIds.length > 0,
+      request.isNational !== undefined,
       Boolean(request.playerEdition || request.leagueEdition || request.stadiumEdition),
       Object.keys(request.overall).length > 0,
       Object.keys(request.attack).length > 0,
@@ -238,6 +251,14 @@ export class TeamFinder {
       playerEdition: undefined,
       leagueEdition: undefined,
       stadiumEdition: undefined,
+    }));
+  }
+
+  protected setNationalFilter(value: NationalFilter): void {
+    this.nationalFilter.set(value);
+    this.draftRequest.update((request) => ({
+      ...request,
+      isNational: value === 'all' ? undefined : value === 'yes',
     }));
   }
 
@@ -318,6 +339,7 @@ export class TeamFinder {
     });
     this.labels.set({ league: {}, country: {} });
     this.appliedLabels = { league: {}, country: {} };
+    this.nationalFilter.set('all');
     this.contextPlayer.set(undefined);
     this.contextLeague.set(undefined);
     this.contextStadium.set(undefined);
@@ -336,6 +358,7 @@ export class TeamFinder {
       pageSize: current.pageSize,
     });
     this.labels.set({ league: {}, country: {} });
+    this.nationalFilter.set('all');
   }
 
   protected retrySearch(): void {
@@ -369,6 +392,9 @@ export class TeamFinder {
       league: { ...this.appliedLabels.league },
       country: { ...this.appliedLabels.country },
     });
+    this.nationalFilter.set(
+      this.request().isNational === undefined ? 'all' : this.request().isNational ? 'yes' : 'no',
+    );
     this.filterDialogRef = this.dialog.open(
       this.filterDrawer(),
       finderFilterDialogConfig('team-filter-title'),
@@ -520,6 +546,7 @@ export class TeamFinder {
       versions: [...filters.versions],
       leagueKeys: [...filters.leagueKeys],
       countryIds: [...filters.countryIds],
+      isNational: filters.isNational,
       overall: { ...filters.overall },
       attack: { ...filters.attack },
       midfield: { ...filters.midfield },
@@ -534,6 +561,7 @@ export class TeamFinder {
       versions: [...request.versions],
       leagueKeys: [...request.leagueKeys],
       countryIds: [...request.countryIds],
+      isNational: request.isNational,
       overall: { ...request.overall },
       attack: { ...request.attack },
       midfield: { ...request.midfield },

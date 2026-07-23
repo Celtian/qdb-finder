@@ -88,7 +88,9 @@ main {
   padding: 1.5rem 2rem;
 }
 .search {
+  display: flex;
   width: min(760px, 100%);
+  margin-inline: auto;
 }
 .context-banner {
   display: flex;

@@ -13,7 +13,7 @@ const createDatabase = (
   id: string,
   name: string,
   kind: 'built-in' | 'custom',
-  schemaVersion = 1,
+  schemaVersion = 2,
 ): void => {
   const database = new DatabaseSync(path);
   database.exec(
@@ -57,7 +57,7 @@ describe('database library', () => {
 
   it('protects the built-in database and leaves incompatible files visible', () => {
     const { library } = setup();
-    createDatabase(library.pathFor(CUSTOM_ID), CUSTOM_ID, 'Old database', 'custom', 0);
+    createDatabase(library.pathFor(CUSTOM_ID), CUSTOM_ID, 'Old database', 'custom', 1);
 
     expect(library.list().find(({ id }) => id === CUSTOM_ID)).toMatchObject({
       status: 'incompatible',

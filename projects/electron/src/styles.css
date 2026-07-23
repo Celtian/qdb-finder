@@ -115,6 +115,10 @@ body {
   white-space: nowrap;
 }
 
+.mat-mdc-header-cell {
+  white-space: nowrap;
+}
+
 .position-list {
   display: flex;
   flex-wrap: wrap;

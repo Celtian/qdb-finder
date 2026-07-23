@@ -90,6 +90,14 @@
           </mat-chip>
         }
       </mat-chip-set>
+      <mat-form-field appearance="outline">
+        <mat-label>National team</mat-label>
+        <mat-select [value]="nationalFilter()" (valueChange)="setNationalFilter($event)">
+          <mat-option value="all">All</mat-option>
+          <mat-option value="yes">Yes</mat-option>
+          <mat-option value="no">No</mat-option>
+        </mat-select>
+      </mat-form-field>
       @for (rating of ratingFilters; track rating.key) {
         <fieldset>
           <legend>{{ rating.label }}</legend>
@@ -261,6 +269,10 @@
                 </span>
               </td>
             </ng-container>
+            <ng-container matColumnDef="national">
+              <th *matHeaderCellDef mat-header-cell>National</th>
+              <td *matCellDef="let row" mat-cell>{{ row.national }}</td>
+            </ng-container>
             <ng-container matColumnDef="league">
               <th *matHeaderCellDef mat-header-cell mat-sort-header="league">League</th>
               <td *matCellDef="let row" mat-cell>{{ row.leagueName || '—' }}</td>
@@ -292,6 +304,20 @@
               <td *matCellDef="let row" mat-cell>
                 <span [class]="row.defenceClass">{{ row.defence ?? '—' }}</span>
               </td>
+            </ng-container>
+            <ng-container matColumnDef="domesticPrestige">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="domesticPrestige">Domestic</th>
+              <td *matCellDef="let row" mat-cell>{{ row.domesticPrestige ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="internationalPrestige">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="internationalPrestige">
+                International
+              </th>
+              <td *matCellDef="let row" mat-cell>{{ row.internationalPrestige ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="budget">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="budget">Budget</th>
+              <td *matCellDef="let row" mat-cell>{{ row.budgetLabel }}</td>
             </ng-container>
             <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
             <tr *matRowDef="let row; columns: columns()" mat-row (dblclick)="openTeam(row)"></tr>

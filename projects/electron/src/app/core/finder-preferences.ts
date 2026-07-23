@@ -39,6 +39,7 @@ export interface TeamFinderFilters {
   versions: number[];
   leagueKeys: string[];
   countryIds: number[];
+  isNational?: boolean;
   overall: NumberRange;
   attack: NumberRange;
   midfield: NumberRange;
@@ -239,6 +240,9 @@ const normalizeFilters = <K extends FinderKind>(
         versions: numbers(item['versions']),
         leagueKeys: strings(item['leagueKeys']),
         countryIds: numbers(item['countryIds']),
+        ...(optionalBoolean(item['isNational']) === undefined
+          ? {}
+          : { isNational: optionalBoolean(item['isNational']) }),
         overall: range(item['overall']),
         attack: range(item['attack']),
         midfield: range(item['midfield']),

@@ -27,7 +27,7 @@ const builtIn: DatabaseDescriptor = {
   id: 'built-in',
   name: 'Built-in FIFA 11–23',
   kind: 'built-in',
-  schemaVersion: 1,
+  schemaVersion: 2,
   editions: 227_572,
   teamEditions: 8_907,
   leagueEditions: 560,
@@ -173,6 +173,9 @@ describe('Databases', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('h1')?.textContent).toContain('Manage FIFA databases');
+    expect(element.querySelector('.wizard-card .database-icon mat-icon')?.textContent?.trim()).toBe(
+      'upload_file',
+    );
     expect(element.textContent).toContain('Text-table folder');
     expect(element.textContent).toContain('t3db database');
     expect(element.querySelector('.database-summary')?.textContent).toContain('FIFA 11–23');

@@ -150,6 +150,12 @@ const teamComparator =
           return row.midfield;
         case 'defence':
           return row.defence;
+        case 'domesticPrestige':
+          return row.domesticPrestige;
+        case 'internationalPrestige':
+          return row.internationalPrestige;
+        case 'budget':
+          return row.budget;
       }
     };
     return compareRows(left, right, value(left), value(right), request.direction);

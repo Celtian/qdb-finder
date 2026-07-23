@@ -383,13 +383,43 @@ export interface DatabaseDescriptor extends DatabaseInfo {
   error?: string;
 }
 
-export interface DatabaseSourceSelection {
+export type DatabaseSourceKind = 'text-folder' | 't3db';
+
+interface DatabaseSourceSelectionBase {
   id: string;
-  displayPath: string;
-  folderName: string;
+  kind: DatabaseSourceKind;
+  suggestedName: string;
   detection: 'detected' | 'ambiguous' | 'unknown';
   detectedVersion?: number;
 }
+
+export interface TextDatabaseSourceSelection extends DatabaseSourceSelectionBase {
+  kind: 'text-folder';
+  displayPath: string;
+}
+
+export interface T3dbDatabaseSourceSelection extends DatabaseSourceSelectionBase {
+  kind: 't3db';
+  databaseDisplayPath: string;
+  metadataDisplayPath: string;
+}
+
+export type DatabaseSourceSelection = TextDatabaseSourceSelection | T3dbDatabaseSourceSelection;
+
+export interface DatabaseSourceFileSelection {
+  id: string;
+  displayPath: string;
+  fileName: string;
+}
+
+export interface T3dbDatabaseSourcePreparationRequest {
+  databaseFileId: string;
+  metadataFileId: string;
+}
+
+export type DatabaseSourcePreparationResult =
+  | { status: 'completed'; source: T3dbDatabaseSourceSelection }
+  | { status: 'failed'; message: string };
 
 export interface DatabaseImportRequest {
   requestId: string;
@@ -419,7 +449,8 @@ export type DatabaseSourceValidationIssueCode =
   | 'missing-reference';
 
 export interface DatabaseSourceValidationSample {
-  line: number;
+  line?: number;
+  record?: number;
   value?: string;
 }
 
@@ -491,7 +522,12 @@ export interface QdbApi {
   suggestEntityFacets(request: EntityFacetRequest): Promise<EntityFacetOption[]>;
   suggestFilters(request: FilterSuggestionRequest): Promise<FilterSuggestion[]>;
   listDatabases(): Promise<DatabaseDescriptor[]>;
-  selectDatabaseSource(): Promise<DatabaseSourceSelection | undefined>;
+  selectTextDatabaseSource(): Promise<TextDatabaseSourceSelection | undefined>;
+  selectT3dbDatabaseFile(): Promise<DatabaseSourceFileSelection | undefined>;
+  selectT3dbMetadataFile(): Promise<DatabaseSourceFileSelection | undefined>;
+  prepareT3dbDatabaseSource(
+    request: T3dbDatabaseSourcePreparationRequest,
+  ): Promise<DatabaseSourcePreparationResult>;
   validateDatabaseSource(
     request: DatabaseSourceValidationRequest,
   ): Promise<DatabaseSourceValidationResult>;

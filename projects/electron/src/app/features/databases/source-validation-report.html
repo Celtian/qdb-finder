@@ -36,9 +36,13 @@
               </summary>
               @if (issue.samples.length) {
                 <ul class="samples">
-                  @for (sample of issue.samples; track sample.line + ':' + (sample.value ?? '')) {
+                  @for (
+                    sample of issue.samples;
+                    track (sample.line ?? sample.record) + ':' + (sample.value ?? '')
+                  ) {
                     <li>
-                      Line {{ sample.line }}
+                      {{ sample.line === undefined ? 'Record' : 'Line' }}
+                      {{ sample.line ?? sample.record }}
                       @if (sample.value !== undefined) {
                         — <code>{{ sample.value }}</code>
                       }
@@ -68,9 +72,13 @@
               </summary>
               @if (issue.samples.length) {
                 <ul class="samples">
-                  @for (sample of issue.samples; track sample.line + ':' + (sample.value ?? '')) {
+                  @for (
+                    sample of issue.samples;
+                    track (sample.line ?? sample.record) + ':' + (sample.value ?? '')
+                  ) {
                     <li>
-                      Line {{ sample.line }}
+                      {{ sample.line === undefined ? 'Record' : 'Line' }}
+                      {{ sample.line ?? sample.record }}
                       @if (sample.value !== undefined) {
                         — <code>{{ sample.value }}</code>
                       }

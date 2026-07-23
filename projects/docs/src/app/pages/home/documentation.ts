@@ -357,10 +357,11 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Custom database library',
         paragraphs: [
-          'The desktop Databases page imports one FIFA 11–23 edition at a time. Select the folder that directly contains players.txt, teams.txt, nations.txt and the other exported tables, then provide a unique name. QDB Finder checks the headers and automatically selects a uniquely detected FIFA edition. Validate source performs a cancellable read-only scan before import and reports corrupted rows by file, field and line; advisory metadata warnings do not block modified databases.',
-          'Every import becomes an isolated SQLite file in the application-data directory. The bundled database stays immutable, compatible databases are searched together by default, cancellation removes temporary output, and deleting an import never changes the original text files.',
+          'The desktop Databases wizard imports one FIFA 11–23 edition at a time from either an exported text-table folder or a PC fifa_ng_db.db file with its matching metadata XML. PC t3db format version 8 is decoded through fifa-t3db; Xbox and other binary formats are rejected.',
+          'QDB Finder automatically selects a uniquely detected FIFA edition or asks for a manual choice when detection is uncertain. Validate performs a cancellable read-only scan and reports corrupted text rows by line and t3db rows by record. Advisory metadata warnings do not block modified databases, but a manual edition choice never bypasses schema compatibility checks.',
+          'Every import becomes an isolated SQLite file in the application-data directory. The bundled database stays immutable, compatible databases are searched together by default, cancellation removes temporary output, and deleting an import never changes the selected source files.',
         ],
-        note: 'A database with an incompatible schema remains listed but is excluded from search; re-import its source folder with the current application version.',
+        note: 'A generated database with an incompatible QDB schema remains listed but is excluded from search; re-import its original source with the current application version.',
       },
     ],
   },

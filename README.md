@@ -22,7 +22,7 @@ QDB Finder is an offline desktop search application for FIFA 11–23 player data
 - ⚡ Page and sort results inside SQLite without loading the complete dataset into Angular.
 - 📊 Inspect player attributes, team squads and stadiums, league teams and referees, raw fields, and historical editions.
 - 🗃️ Rebuild the complete database deterministically from the supplied FIFA text files.
-- 📁 Import custom FIFA 11–23 text-table folders into isolated databases, then switch or remove them from the in-app database library.
+- 📁 Import custom FIFA 11–23 text-table folders or PC t3db format-8 databases into isolated databases, then switch or remove them from the in-app database library.
 - 🔒 Keep Node.js, SQL, and filesystem access behind a sandboxed, typed Electron preload API.
 
 ## 🗂️ Workspace
@@ -52,9 +52,11 @@ Database generation processes 306 available supported-name files, preserves veri
 
 ### Importing a custom database
 
-Open **Databases** in the desktop navigation, enter a unique database name, and choose the folder that directly contains files such as `players.txt`, `teams.txt`, and `nations.txt`. QDB Finder compares the table headers with the FIFA 11–23 definitions and automatically selects a uniquely detected edition. Use **Validate source** before importing to scan table structure, numeric values, canonical identifiers, published ranges, and relationship references without creating database output. Corrupted data blocks import with file, field, and line details; advisory metadata warnings remain importable for modified databases.
+Open **Databases** in the desktop navigation and follow the import wizard. Choose either a folder that directly contains files such as `players.txt`, `teams.txt`, and `nations.txt`, or select a PC `fifa_ng_db.db` file together with its matching metadata XML. Direct binary imports use [`fifa-t3db`](https://www.npmjs.com/package/fifa-t3db) and support PC t3db format version 8; Xbox byte order and other binary versions are rejected.
 
-Each successful import is stored as a separate SQLite file in Electron's application-data directory and becomes active immediately. The bundled database remains immutable, imports can be cancelled safely, and removing a custom database never changes its original text files. Databases created with an incompatible future schema remain visible but must be re-imported.
+QDB Finder compares the source schema with the FIFA 11–23 definitions and automatically selects a uniquely detected edition. If detection is uncertain, choose the edition manually; compatibility is still checked. **Validate source** scans table structure, values, canonical identifiers, published ranges, and relationships without creating output. Corrupted text rows are reported by line and t3db rows by record; advisory metadata warnings remain importable.
+
+Each successful import is stored as a separate SQLite file in Electron's application-data directory and becomes active immediately. The bundled database remains immutable, imports can be cancelled safely, and removing a custom database never changes its source files. Databases created with an incompatible future schema remain visible but must be re-imported.
 
 ## 🧪 Checks and builds
 

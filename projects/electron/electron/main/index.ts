@@ -6,9 +6,10 @@ import {
   Menu,
   shell,
   type IpcMainInvokeEvent,
+  type OpenDialogOptions,
 } from 'electron';
 import { randomUUID } from 'node:crypto';
-import { basename, join } from 'node:path';
+import { basename, extname, join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { updateElectronApp } from 'update-electron-app';
 import type {
@@ -19,6 +20,8 @@ import type {
   DatabaseSourceValidationReport,
   DatabaseSourceValidationRequest,
   DatabaseSourceValidationResult,
+  DatabaseSourceFileSelection,
+  DatabaseSourcePreparationResult,
   FilterSuggestionRequest,
   LeagueEditionKey,
   LeagueSearchRequest,
@@ -30,14 +33,22 @@ import type {
   StadiumSearchRequest,
   TeamEditionKey,
   TeamSearchRequest,
+  T3dbDatabaseSourcePreparationRequest,
 } from '../../src/app/core/qdb-contracts';
 import { DatabaseLibrary } from '../database-library';
 import { DatabaseRegistry } from '../database-registry';
+import {
+  DatabaseSourceSelections,
+  type SelectedDatabaseSource,
+  type SelectedT3dbFileKind,
+} from '../database-source-selections';
 import { inspectSourceHeaders, SUPPORTED_FIFA_VERSIONS } from '../importer';
+import { inspectT3dbSource, t3dbSourceErrorMessage } from '../t3db-source';
 
 let databaseLibrary: DatabaseLibrary;
 let databaseRegistry: DatabaseRegistry;
-const sourceSelections = new Map<string, string>();
+
+const sourceSelections = new DatabaseSourceSelections();
 const imports = new Map<string, { worker: Worker; cancel: () => void }>();
 const validations = new Map<string, { worker: Worker; cancel: () => void }>();
 
@@ -46,6 +57,27 @@ app.setName('QDB Finder');
 
 const senderWindow = (event: IpcMainInvokeEvent): BrowserWindow | undefined =>
   BrowserWindow.fromWebContents(event.sender) ?? undefined;
+
+const selectT3dbFile = async (
+  event: IpcMainInvokeEvent,
+  kind: SelectedT3dbFileKind,
+): Promise<DatabaseSourceFileSelection | undefined> => {
+  const window = senderWindow(event);
+  const options: OpenDialogOptions = {
+    properties: ['openFile'],
+    filters:
+      kind === 'database'
+        ? [{ name: 'FIFA t3db database', extensions: ['db'] }]
+        : [{ name: 'FIFA metadata XML', extensions: ['xml'] }],
+  };
+  const result = window
+    ? await dialog.showOpenDialog(window, options)
+    : await dialog.showOpenDialog(options);
+  if (result.canceled || !result.filePaths[0]) return undefined;
+  const path = result.filePaths[0];
+  const id = sourceSelections.addT3dbFile(kind, path);
+  return { id, displayPath: path, fileName: basename(path) };
+};
 
 const databasePath = (): string =>
   process.env['QDB_DATABASE_PATH'] ??
@@ -65,26 +97,28 @@ const validateImportRequest = (request: DatabaseImportRequest): string => {
   return name;
 };
 
-const validateSourceRequest = (request: DatabaseSourceValidationRequest): string => {
+const validateSourceRequest = (
+  request: DatabaseSourceValidationRequest,
+): SelectedDatabaseSource => {
   if (!SUPPORTED_FIFA_VERSIONS.includes(request.version))
     throw new Error('Unsupported FIFA version. Choose FIFA 11–23.');
   if (!/^[0-9a-f-]{36}$/i.test(request.requestId))
     throw new Error('Invalid validation request identifier.');
-  const sourcePath = sourceSelections.get(request.selectionId);
-  if (!sourcePath) throw new Error('Select the source folder again before validating.');
+  const source = sourceSelections.get(request.selectionId);
+  if (!source) throw new Error('Select the database source again before validating.');
   if (validations.has(request.requestId)) throw new Error('This validation is already running.');
   if (validations.size || imports.size)
     throw new Error('Another database task is already running.');
-  return sourcePath;
+  return source;
 };
 
 const validateDatabaseSource = (
   event: IpcMainInvokeEvent,
   request: DatabaseSourceValidationRequest,
 ): Promise<DatabaseSourceValidationResult> => {
-  const sourcePath = validateSourceRequest(request);
+  const source = validateSourceRequest(request);
   const worker = new Worker(join(__dirname, '..', 'database-source-validation-worker.js'), {
-    workerData: { sourcePath, version: request.version },
+    workerData: { source, version: request.version },
   });
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -130,7 +164,7 @@ const validateDatabaseSource = (
             message:
               typeof message.message === 'string'
                 ? message.message
-                : 'The source folder could not be validated.',
+                : 'The database source could not be validated.',
           });
         }
       },
@@ -156,8 +190,8 @@ const importDatabase = (
   request: DatabaseImportRequest,
 ): Promise<DatabaseImportResult> => {
   const name = validateImportRequest(request);
-  const sourcePath = sourceSelections.get(request.selectionId);
-  if (!sourcePath) throw new Error('Select the source folder again before importing.');
+  const source = sourceSelections.get(request.selectionId);
+  if (!source) throw new Error('Select the database source again before importing.');
   if (imports.has(request.requestId)) throw new Error('This import is already running.');
   if (imports.size || validations.size)
     throw new Error('Another database task is already running.');
@@ -169,7 +203,7 @@ const importDatabase = (
       databaseId,
       databaseName: name,
       outputPath,
-      sourcePath,
+      source,
       version: request.version,
     },
   });
@@ -211,7 +245,7 @@ const importDatabase = (
             status: 'failed',
             error: message.error ?? {
               code: 'import-failed',
-              message: 'Database import failed. Check the selected folder and try again.',
+              message: 'Database import failed. Check the selected source and try again.',
               files: [],
             },
           });
@@ -226,7 +260,7 @@ const importDatabase = (
             if (!descriptor) throw new Error('Imported database could not be registered.');
             settled = true;
             finish();
-            sourceSelections.delete(request.selectionId);
+            sourceSelections.consume(request.selectionId);
             resolve({ status: 'completed', database: descriptor });
           } catch (error) {
             settled = true;
@@ -316,23 +350,70 @@ app.whenReady().then(async () => {
     databaseRegistry.suggest(request),
   );
   ipcMain.handle('qdb:databases:list', () => databaseLibrary.list());
-  ipcMain.handle('qdb:databases:select-source', async (event) => {
+  ipcMain.handle('qdb:databases:select-text-source', async (event) => {
     const window = senderWindow(event);
     const result = window
       ? await dialog.showOpenDialog(window, { properties: ['openDirectory'] })
       : await dialog.showOpenDialog({ properties: ['openDirectory'] });
     if (result.canceled || !result.filePaths[0]) return undefined;
-    const id = randomUUID();
-    sourceSelections.set(id, result.filePaths[0]);
-    const inspection = inspectSourceHeaders(result.filePaths[0]);
+    const path = result.filePaths[0];
+    const inspection = inspectSourceHeaders(path);
+    const id = sourceSelections.addTextSource(path);
     return {
       id,
-      displayPath: result.filePaths[0],
-      folderName: basename(result.filePaths[0]),
+      kind: 'text-folder',
+      displayPath: path,
+      suggestedName: basename(path),
       detection: inspection.detection,
       detectedVersion: inspection.detectedVersion,
     };
   });
+  ipcMain.handle('qdb:databases:select-t3db-database', (event) =>
+    selectT3dbFile(event, 'database'),
+  );
+  ipcMain.handle('qdb:databases:select-t3db-metadata', (event) =>
+    selectT3dbFile(event, 'metadata'),
+  );
+  ipcMain.handle(
+    'qdb:databases:prepare-t3db-source',
+    async (
+      _event,
+      request: T3dbDatabaseSourcePreparationRequest,
+    ): Promise<DatabaseSourcePreparationResult> => {
+      const source = sourceSelections.resolveT3dbPair(
+        request.databaseFileId,
+        request.metadataFileId,
+      );
+      if (!source)
+        return {
+          status: 'failed',
+          message: 'Select both t3db source files again before continuing.',
+        };
+      try {
+        const inspection = await inspectT3dbSource(source.databasePath, source.metadataPath);
+        const id = sourceSelections.addT3dbSource(
+          source,
+          request.databaseFileId,
+          request.metadataFileId,
+        );
+        return {
+          status: 'completed',
+          source: {
+            id,
+            kind: 't3db',
+            databaseDisplayPath: source.databasePath,
+            metadataDisplayPath: source.metadataPath,
+            suggestedName: basename(source.databasePath, extname(source.databasePath)),
+            detection: inspection.detection,
+            detectedVersion: inspection.detectedVersion,
+          },
+        };
+      } catch (error) {
+        console.error('[qdb:t3db] Source inspection failed:', error);
+        return { status: 'failed', message: t3dbSourceErrorMessage(error) };
+      }
+    },
+  );
   ipcMain.handle(
     'qdb:databases:validate-source',
     async (event, request: DatabaseSourceValidationRequest) => {
@@ -341,12 +422,11 @@ app.whenReady().then(async () => {
       } catch (error) {
         console.error('[qdb:validate] Validation request failed:', error);
         const technicalMessage = error instanceof Error ? error.message : String(error);
-        const message =
-          /^(Select the source|This validation|Another database task|Unsupported FIFA)/.test(
-            technicalMessage,
-          )
-            ? technicalMessage
-            : 'The source folder could not be validated. Check the folder and try again.';
+        const message = /^(Select the|This validation|Another database task|Unsupported FIFA)/.test(
+          technicalMessage,
+        )
+          ? technicalMessage
+          : 'The database source could not be validated. Check the source and try again.';
         return { status: 'failed', message } satisfies DatabaseSourceValidationResult;
       }
     },
@@ -363,11 +443,11 @@ app.whenReady().then(async () => {
     } catch (error) {
       const technicalMessage = error instanceof Error ? error.message : String(error);
       const message =
-        /^(Database name|A database|Select the source|This import|Another database task|Unsupported FIFA)/.test(
+        /^(Database name|A database|Select the|This import|Another database task|Unsupported FIFA)/.test(
           technicalMessage,
         )
           ? technicalMessage
-          : 'Database import failed. Check the selected folder and try again.';
+          : 'Database import failed. Check the selected source and try again.';
       console.error('[qdb:import] Import request failed:', error);
       return {
         status: 'failed',
@@ -414,5 +494,6 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   for (const running of validations.values()) running.cancel();
   for (const running of imports.values()) running.cancel();
+  sourceSelections.clear();
   databaseRegistry?.close();
 });

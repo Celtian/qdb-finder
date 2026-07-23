@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ['tools/**/*.spec.ts'],
     environment: 'node',
+    globalSetup: ['./tools/vitest.global-setup.ts'],
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage/tools',

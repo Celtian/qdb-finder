@@ -9,6 +9,9 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
+  'resolution-mode': 'import',
+};
 import { Attribute, CalculateUtils, Fifa as RatingFifa, Position } from 'fifarating';
 import { registerFifaDatePrototype } from 'fifadate';
 import { Datatype, Fifa, Table, fifaTableConfig, sortByOrder, type Field } from 'fifatables';
@@ -54,10 +57,21 @@ export interface NationCodeRow {
   isocountrycode?: NationCodeValue;
 }
 
-export interface ImportSource {
+export interface TextImportSource {
+  kind?: 'text-folder';
   fifa: Fifa;
   path: string;
 }
+
+export interface T3dbImportSource {
+  kind: 't3db';
+  fifa: Fifa;
+  databasePath: string;
+  metadataPath: string;
+  database: FifaDatabase;
+}
+
+export type ImportSource = TextImportSource | T3dbImportSource;
 
 export type ImportSourceIssueCode =
   | 'version-mismatch'
@@ -158,6 +172,8 @@ const runPhase = <T>(label: string, progress: ImportOptions['progress'], action:
   }
 };
 
+const isT3dbSource = (source: ImportSource): source is T3dbImportSource => source.kind === 't3db';
+
 const VALIDATION_SAMPLE_LIMIT = 5;
 const VALIDATION_GROUP_LIMIT_PER_SEVERITY = 100;
 const SAMPLE_VALUE_LIMIT = 120;
@@ -197,7 +213,10 @@ class SourceValidationAccumulator {
         if (
           current.samples.length < VALIDATION_SAMPLE_LIMIT &&
           !current.samples.some(
-            (candidate) => candidate.line === sample.line && candidate.value === sample.value,
+            (candidate) =>
+              candidate.line === sample.line &&
+              candidate.record === sample.record &&
+              candidate.value === sample.value,
           )
         )
           current.samples.push(sample);
@@ -462,6 +481,129 @@ export const readTable = (path: string, fields: Field[], options?: TableReadOpti
   }
   if (options?.throwOnErrors && options.accumulator.errorCount)
     throw validationError(`${options.table}.txt`, options.accumulator);
+  return rows;
+};
+
+const tableIssueFile = (table: Table, t3db: boolean): string =>
+  t3db ? `${table} table` : `${table}.txt`;
+
+const readT3dbTable = (
+  database: FifaDatabase,
+  table: Table,
+  fields: Field[],
+  accumulator: SourceValidationAccumulator,
+  throwOnErrors = false,
+): RawRow[] => {
+  const file = tableIssueFile(table, true);
+  let sourceRows: readonly FifaRow[];
+  try {
+    sourceRows = database.readTable(table).rows;
+  } catch (error) {
+    addMalformedFileIssue(
+      accumulator,
+      file,
+      error instanceof Error ? error.message : 'The t3db table could not be read.',
+    );
+    if (throwOnErrors) throw validationError(file, accumulator);
+    return [];
+  }
+  const seen = new Map<string, Map<string, { record: number; value: string; reported: boolean }>>(
+    fields.filter((field) => field.unique).map((field) => [field.name, new Map()]),
+  );
+  const rows: RawRow[] = [];
+  for (const [rowIndex, sourceRow] of sourceRows.entries()) {
+    const record = rowIndex + 1;
+    let valid = true;
+    const entries: [string, string | number][] = [];
+    for (const field of fields) {
+      const value = sourceRow[field.name];
+      if (value === undefined) {
+        valid = false;
+        accumulator.add({
+          severity: 'error',
+          code: 'malformed-row',
+          file,
+          field: field.name,
+          message: 'The required field is missing from this record.',
+          group: 'missing-field',
+          samples: [{ record }],
+        });
+        continue;
+      }
+      if (
+        (field.type === Datatype.String && typeof value !== 'string') ||
+        (field.type !== Datatype.String &&
+          (typeof value !== 'number' ||
+            !Number.isFinite(value) ||
+            (field.type === Datatype.Int && !Number.isSafeInteger(value))))
+      ) {
+        valid = false;
+        accumulator.add({
+          severity: 'error',
+          code:
+            field.type === Datatype.Int && typeof value === 'number' && !Number.isSafeInteger(value)
+              ? 'unsafe-integer'
+              : 'invalid-number',
+          file,
+          field: field.name,
+          message:
+            field.type === Datatype.String
+              ? 'Expected a string value.'
+              : `Expected a valid ${field.type === Datatype.Int ? 'integer' : 'number'}.`,
+          group: 'invalid-value',
+          samples: [{ record, value: sampleValue(String(value)) }],
+        });
+        continue;
+      }
+      entries.push([field.name, value]);
+      if (
+        typeof value === 'number' &&
+        field.range &&
+        (value < field.range.min || value > field.range.max)
+      )
+        accumulator.add({
+          severity: 'warning',
+          code: 'out-of-range',
+          file,
+          field: field.name,
+          message: `Value is outside the published range ${field.range.min}–${field.range.max}.`,
+          group: `${field.range.min}:${field.range.max}`,
+          samples: [{ record, value: sampleValue(String(value)) }],
+        });
+      if (field.unique) {
+        const key = String(value);
+        const valuesSeen = seen.get(field.name) as Map<
+          string,
+          { record: number; value: string; reported: boolean }
+        >;
+        const previous = valuesSeen.get(key);
+        if (!previous) valuesSeen.set(key, { record, value: String(value), reported: false });
+        else {
+          const critical = canonicalIdentityFields.get(table) === field.name;
+          accumulator.add({
+            severity: critical ? 'error' : 'warning',
+            code: 'duplicate-value',
+            file,
+            field: field.name,
+            message: critical
+              ? `Canonical identifier ${sampleValue(key)} occurs more than once.`
+              : `Value ${sampleValue(key)} occurs more than once in a field declared unique.`,
+            group: key,
+            count: previous.reported ? 1 : 2,
+            samples: [
+              ...(previous.reported
+                ? []
+                : [{ record: previous.record, value: sampleValue(previous.value) }]),
+              { record, value: sampleValue(String(value)) },
+            ],
+          });
+          previous.reported = true;
+        }
+      }
+    }
+    if (valid) rows.push(Object.fromEntries(entries));
+  }
+  if (throwOnErrors && accumulator.errorCount) throw validationError(file, accumulator);
   return rows;
 };
 
@@ -878,6 +1020,128 @@ const readHeader = (path: string): string[] => {
 const expectedHeader = (fifa: Fifa, table: Table): string[] =>
   [...fifaTableConfig(fifa, table)].sort(sortByOrder).map((field) => field.name);
 
+const compatibleT3dbFieldType = (field: Field, type: FifaXmlFieldType): boolean => {
+  if (field.type === Datatype.String) return type === 'DBOFIELDTYPE_STRING';
+  if (field.type === Datatype.Float) return type === 'DBOFIELDTYPE_REAL';
+  return type === 'DBOFIELDTYPE_INTEGER' || type === 'DBOFIELDTYPE_DATE';
+};
+
+const t3dbTableCompatibility = (
+  database: FifaDatabase,
+  fifa: Fifa,
+  table: Table,
+): { missing: string[]; incompatible: string[]; extra: string[] } => {
+  const schema = database.schema.tables.find(({ name }) => name === table);
+  const expected = fifaTableConfig(fifa, table);
+  if (!schema)
+    return {
+      missing: expected.map(({ name }) => name),
+      incompatible: [],
+      extra: [],
+    };
+  const actual = new Map(schema.fields.map((field) => [field.name, field]));
+  const expectedNames = new Set(expected.map(({ name }) => name));
+  return {
+    missing: expected.filter(({ name }) => !actual.has(name)).map(({ name }) => name),
+    incompatible: expected
+      .filter((field) => {
+        const candidate = actual.get(field.name);
+        return candidate !== undefined && !compatibleT3dbFieldType(field, candidate.type);
+      })
+      .map(({ name }) => name),
+    extra: schema.fields.filter(({ name }) => !expectedNames.has(name)).map(({ name }) => name),
+  };
+};
+
+const versionMatchesT3dbSchema = (database: FifaDatabase, fifa: Fifa): boolean =>
+  requiredTables(fifa).every((table) => {
+    const compatibility = t3dbTableCompatibility(database, fifa, table);
+    return (
+      compatibility.missing.length === 0 &&
+      compatibility.incompatible.length === 0 &&
+      compatibility.extra.length === 0
+    );
+  });
+
+export const inspectT3dbDatabase = (
+  database: FifaDatabase,
+  selectedVersion?: number,
+): SourceHeaderInspection => {
+  const matchingVersions = FIFAS.filter((fifa) => versionMatchesT3dbSchema(database, fifa))
+    .map((fifa) => Number(fifa.slice(4)))
+    .sort((left, right) => right - left);
+  const detection =
+    matchingVersions.length === 1
+      ? ('detected' as const)
+      : matchingVersions.length > 1
+        ? ('ambiguous' as const)
+        : ('unknown' as const);
+  const detectedVersion = detection === 'detected' ? matchingVersions[0] : undefined;
+  if (selectedVersion === undefined)
+    return { detection, detectedVersion, matchingVersions, diagnostics: [] };
+
+  const fifa = fifaForVersion(selectedVersion);
+  const requiredT3dbTables = [
+    ...requiredTables(fifa),
+    ...(fifa === Fifa.Fifa11 ? [] : ['version']),
+  ];
+  const missingTables = requiredT3dbTables.filter(
+    (table) => !database.schema.tables.some(({ name }) => name === table),
+  );
+  if (missingTables.length)
+    return {
+      detection,
+      detectedVersion,
+      matchingVersions,
+      issue: {
+        code: 'missing-files',
+        message: `This t3db database is missing required tables: ${fileSummary(missingTables)}.`,
+        files: missingTables.map((table) => `${table} table`),
+        detectedVersion,
+      },
+      diagnostics: missingTables.map((table) => `Missing required t3db table: ${table}`),
+    };
+
+  const invalid = requiredTables(fifa).flatMap((table) => {
+    const compatibility = t3dbTableCompatibility(database, fifa, table);
+    return [
+      ...compatibility.missing.map((field) => `${table}.${field} is missing`),
+      ...compatibility.incompatible.map((field) => `${table}.${field} has an incompatible type`),
+    ];
+  });
+  if (!invalid.length) {
+    if (detectedVersion !== undefined && detectedVersion !== selectedVersion)
+      return {
+        detection,
+        detectedVersion,
+        matchingVersions,
+        issue: {
+          code: 'version-mismatch',
+          message: `This t3db schema appears to be FIFA ${detectedVersion}, but FIFA ${selectedVersion} is selected.`,
+          files: [],
+          detectedVersion,
+        },
+        diagnostics: [],
+      };
+    return { detection, detectedVersion, matchingVersions, diagnostics: [] };
+  }
+  return {
+    detection,
+    detectedVersion,
+    matchingVersions,
+    issue: {
+      code: detectedVersion === undefined ? 'header-mismatch' : 'version-mismatch',
+      message:
+        detectedVersion !== undefined
+          ? `This t3db schema appears to be FIFA ${detectedVersion}, but FIFA ${selectedVersion} is selected.`
+          : `The t3db schema is not compatible with FIFA ${selectedVersion}.`,
+      files: [...new Set(invalid.map((entry) => `${entry.split('.')[0]} table`))],
+      detectedVersion,
+    },
+    diagnostics: invalid,
+  };
+};
+
 const fileSummary = (files: readonly string[]): string => {
   const visible = files.slice(0, 3);
   const remaining = files.length - visible.length;
@@ -1002,8 +1266,10 @@ export const inspectSourceHeaders = (
 };
 
 const validateSources = (sources: readonly ImportSource[]): void => {
-  for (const { fifa, path: sourcePath } of sources) {
-    const inspection = inspectSourceHeaders(sourcePath, Number(fifa.slice(4)));
+  for (const source of sources) {
+    const inspection = isT3dbSource(source)
+      ? inspectT3dbDatabase(source.database, Number(source.fifa.slice(4)))
+      : inspectSourceHeaders(source.path, Number(source.fifa.slice(4)));
     if (inspection.issue)
       throw new ImportSourceValidationError(inspection.issue, inspection.diagnostics);
   }
@@ -1012,8 +1278,9 @@ const validateSources = (sources: readonly ImportSource[]): void => {
 const addHeaderInspectionIssue = (
   accumulator: SourceValidationAccumulator,
   issue: ImportSourceIssue,
+  fallbackFile = 'Source folder',
 ): void => {
-  const files = issue.files.length ? issue.files : ['Source folder'];
+  const files = issue.files.length ? issue.files : [fallbackFile];
   for (const file of files)
     accumulator.add({
       severity: 'error',
@@ -1028,6 +1295,7 @@ const addHeaderInspectionIssue = (
 const addRelationshipWarnings = (
   rowsByTable: ReadonlyMap<Table, RawRow[]>,
   accumulator: SourceValidationAccumulator,
+  t3db = false,
 ): void => {
   const referenceIds = new Map<string, Set<string>>();
   const target = (table: Table, field: string): Set<string> => {
@@ -1104,11 +1372,15 @@ const addRelationshipWarnings = (
       accumulator.add({
         severity: 'warning',
         code: 'missing-reference',
-        file: `${check.table}.txt`,
+        file: tableIssueFile(check.table, t3db),
         field: check.field,
         message: `Referenced ${check.targetTable}.${check.targetField} value does not exist.`,
         group: `${check.targetTable}:${check.targetField}`,
-        samples: [{ line: rowIndex + 2, value: sampleValue(value) }],
+        samples: [
+          t3db
+            ? { record: rowIndex + 1, value: sampleValue(value) }
+            : { line: rowIndex + 2, value: sampleValue(value) },
+        ],
       });
     }
   }
@@ -1120,23 +1392,32 @@ export const validateSourceData = (
 ): DatabaseSourceValidationReport => {
   const accumulator = new SourceValidationAccumulator();
   const version = Number(source.fifa.slice(4));
-  const inspection = inspectSourceHeaders(source.path, version);
+  const t3db = isT3dbSource(source);
+  const inspection = t3db
+    ? inspectT3dbDatabase(source.database, version)
+    : inspectSourceHeaders(source.path, version);
   if (inspection.issue) {
-    addHeaderInspectionIssue(accumulator, inspection.issue);
+    addHeaderInspectionIssue(accumulator, inspection.issue, t3db ? 't3db schema' : 'Source folder');
     return accumulator.report();
   }
   const configuredTables = TABLES.filter((table) => {
-    const path = join(source.path, `${table}.txt`);
-    return fifaTableConfig(source.fifa, table).length > 0 && isFile(path);
+    if (fifaTableConfig(source.fifa, table).length === 0) return false;
+    return t3db
+      ? source.database.schema.tables.some(({ name }) => name === table)
+      : isFile(join(source.path, `${table}.txt`));
   });
   const rowsByTable = new Map<Table, RawRow[]>();
   for (const [index, table] of configuredTables.entries()) {
-    const file = `${table}.txt`;
+    const file = tableIssueFile(table, t3db);
     progress?.(`Validating ${file} (${index + 1}/${configuredTables.length})…`);
-    const path = join(source.path, file);
     const fields = [...fifaTableConfig(source.fifa, table)].sort(sortByOrder);
     try {
-      rowsByTable.set(table, readTable(path, fields, { table, accumulator }));
+      rowsByTable.set(
+        table,
+        t3db
+          ? readT3dbTable(source.database, table, fields, accumulator)
+          : readTable(join(source.path, `${table}.txt`), fields, { table, accumulator }),
+      );
     } catch (error) {
       addMalformedFileIssue(
         accumulator,
@@ -1145,7 +1426,7 @@ export const validateSourceData = (
       );
     }
   }
-  addRelationshipWarnings(rowsByTable, accumulator);
+  addRelationshipWarnings(rowsByTable, accumulator, t3db);
   return accumulator.report();
 };
 
@@ -1155,12 +1436,65 @@ const importRawTables = (
 ): { files: number; rows: number } => {
   let files = 0;
   let rows = 0;
-  const source = db.prepare('INSERT INTO import_source VALUES (?, ?, ?, ?, ?)');
+  const sourceStatement = db.prepare('INSERT INTO import_source VALUES (?, ?, ?, ?, ?)');
   const missing = db.prepare('INSERT INTO import_missing VALUES (?, ?, ?)');
-  for (const { fifa, path: sourcePath } of sources)
+  const insertTable = (
+    fifa: Fifa,
+    table: Table,
+    fields: Field[],
+    data: RawRow[],
+    sourcePath: string,
+    sourceBytes: number,
+  ): void => {
+    const columns = fields.map(
+      (field) =>
+        `${quote(field.name)} ${field.type === Datatype.String ? 'TEXT' : field.type === Datatype.Float ? 'REAL' : 'INTEGER'}`,
+    );
+    db.exec(`CREATE TABLE ${quote(rawTableName(fifa, table))} (${columns.join(',')})`);
+    const insert = db.prepare(
+      `INSERT INTO ${quote(rawTableName(fifa, table))} VALUES (${fields.map(() => '?').join(',')})`,
+    );
+    db.exec('BEGIN');
+    try {
+      for (const row of data)
+        insert.run(...fields.map((field) => row[field.name] as SQLInputValue));
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+    sourceStatement.run(Number(fifa.slice(4)), table, sourcePath, data.length, sourceBytes);
+    files += 1;
+    rows += data.length;
+  };
+  for (const importSource of sources)
     for (const table of TABLES) {
+      const { fifa } = importSource;
       const version = Number(fifa.slice(4));
       const fields = [...fifaTableConfig(fifa, table)].sort(sortByOrder);
+      if (isT3dbSource(importSource)) {
+        const tableInfo = importSource.database.listTables().find(({ name }) => name === table);
+        if (!fields.length) {
+          missing.run(version, table, 'No fifatables definition');
+          continue;
+        }
+        if (!tableInfo) {
+          missing.run(version, table, 'Source table is missing');
+          continue;
+        }
+        const accumulator = new SourceValidationAccumulator();
+        const data = readT3dbTable(importSource.database, table, fields, accumulator, true);
+        insertTable(
+          fifa,
+          table,
+          fields,
+          data,
+          `${importSource.databasePath}#${table}`,
+          tableInfo.recordSize * tableInfo.recordCount + tableInfo.compressedStringLength,
+        );
+        continue;
+      }
+      const sourcePath = importSource.path;
       const path = join(sourcePath, `${table}.txt`);
       let fileStat: ReturnType<typeof statSync> | undefined;
       try {
@@ -1173,7 +1507,7 @@ const importRawTables = (
           ? decodeFifaText(readFileSync(path)).split(/\r?\n/).filter(Boolean)
           : [];
         if (fileStat && sourceLines.length <= 1) {
-          source.run(version, table, path, 0, fileStat.size);
+          sourceStatement.run(version, table, path, 0, fileStat.size);
           missing.run(version, table, 'Header-only source has no fifatables definition');
           files += 1;
           continue;
@@ -1198,26 +1532,7 @@ const importRawTables = (
         );
         throw validationError(`${table}.txt`, accumulator);
       }
-      const columns = fields.map(
-        (field) =>
-          `${quote(field.name)} ${field.type === Datatype.String ? 'TEXT' : field.type === Datatype.Float ? 'REAL' : 'INTEGER'}`,
-      );
-      db.exec(`CREATE TABLE ${quote(rawTableName(fifa, table))} (${columns.join(',')})`);
-      const insert = db.prepare(
-        `INSERT INTO ${quote(rawTableName(fifa, table))} VALUES (${fields.map(() => '?').join(',')})`,
-      );
-      db.exec('BEGIN');
-      try {
-        for (const row of data)
-          insert.run(...fields.map((field) => row[field.name] as SQLInputValue));
-        db.exec('COMMIT');
-      } catch (error) {
-        db.exec('ROLLBACK');
-        throw error;
-      }
-      source.run(version, table, path, data.length, fileStat.size);
-      files += 1;
-      rows += data.length;
+      insertTable(fifa, table, fields, data, path, Number(fileStat.size));
     }
   return { files, rows };
 };
@@ -1226,8 +1541,14 @@ const tableRows = (db: DatabaseSync, fifa: Fifa, table: Table): SqlRow[] =>
   db.prepare(`SELECT * FROM ${quote(rawTableName(fifa, table))}`).all() as SqlRow[];
 const mapBy = (rows: SqlRow[], key: string, value: string): Map<number, string> =>
   new Map(rows.map((row) => [asNumber(row[key]), asText(row[value])]));
-const versionSnapshot = (sourcePath: string, fifa: Fifa): string => {
+export const sourceSnapshotDate = (source: ImportSource): string => {
+  const { fifa } = source;
   if (fifa === Fifa.Fifa11) return '2010-10-01';
+  if (isT3dbSource(source)) {
+    const exportDate = source.database.readTable('version').rows[0]?.['exportdate'];
+    return isoDate(exportDate ?? 0) ?? `${Number(fifa.slice(4)) - 1}-10-01`;
+  }
+  const sourcePath = source.path;
   const path = join(sourcePath, 'version.txt');
   const lines = decodeFifaText(readFileSync(path)).split(/\r?\n/);
   const header = parseTsvLine(lines[0]);
@@ -1307,9 +1628,10 @@ const buildCanonical = (
   let stadiumsCount = 0;
   let refereeLeagueLinks = 0;
   let stadiumTeamLinks = 0;
-  for (const { fifa, path: sourcePath } of sources) {
+  for (const importSource of sources) {
+    const { fifa } = importSource;
     const version = Number(fifa.slice(4));
-    const snapshot = versionSnapshot(sourcePath, fifa);
+    const snapshot = sourceSnapshotDate(importSource);
     const names = mapBy(tableRows(db, fifa, Table.PlayerNames), 'nameid', 'name');
     const nationRows = tableRows(db, fifa, Table.Nations);
     const nations = mapBy(nationRows, 'nationid', 'nationname');
@@ -1654,7 +1976,7 @@ const buildCanonical = (
 };
 
 export const buildDatabase = (options: ImportOptions): ImportSummary => {
-  if (!options.sources.length) throw new Error('At least one FIFA source folder is required.');
+  if (!options.sources.length) throw new Error('At least one FIFA source is required.');
   const uniqueVersions = new Set(options.sources.map(({ fifa }) => fifa));
   if (uniqueVersions.size !== options.sources.length)
     throw new Error('Each FIFA version can only be imported once per database.');

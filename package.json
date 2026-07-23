@@ -73,6 +73,7 @@
     "@angular/ssr": "^22.0.7",
     "@fontsource/roboto": "5.2.10",
     "express": "^5.1.0",
+    "fifa-t3db": "^0.0.2",
     "fifadate": "0.0.9",
     "fifarating": "0.2.4",
     "fifatables": "0.2.10",

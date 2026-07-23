@@ -3,6 +3,7 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatRadioButtonHarness } from '@angular/material/radio/testing';
 import { TestBed } from '@angular/core/testing';
+import type { WritableSignal } from '@angular/core';
 import axe from 'axe-core';
 import { of } from 'rxjs';
 import { DatabaseContext } from '../../core/database-context';
@@ -147,6 +148,86 @@ describe('Settings', () => {
 
     expect(removeCustomDatabases).not.toHaveBeenCalled();
     expect(context.databases()).toEqual([builtIn, custom]);
+  });
+
+  it('keeps finder preferences when their reset is cancelled', async () => {
+    window.localStorage.setItem(finderFilterPreferenceKey('players'), '{}');
+    window.localStorage.setItem(finderColumnPreferenceKey('players'), '["name"]');
+    const fixture = TestBed.createComponent(Settings);
+    await fixture.whenStable();
+    const testable = fixture.componentInstance as unknown as {
+      resetFinderPreferences(): Promise<void>;
+    };
+
+    await testable.resetFinderPreferences();
+
+    expect(window.localStorage.getItem(finderFilterPreferenceKey('players'))).not.toBeNull();
+    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).not.toBeNull();
+  });
+
+  it('does not open removal confirmation without removable data or while already removing', async () => {
+    databases = [builtIn];
+    const fixture = TestBed.createComponent(Settings);
+    await fixture.whenStable();
+    const testable = fixture.componentInstance as unknown as {
+      removing: WritableSignal<boolean>;
+      removeCustomDatabases(): Promise<void>;
+    };
+
+    await testable.removeCustomDatabases();
+    expect(open).not.toHaveBeenCalled();
+
+    context.set([builtIn, custom]);
+    testable.removing.set(true);
+    await testable.removeCustomDatabases();
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('reports plural removal success and removal failures', async () => {
+    const secondCustom = database(
+      '22222222-2222-4222-8222-222222222222',
+      'Custom FIFA 22',
+      'custom',
+    );
+    databases = [builtIn, custom, secondCustom];
+    dialogResult = true;
+    removeCustomDatabases.mockResolvedValueOnce([custom.id, secondCustom.id]);
+    const fixture = TestBed.createComponent(Settings);
+    await fixture.whenStable();
+    const testable = fixture.componentInstance as unknown as {
+      error: WritableSignal<string>;
+      success: WritableSignal<string>;
+      removeCustomDatabases(): Promise<void>;
+    };
+
+    await testable.removeCustomDatabases();
+    expect(testable.success()).toContain('2 custom databases were removed');
+
+    context.set([builtIn, custom]);
+    removeCustomDatabases.mockRejectedValueOnce(new Error('Removal crashed.'));
+    await testable.removeCustomDatabases();
+    expect(testable.error()).toBe('Removal crashed.');
+
+    removeCustomDatabases.mockRejectedValueOnce('unexpected failure');
+    await testable.removeCustomDatabases();
+    expect(testable.error()).toBe('Custom databases could not be removed.');
+  });
+
+  it('reports database-loading errors and retries with a fallback message', async () => {
+    listDatabases.mockRejectedValueOnce(new Error('Library crashed.'));
+    const fixture = TestBed.createComponent(Settings);
+    await fixture.whenStable();
+    const testable = fixture.componentInstance as unknown as {
+      error: WritableSignal<string>;
+      retry(): void;
+    };
+
+    expect(testable.error()).toBe('Library crashed.');
+
+    listDatabases.mockRejectedValueOnce('unexpected failure');
+    testable.retry();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Database library is unavailable.');
   });
 
   it('has no detectable AXE violations', async () => {

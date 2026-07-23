@@ -4,7 +4,11 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { FinderColumnKey } from '../../core/finder-columns';
+import {
+  defaultFinderColumnPreference,
+  type FinderColumnKey,
+  type FinderColumnPreference,
+} from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
@@ -79,12 +83,15 @@ describe('TeamFinder', () => {
         (): TeamSearchRequest;
         update(update: (value: TeamSearchRequest) => TeamSearchRequest): void;
       };
-      applyColumns(columns: readonly FinderColumnKey[]): void;
+      applyColumns(preference: FinderColumnPreference): void;
     };
     testable.request.update((value) => ({ ...value, countryIds: [14], offset: 50 }));
     searchTeams.mockClear();
 
-    testable.applyColumns(['name', 'country']);
+    testable.applyColumns({
+      ...defaultFinderColumnPreference('teams'),
+      visible: ['name', 'country'],
+    });
     await fixture.whenStable();
 
     expect(testable.columns()).toEqual(['name', 'country']);
@@ -99,7 +106,10 @@ describe('TeamFinder', () => {
     );
     expect(
       JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('teams')) ?? ''),
-    ).toEqual(['name', 'country']);
+    ).toEqual({
+      ...defaultFinderColumnPreference('teams'),
+      visible: ['name', 'country'],
+    });
   });
 
   it('stages rating ranges and searches once on Apply', async () => {

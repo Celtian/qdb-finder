@@ -4,7 +4,11 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
-import type { FinderColumnKey } from '../../core/finder-columns';
+import {
+  defaultFinderColumnPreference,
+  type FinderColumnKey,
+  type FinderColumnPreference,
+} from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
@@ -74,12 +78,15 @@ describe('LeagueFinder', () => {
         (): LeagueSearchRequest;
         update(update: (value: LeagueSearchRequest) => LeagueSearchRequest): void;
       };
-      applyColumns(columns: readonly FinderColumnKey[]): void;
+      applyColumns(preference: FinderColumnPreference): void;
     };
     testable.request.update((value) => ({ ...value, levels: [1], offset: 50 }));
     searchLeagues.mockClear();
 
-    testable.applyColumns(['name', 'level']);
+    testable.applyColumns({
+      ...defaultFinderColumnPreference('leagues'),
+      visible: ['name', 'level'],
+    });
     await fixture.whenStable();
 
     expect(testable.columns()).toEqual(['name', 'level']);
@@ -94,7 +101,10 @@ describe('LeagueFinder', () => {
     );
     expect(
       JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('leagues')) ?? ''),
-    ).toEqual(['name', 'level']);
+    ).toEqual({
+      ...defaultFinderColumnPreference('leagues'),
+      visible: ['name', 'level'],
+    });
   });
 
   it('stages league tiers until Apply', async () => {

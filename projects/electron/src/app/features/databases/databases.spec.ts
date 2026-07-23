@@ -7,12 +7,16 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatStepperHarness } from '@angular/material/stepper/testing';
 import { provideRouter } from '@angular/router';
 import axe from 'axe-core';
+import { of } from 'rxjs';
 import { Qdb } from '../../core/qdb';
 import type {
   DatabaseDescriptor,
+  DatabaseImportRequest,
+  DatabaseImportResult,
   DatabaseImportProgress,
   DatabaseSourceFileSelection,
   DatabaseSourceKind,
+  DatabaseSourceValidationResult,
   DatabaseSourceValidationProgress,
   DatabaseSourceValidationReport,
   TextDatabaseSourceSelection,
@@ -51,6 +55,14 @@ const custom: DatabaseDescriptor = {
 const validReport: DatabaseSourceValidationReport = {
   valid: true,
   errorCount: 0,
+  warningCount: 0,
+  issues: [],
+  omittedIssueGroups: 0,
+};
+
+const corruptedReport: DatabaseSourceValidationReport = {
+  valid: false,
+  errorCount: 1,
   warningCount: 0,
   issues: [],
   omittedIssueGroups: 0,
@@ -98,12 +110,14 @@ describe('Databases', () => {
       detectedVersion: 16,
     },
   }));
-  const importDatabase = vi.fn(async (request: { name: string }) => ({
-    status: 'completed' as const,
-    database: { ...builtIn, id: 'custom-id', name: request.name, kind: 'custom' as const },
-  }));
-  const validateDatabaseSource = vi.fn(async () => ({
-    status: 'completed' as const,
+  const importDatabase = vi.fn<(request: DatabaseImportRequest) => Promise<DatabaseImportResult>>(
+    async (request) => ({
+      status: 'completed',
+      database: { ...builtIn, id: 'custom-id', name: request.name, kind: 'custom' },
+    }),
+  );
+  const validateDatabaseSource = vi.fn<() => Promise<DatabaseSourceValidationResult>>(async () => ({
+    status: 'completed',
     report: validReport,
   }));
   const removeDatabase = vi.fn(async () => undefined);
@@ -408,23 +422,201 @@ describe('Databases', () => {
     expect(cancelDatabaseSourceValidation).toHaveBeenCalledWith('validation-request');
   });
 
-  it('announces import progress and forwards cancellation for the active request', async () => {
+  it('ignores unrelated progress and forwards progress and cancellation for active requests', async () => {
     const testable = fixture.componentInstance as unknown as {
       requestId: string;
+      validationRequestId: string;
       importing: WritableSignal<boolean>;
+      progress: WritableSignal<string>;
+      validationProgress: WritableSignal<string>;
       cancelImport(): Promise<void>;
+      cancelValidation(): Promise<void>;
     };
     testable.requestId = 'import-request';
+    testable.validationRequestId = 'validation-request';
     testable.importing.set(true);
 
-    progressListener({ requestId: 'import-request', message: 'Building canonical data…' });
+    progressListener({ requestId: 'other-request', message: 'Ignored import progress' });
+    validationProgressListener({
+      requestId: 'other-request',
+      message: 'Ignored validation progress',
+    });
+    expect(testable.progress()).toBe('');
+    expect(testable.validationProgress()).toBe('');
+
+    progressListener({ requestId: 'import-request', message: 'Importing players…' });
+    validationProgressListener({
+      requestId: 'validation-request',
+      message: 'Checking players…',
+    });
     await fixture.whenStable();
     await testable.cancelImport();
+    await testable.cancelValidation();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Building canonical data…',
-    );
+    expect(testable.progress()).toBe('Importing players…');
+    expect(testable.validationProgress()).toBe('Checking players…');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Importing players…');
     expect(cancelDatabaseImport).toHaveBeenCalledWith('import-request');
+    expect(cancelDatabaseSourceValidation).toHaveBeenCalledWith('validation-request');
+
+    testable.requestId = '';
+    testable.validationRequestId = '';
+    await testable.cancelImport();
+    await testable.cancelValidation();
+    expect(cancelDatabaseImport).toHaveBeenCalledOnce();
+    expect(cancelDatabaseSourceValidation).toHaveBeenCalledOnce();
+  });
+
+  it('handles cancelled selection and validation guard conditions', async () => {
+    selectTextDatabaseSource.mockResolvedValueOnce(undefined);
+    const testable = fixture.componentInstance as unknown as {
+      validating: WritableSignal<boolean>;
+      importing: WritableSignal<boolean>;
+      selectTextSource(): Promise<void>;
+      validateSource(): void;
+    };
+
+    await testable.selectTextSource();
+    testable.validateSource();
+    await fixture.whenStable();
+    expect(validateDatabaseSource).not.toHaveBeenCalled();
+
+    await testable.selectTextSource();
+    testable.validating.set(true);
+    testable.validateSource();
+    testable.validating.set(false);
+    testable.importing.set(true);
+    testable.validateSource();
+
+    expect(validateDatabaseSource).not.toHaveBeenCalled();
+  });
+
+  it('reports cancelled, failed, stale, and exceptional source validations', async () => {
+    const testable = fixture.componentInstance as unknown as {
+      model: WritableSignal<{ name: string; version: number }>;
+      success: WritableSignal<string>;
+      error: WritableSignal<string>;
+      validationReport(): DatabaseSourceValidationReport | undefined;
+      selectTextSource(): Promise<void>;
+      validateSource(): void;
+    };
+    await testable.selectTextSource();
+
+    validateDatabaseSource.mockResolvedValueOnce({ status: 'cancelled' });
+    testable.validateSource();
+    await fixture.whenStable();
+    expect(testable.success()).toBe('Source validation cancelled.');
+
+    validateDatabaseSource.mockResolvedValueOnce({ status: 'failed', message: 'Invalid headers.' });
+    testable.validateSource();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Invalid headers.');
+
+    validateDatabaseSource.mockImplementationOnce(async () => {
+      testable.model.update((value) => ({ ...value, version: value.version + 1 }));
+      return { status: 'completed', report: validReport };
+    });
+    testable.validateSource();
+    await fixture.whenStable();
+    expect(testable.validationReport()).toBeUndefined();
+
+    validateDatabaseSource.mockRejectedValueOnce(new Error('Validation crashed.'));
+    testable.validateSource();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Validation crashed.');
+
+    validateDatabaseSource.mockRejectedValueOnce('unexpected failure');
+    testable.validateSource();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Source validation failed.');
+  });
+
+  it('handles import preconditions and every non-completed import result', async () => {
+    const testable = fixture.componentInstance as unknown as {
+      model: WritableSignal<{ name: string; version: number }>;
+      error: WritableSignal<string>;
+      success: WritableSignal<string>;
+      validationReport(): DatabaseSourceValidationReport | undefined;
+      selectTextSource(): Promise<void>;
+      validateSource(): void;
+      import(): void;
+    };
+
+    testable.import();
+    expect(testable.error()).toBe('Validate the selected source before importing.');
+    expect(importDatabase).not.toHaveBeenCalled();
+
+    await testable.selectTextSource();
+    testable.validateSource();
+    await fixture.whenStable();
+    testable.model.update((value) => ({ ...value, name: 'Custom database' }));
+
+    importDatabase.mockResolvedValueOnce({ status: 'cancelled' });
+    testable.import();
+    await fixture.whenStable();
+    expect(testable.success()).toBe('Import cancelled. No database was added.');
+
+    importDatabase.mockResolvedValueOnce({
+      status: 'failed',
+      error: { code: 'import-failed', message: 'Import was rejected.', files: [] },
+    });
+    testable.import();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Import was rejected.');
+
+    importDatabase.mockRejectedValueOnce(new Error('Import crashed.'));
+    testable.import();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Import crashed.');
+
+    importDatabase.mockRejectedValueOnce('unexpected failure');
+    testable.import();
+    await fixture.whenStable();
+    expect(testable.error()).toBe('Database import failed.');
+
+    importDatabase.mockResolvedValueOnce({
+      status: 'failed',
+      error: {
+        code: 'source-corrupted',
+        message: 'Source is corrupted.',
+        files: ['players.txt'],
+        validation: corruptedReport,
+      },
+    });
+    testable.import();
+    await fixture.whenStable();
+    expect(testable.validationReport()).toBe(corruptedReport);
+  });
+
+  it('formats empty, singular, and non-contiguous edition ranges', () => {
+    const testable = fixture.componentInstance as unknown as {
+      formatVersionLabel(versions: number[]): string;
+    };
+
+    expect(testable.formatVersionLabel([])).toBe('No FIFA editions');
+    expect(testable.formatVersionLabel([16])).toBe('FIFA 16');
+    expect(testable.formatVersionLabel([23, 16])).toBe('FIFA 16, FIFA 23');
+  });
+
+  it('honors database-removal cancellation and confirmation', async () => {
+    const dialog = TestBed.inject(MatDialog);
+    const open = vi.spyOn(dialog, 'open');
+    const testable = fixture.componentInstance as unknown as {
+      remove(database: DatabaseDescriptor): Promise<void>;
+    };
+
+    open.mockReturnValueOnce({ afterClosed: () => of(false) } as never);
+    await testable.remove(builtIn);
+    expect(removeDatabase).not.toHaveBeenCalled();
+
+    open.mockReturnValueOnce({ afterClosed: () => of(true) } as never);
+    await testable.remove(builtIn);
+    expect(removeDatabase).toHaveBeenCalledWith(builtIn.id);
+    expect(listDatabases).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not expose activation controls', () => {
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Activate');
   });
 
   it('has no detectable AXE violations', async () => {

@@ -20,4 +20,16 @@ describe('application routes', () => {
     ]);
     expect(routes.at(-1)).toMatchObject({ path: '**', redirectTo: '' });
   });
+
+  it('resolves every lazy destination', async () => {
+    const components = await Promise.all(
+      routes.slice(0, 8).map(async (route) => {
+        if (!route.loadComponent) throw new Error(`Route ${route.path} is not lazy.`);
+        return route.loadComponent();
+      }),
+    );
+
+    expect(components).toHaveLength(8);
+    for (const component of components) expect(component).toBeTypeOf('function');
+  });
 });

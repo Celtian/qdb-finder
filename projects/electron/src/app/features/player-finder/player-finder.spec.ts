@@ -5,7 +5,11 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Qdb } from '../../core/qdb';
 import { DatabaseContext } from '../../core/database-context';
-import type { FinderColumnKey } from '../../core/finder-columns';
+import {
+  defaultFinderColumnPreference,
+  type FinderColumnKey,
+  type FinderColumnPreference,
+} from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
@@ -163,12 +167,15 @@ describe('PlayerFinder', () => {
         (): SearchRequest;
         update(update: (value: SearchRequest) => SearchRequest): void;
       };
-      applyColumns(columns: readonly FinderColumnKey[]): void;
+      applyColumns(preference: FinderColumnPreference): void;
     };
     testable.request.update((value) => ({ ...value, versions: [23], offset: 50 }));
     searchPlayers.mockClear();
 
-    testable.applyColumns(['name', 'birthDate']);
+    testable.applyColumns({
+      ...defaultFinderColumnPreference('players'),
+      visible: ['name', 'birthDate'],
+    });
     await fixture.whenStable();
 
     expect(testable.columns()).toEqual(['name', 'birthDate']);
@@ -184,7 +191,10 @@ describe('PlayerFinder', () => {
     );
     expect(
       JSON.parse(window.localStorage.getItem(finderColumnPreferenceKey('players')) ?? ''),
-    ).toEqual(['name', 'birthDate']);
+    ).toEqual({
+      ...defaultFinderColumnPreference('players'),
+      visible: ['name', 'birthDate'],
+    });
   });
 
   it('restores persisted columns and reconciles a hidden default sort on creation', async () => {

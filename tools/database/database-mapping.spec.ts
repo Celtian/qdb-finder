@@ -244,14 +244,14 @@ describe('database row mapping fallbacks', () => {
 });
 
 describe('database metadata fallbacks', () => {
-  it('requires schema-one databases to be re-imported', () => {
+  it('requires schema-two databases to be re-imported', () => {
     const directory = mkdtempSync(join(tmpdir(), 'qdb-old-schema-'));
     const path = join(directory, 'old.sqlite');
     const writable = new DatabaseSync(path);
     writable.exec(
-      'PRAGMA user_version = 1; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+      'PRAGMA user_version = 2; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
     );
-    writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '1');
+    writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '2');
     writable.close();
 
     expect(() => new PlayerDatabase(path)).toThrow(/Re-import this database/);
@@ -263,9 +263,9 @@ describe('database metadata fallbacks', () => {
     const path = join(directory, 'empty.sqlite');
     const writable = new DatabaseSync(path);
     writable.exec(
-      'PRAGMA user_version = 2; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+      'PRAGMA user_version = 3; CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
     );
-    writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '2');
+    writable.prepare('INSERT INTO metadata VALUES (?, ?)').run('schema_version', '3');
     writable.close();
 
     const database = new PlayerDatabase(path);
@@ -273,7 +273,7 @@ describe('database metadata fallbacks', () => {
       id: 'unknown',
       name: 'Unnamed database',
       kind: 'built-in',
-      schemaVersion: 2,
+      schemaVersion: 3,
       editions: 0,
       teamEditions: 0,
       leagueEditions: 0,

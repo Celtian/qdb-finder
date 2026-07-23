@@ -27,7 +27,7 @@ const builtIn: DatabaseDescriptor = {
   id: 'built-in',
   name: 'Built-in FIFA 11–23',
   kind: 'built-in',
-  schemaVersion: 2,
+  schemaVersion: 3,
   editions: 227_572,
   teamEditions: 8_907,
   leagueEditions: 560,

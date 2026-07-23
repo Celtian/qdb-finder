@@ -386,17 +386,20 @@ describe('FIFA text importer', () => {
     expect(progress.some((message) => message.includes('failed after'))).toBe(true);
   });
 
-  it('builds a named single-edition custom database with the shared schema', () => {
+  it('builds a named multi-edition custom database with the shared schema', () => {
     const directory = mkdtempSync(join(tmpdir(), 'qdb-custom-'));
     directories.push(directory);
     const path = join(directory, 'custom.sqlite');
     const progress: string[] = [];
 
     const summary = buildDatabase({
-      sources: [{ fifa: fifaForVersion(23), path: join(process.cwd(), 'examples', 'fifa23') }],
+      sources: [
+        { fifa: fifaForVersion(16), path: join(process.cwd(), 'examples', 'fifa16') },
+        { fifa: fifaForVersion(23), path: join(process.cwd(), 'examples', 'fifa23') },
+      ],
       outputPath: path,
       databaseId: '11111111-1111-4111-8111-111111111111',
-      databaseName: 'My FIFA 23',
+      databaseName: 'My FIFA 16 and 23',
       databaseKind: 'custom',
       verifyExpectedCounts: false,
       progress: (message) => progress.push(message),
@@ -411,11 +414,11 @@ describe('FIFA text importer', () => {
         }[]
       ).map(({ key, value }) => [key, value]),
     );
-    expect(database.prepare('PRAGMA user_version').get()?.['user_version']).toBe(2);
+    expect(database.prepare('PRAGMA user_version').get()?.['user_version']).toBe(3);
     expect(metadata).toMatchObject({
-      database_name: 'My FIFA 23',
+      database_name: 'My FIFA 16 and 23',
       database_kind: 'custom',
-      versions: '23',
+      versions: '16,23',
     });
     expect(summary.playerEditions).toBeGreaterThan(1_000);
     expect(summary.rawRows).toBeGreaterThan(summary.playerEditions);
@@ -451,6 +454,45 @@ describe('FIFA text importer', () => {
       country_id: 14,
       country_name: 'England',
       country_code: 'gb-eng',
+    });
+    expect(
+      database
+        .prepare(
+          `SELECT is_national, country_id, country_name, country_code
+           FROM team_edition WHERE version = 23 AND team_id = 110984`,
+        )
+        .get(),
+    ).toEqual({
+      is_national: 0,
+      country_id: 57,
+      country_name: 'Ecuador',
+      country_code: 'ec',
+    });
+    expect(
+      database
+        .prepare(
+          `SELECT is_national, country_id, country_name, country_code
+           FROM team_edition WHERE version = 16 AND team_id = 1629`,
+        )
+        .get(),
+    ).toEqual({
+      is_national: 0,
+      country_id: 54,
+      country_name: 'Brazil',
+      country_code: 'br',
+    });
+    expect(
+      database
+        .prepare(
+          `SELECT is_national, country_id, country_name, country_code
+           FROM team_edition WHERE version = 16 AND team_id = 1960`,
+        )
+        .get(),
+    ).toEqual({
+      is_national: 0,
+      country_id: 50,
+      country_name: 'Wales',
+      country_code: 'gb-wls',
     });
     database.close();
   }, 60_000);

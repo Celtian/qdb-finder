@@ -204,6 +204,7 @@ describe('finder columns', () => {
       versions: [22],
       leagueKeys: ['league'],
       countryIds: [14],
+      isNational: false,
       overall: { min: 70 },
       attack: {},
       midfield: {},
@@ -244,6 +245,7 @@ describe('finder columns', () => {
       gender: 'women',
       positions: ['ST'],
     });
+    expect(preferences.loadFilters('teams')).toMatchObject({ isNational: false });
     expect(preferences.loadFilters('teams').labels.country['14']?.label).toBe('England');
     expect(preferences.loadFilters('leagues').levels).toEqual([1]);
     expect(preferences.loadFilters('referees').isReal).toBe(true);

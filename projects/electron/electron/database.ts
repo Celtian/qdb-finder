@@ -212,6 +212,10 @@ export class PlayerDatabase {
     this.addListFilter('t.version', request.versions, where, values);
     this.addListFilter('t.league_key', request.leagueKeys, where, values);
     this.addListFilter('t.country_id', request.countryIds, where, values);
+    if (request.isNational !== undefined) {
+      where.push('t.is_national = ?');
+      values.push(Number(request.isNational));
+    }
     this.addRange('t.overall', request.overall, where, values);
     this.addRange('t.attack', request.attack, where, values);
     this.addRange('t.midfield', request.midfield, where, values);
@@ -704,6 +708,7 @@ export class PlayerDatabase {
       countryId: nullableNumber(row['country_id']),
       countryName: String(row['country_name'] ?? ''),
       countryCode: String(row['country_code'] ?? ''),
+      isNational: Boolean(Number(row['is_national'])),
       squadSize: Number(row['squad_size']),
       overall: nullableNumber(row['overall']),
       attack: nullableNumber(row['attack']),

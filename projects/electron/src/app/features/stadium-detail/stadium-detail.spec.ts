@@ -39,6 +39,7 @@ const stadium: StadiumDetails = {
       countryId: 14,
       countryName: 'England',
       countryCode: 'gb-eng',
+      isNational: false,
       squadSize: 32,
       overall: 82,
       attack: 84,

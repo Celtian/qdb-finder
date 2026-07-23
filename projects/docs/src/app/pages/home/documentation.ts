@@ -266,8 +266,8 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Team finder',
         paragraphs: [
-          'Search team names or an exact numeric Original ID, then filter by FIFA edition, exact league, country and overall, attack, midfield or defence rating ranges.',
-          'Available columns cover the source database, Original ID, edition, country, league, squad size and the four sortable rating measures. Use Columns to choose which appear beside the required team name.',
+          'Search team names or an exact numeric Original ID, then filter by FIFA edition, exact league, country, national-team status and overall, attack, midfield or defence rating ranges.',
+          'Available columns cover the source database, Original ID, edition, country, national-team status, league, squad size and the four sortable rating measures. National teams take their country from the source team-to-nation link. Use Columns to choose which appear beside the required team name.',
         ],
       },
       {

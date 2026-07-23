@@ -23,6 +23,7 @@ export type FinderColumnKey =
   | 'licensed'
   | 'midfield'
   | 'name'
+  | 'national'
   | 'nationality'
   | 'originalId'
   | 'overall'
@@ -89,6 +90,7 @@ export const finderColumns: Record<FinderKind, readonly FinderColumnDefinition[]
     defineColumn('database', 'Database'),
     defineColumn('version', 'Edition', 'version'),
     defineColumn('country', 'Country'),
+    defineColumn('national', 'National'),
     defineColumn('league', 'League', 'league'),
     defineColumn('squadSize', 'Squad', 'squadSize'),
     defineColumn('overall', 'OVR', 'overall'),

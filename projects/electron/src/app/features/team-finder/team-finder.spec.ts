@@ -113,7 +113,11 @@ describe('TeamFinder', () => {
   });
 
   it('stages rating ranges and searches once on Apply', async () => {
-    const testable = component as unknown as { openFilters(): void; applyFilters(): void };
+    const testable = component as unknown as {
+      openFilters(): void;
+      setNationalFilter(value: 'all' | 'yes' | 'no'): void;
+      applyFilters(): void;
+    };
     testable.openFilters();
     await fixture.whenStable();
     const overallMin = document.body.querySelector<HTMLInputElement>(
@@ -123,24 +127,26 @@ describe('TeamFinder', () => {
 
     overallMin!.value = '80';
     overallMin!.dispatchEvent(new Event('input'));
+    testable.setNationalFilter('no');
     await fixture.whenStable();
 
     expect(searchTeams).not.toHaveBeenCalled();
     testable.applyFilters();
-    expect(searchTeams).toHaveBeenCalledWith(expect.objectContaining({ overall: { min: 80 } }));
+    expect(searchTeams).toHaveBeenCalledWith(
+      expect.objectContaining({ overall: { min: 80 }, isNational: false }),
+    );
     expect(searchTeams.mock.calls.filter(([request]) => request.overall.min === 80)).toHaveLength(
       1,
     );
     expect(
-      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('teams')) ?? '').filters
-        .overall,
-    ).toEqual({ min: 80 });
+      JSON.parse(window.localStorage.getItem(finderFilterPreferenceKey('teams')) ?? '').filters,
+    ).toMatchObject({ overall: { min: 80 }, isNational: false });
     await fixture.whenStable();
     expect(
       (fixture.nativeElement as HTMLElement)
         .querySelector('.filter-button')
         ?.getAttribute('aria-label'),
-    ).toBe('Choose filters, 1 active');
+    ).toBe('Choose filters, 2 active');
   });
 
   it('renders the original team ID as a non-sortable column after the name', async () => {
@@ -157,6 +163,7 @@ describe('TeamFinder', () => {
       countryId: 14,
       countryName: 'England',
       countryCode: 'gb-eng',
+      isNational: true,
       squadSize: 25,
       overall: 80,
       attack: 81,
@@ -192,7 +199,7 @@ describe('TeamFinder', () => {
     expect(element.querySelector('td.cdk-column-database')).toBeNull();
     expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 4 hidden',
+      'Choose columns, 5 hidden',
     );
 
     testable.columns.set(['name', 'originalId', 'database']);
@@ -200,6 +207,11 @@ describe('TeamFinder', () => {
     const databaseCell = element.querySelector<HTMLElement>('td.cdk-column-database');
     expect(databaseCell?.textContent?.trim()).toBe('Built-in FIFA 11–23');
     expect(getComputedStyle(databaseCell!).whiteSpace).toBe('nowrap');
+
+    testable.columns.set(['name', 'national']);
+    await fixture.whenStable();
+    expect(element.querySelector('td.cdk-column-national')?.textContent?.trim()).toBe('Yes');
+    expect(element.querySelector('th.cdk-column-national .mat-sort-header-container')).toBeNull();
 
     testable.columns.set(['name', 'domesticPrestige', 'internationalPrestige', 'budget']);
     await fixture.whenStable();
@@ -236,6 +248,7 @@ describe('TeamFinder', () => {
       countryId: 14,
       countryName: 'England',
       countryCode: 'gb-eng',
+      isNational: false,
       squadSize: 25,
       overall: 80,
       attack: 81,
@@ -303,6 +316,7 @@ describe('TeamFinder', () => {
     testable.clearFilters();
     await fixture.whenStable();
     expect(testable.request()).toMatchObject({ offset: 0, leagueKeys: [], countryIds: [] });
+    expect(testable.request().isNational).toBeUndefined();
   });
 });
 

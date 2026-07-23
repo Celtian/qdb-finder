@@ -35,7 +35,7 @@ export const FIFAS = Object.values(Fifa);
 export const SUPPORTED_FIFA_VERSIONS = FIFAS.map((fifa) => Number(fifa.slice(4))).sort(
   (left, right) => right - left,
 );
-export const DATABASE_SCHEMA_VERSION = 1;
+export const DATABASE_SCHEMA_VERSION = 2;
 export const TABLES = Object.values(Table);
 export const EXPECTED_EDITIONS = 227_572;
 export const EXPECTED_TEAM_LINKS = 241_640;
@@ -937,6 +937,7 @@ const createSchema = (db: DatabaseSync): void =>
     team_key TEXT NOT NULL, team_name TEXT NOT NULL, league_id INTEGER,
     league_key TEXT NOT NULL, league_name TEXT NOT NULL, country_id INTEGER,
     country_name TEXT NOT NULL, country_code TEXT NOT NULL,
+    is_national INTEGER NOT NULL CHECK (is_national IN (0, 1)),
     squad_size INTEGER NOT NULL DEFAULT 0, overall INTEGER, attack INTEGER,
     midfield INTEGER, defence INTEGER, foundation_year INTEGER, raw_json TEXT NOT NULL,
     UNIQUE(version, team_id)
@@ -1610,7 +1611,7 @@ const buildCanonical = (
     'INSERT OR IGNORE INTO player_team VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   );
   const teamInsert = db.prepare(
-    `INSERT INTO team_edition VALUES (${Array.from({ length: 18 }, () => '?').join(',')})`,
+    `INSERT INTO team_edition VALUES (${Array.from({ length: 19 }, () => '?').join(',')})`,
   );
   const leagueInsert = db.prepare(
     `INSERT INTO league_edition VALUES (${Array.from({ length: 13 }, () => '?').join(',')})`,
@@ -1670,6 +1671,9 @@ const buildCanonical = (
     const teamLeagues = new Map<number, number>();
     for (const row of tableRows(db, fifa, Table.LeagueTeamLinks))
       teamLeagues.set(asNumber(row['teamid']), asNumber(row['leagueid']));
+    const teamNations = new Map<number, number>();
+    for (const row of optionalTableRows(db, fifa, Table.TeamNationLinks))
+      teamNations.set(asNumber(row['teamid']), asNumber(row['nationid']));
     const memberships = new Map<number, SqlRow[]>();
     for (const row of tableRows(db, fifa, Table.TeamPlayerLinks)) {
       const id = asNumber(row['playerid']);
@@ -1706,7 +1710,13 @@ const buildCanonical = (
         const leagueId = teamLeagues.get(teamId) ?? null;
         const league = leagueId === null ? undefined : leagueRowsById.get(leagueId);
         const leagueName = leagueId === null ? '' : (leagues.get(leagueId) ?? '');
-        const countryId = league ? optionalNumber(league['countryid']) : null;
+        const nationalCountryId = teamNations.get(teamId);
+        const isNational = nationalCountryId !== undefined;
+        const countryId = isNational
+          ? nationalCountryId
+          : league
+            ? optionalNumber(league['countryid'])
+            : null;
         teamInsert.run(
           `${version}:${teamId}`,
           version,
@@ -1719,6 +1729,7 @@ const buildCanonical = (
           countryId,
           countryId === null ? '' : (nations.get(countryId) ?? ''),
           countryId === null ? '' : (nationCodes.get(countryId) ?? ''),
+          Number(isNational),
           0,
           optionalNumber(team['overallrating']),
           optionalNumber(team['attackrating']),
@@ -1957,6 +1968,7 @@ const buildCanonical = (
     CREATE INDEX idx_team_edition_name ON team_edition(team_key);
     CREATE INDEX idx_team_edition_league ON team_edition(league_key);
     CREATE INDEX idx_team_edition_country ON team_edition(country_id);
+    CREATE INDEX idx_team_edition_national ON team_edition(is_national);
     CREATE INDEX idx_team_edition_overall ON team_edition(overall);
     CREATE INDEX idx_league_edition_version ON league_edition(version);
     CREATE INDEX idx_league_edition_name ON league_edition(league_key);
@@ -1994,12 +2006,19 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
     throw new Error('Each FIFA version can only be imported once per database.');
   runPhase('Validating source folders', options.progress, () => validateSources(options.sources));
   mkdirSync(dirname(options.outputPath), { recursive: true });
-  try {
-    unlinkSync(options.outputPath);
-  } catch {
-    /* a clean output is optional */
+  for (const path of [
+    options.outputPath,
+    `${options.outputPath}-shm`,
+    `${options.outputPath}-wal`,
+  ]) {
+    try {
+      unlinkSync(path);
+    } catch {
+      /* a clean output is optional */
+    }
   }
   const db = new DatabaseSync(options.outputPath);
+  let summary!: ImportSummary;
   try {
     runPhase('Creating schema', options.progress, () => createSchema(db));
     const raw = runPhase('Importing source tables', options.progress, () =>
@@ -2055,12 +2074,7 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
           `Unexpected canonical counts: ${canonical.players} players, ${canonical.teams} teams, ${canonical.leagues} leagues, ${canonical.referees} referees, ${canonical.stadiums} stadiums, ${canonical.links} player-team links, ${canonical.refereeLeagueLinks} referee-league links, ${canonical.stadiumTeamLinks} stadium-team links.`,
         );
     });
-    runPhase('Optimizing search data and vacuuming', options.progress, () =>
-      db.exec(
-        "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
-      ),
-    );
-    return {
+    summary = {
       sourceFiles: raw.files,
       rawRows: raw.rows,
       playerEditions: canonical.players,
@@ -2075,4 +2089,15 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
   } finally {
     db.close();
   }
+  runPhase('Optimizing search data and vacuuming', options.progress, () => {
+    const optimizer = new DatabaseSync(options.outputPath);
+    try {
+      optimizer.exec(
+        "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
+      );
+    } finally {
+      optimizer.close();
+    }
+  });
+  return summary;
 };

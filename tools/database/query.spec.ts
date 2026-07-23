@@ -209,6 +209,43 @@ integration('player queries', () => {
     expect(rows.every((row) => row.budget === null)).toBe(true);
   });
 
+  it('identifies and filters national teams while exposing their linked country', () => {
+    const national = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      versions: [23],
+      isNational: true,
+      pageSize: 200,
+    });
+    const clubs = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      versions: [23],
+      isNational: false,
+      pageSize: 200,
+    });
+    const czechRepublic = national.rows.find((row) => row.teamId === 1330);
+
+    expect(national.total).toBeGreaterThan(0);
+    expect(national.rows.every((row) => row.isNational)).toBe(true);
+    expect(clubs.total).toBeGreaterThan(0);
+    expect(clubs.rows.every((row) => !row.isNational)).toBe(true);
+    expect(czechRepublic).toMatchObject({
+      name: 'Czech Republic',
+      countryId: 12,
+      countryName: 'Czech Republic',
+      countryCode: 'cz',
+      isNational: true,
+    });
+    expect(
+      database.suggestEntityFacets({
+        databaseIds: [],
+        entity: 'team',
+        facet: 'country',
+        text: 'Czech Republic',
+        versions: [23],
+      })[0],
+    ).toMatchObject({ id: 12, label: 'Czech Republic', countryCode: 'cz' });
+  });
+
   it('returns league country codes, counts and edition previews', () => {
     const leagues = database.searchLeagues({
       ...defaultLeagueSearchRequest(),
@@ -542,6 +579,7 @@ integration('player queries', () => {
       versions: [23],
       leagueKeys: ['england premier league (1)'],
       countryIds: [14],
+      isNational: false,
       overall: { min: 70, max: 99 },
       attack: { min: 70, max: 99 },
       midfield: { min: 70, max: 99 },

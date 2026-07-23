@@ -21,6 +21,7 @@ const team: TeamDetails = {
   countryId: 14,
   countryName: 'England',
   countryCode: 'gb-eng',
+  isNational: false,
   squadSize: 33,
   overall: 80,
   attack: 83,

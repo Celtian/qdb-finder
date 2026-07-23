@@ -21,7 +21,7 @@ describe('Home', () => {
                 id: 'built-in',
                 name: 'Built-in FIFA 11–23',
                 kind: 'built-in' as const,
-                schemaVersion: 1,
+                schemaVersion: 2,
                 editions: 227_572,
                 teamEditions: 8_907,
                 leagueEditions: 560,

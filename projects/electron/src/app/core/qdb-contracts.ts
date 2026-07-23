@@ -120,6 +120,7 @@ export interface TeamSearchRequest {
   versions: number[];
   leagueKeys: string[];
   countryIds: number[];
+  isNational?: boolean;
   overall: NumberRange;
   attack: NumberRange;
   midfield: NumberRange;
@@ -143,6 +144,7 @@ export interface TeamEditionRow extends TeamEditionKey {
   countryId: number | null;
   countryName: string;
   countryCode: string;
+  isNational: boolean;
   squadSize: number;
   overall: number | null;
   attack: number | null;

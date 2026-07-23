@@ -34,6 +34,13 @@ export class TeamDetail {
     { label: 'Attack', value: this.team.attack, className: scoreClass(this.team.attack) },
     { label: 'Midfield', value: this.team.midfield, className: scoreClass(this.team.midfield) },
     { label: 'Defence', value: this.team.defence, className: scoreClass(this.team.defence) },
+    { label: 'Domestic', value: this.team.domesticPrestige, className: '' },
+    { label: 'International', value: this.team.internationalPrestige, className: '' },
+    {
+      label: 'Budget',
+      value: this.team.budget === null ? null : this.team.budget.toLocaleString(),
+      className: '',
+    },
   ];
   protected readonly players = this.team.players.map((player) => ({
     ...player,

@@ -26,6 +26,9 @@ const team: TeamDetails = {
   attack: 83,
   midfield: 80,
   defence: 79,
+  domesticPrestige: 7,
+  internationalPrestige: 8,
+  budget: 75_000_000,
   foundationYear: 1886,
   stadium: {
     key: '23:1',
@@ -109,6 +112,35 @@ describe('TeamDetail', () => {
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 team · Built-in FIFA 11–23 · Original ID 1');
+    const metrics = new Map(
+      [...element.querySelectorAll<HTMLElement>('.metric-grid > div')].map((metric) => [
+        metric.querySelector('span')?.textContent?.trim(),
+        metric.querySelector('strong')?.textContent?.trim(),
+      ]),
+    );
+    expect(metrics.get('Domestic')).toBe('7');
+    expect(metrics.get('International')).toBe('8');
+    expect(metrics.get('Budget')).toBe((75_000_000).toLocaleString());
+  });
+
+  it('renders a missing budget as unavailable', async () => {
+    fixture.destroy();
+    const budget = team.budget;
+    team.budget = null;
+    const missingBudgetFixture = TestBed.createComponent(TeamDetail);
+    try {
+      await missingBudgetFixture.whenStable();
+
+      const budgetMetric = [
+        ...(missingBudgetFixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+          '.metric-grid > div',
+        ),
+      ].find((metric) => metric.querySelector('span')?.textContent?.trim() === 'Budget');
+      expect(budgetMetric?.querySelector('strong')?.textContent?.trim()).toBe('—');
+    } finally {
+      missingBudgetFixture.destroy();
+      team.budget = budget;
+    }
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

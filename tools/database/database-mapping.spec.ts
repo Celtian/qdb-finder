@@ -109,6 +109,7 @@ describe('database row mapping fallbacks', () => {
         midfield: null,
         defence: null,
         foundation_year: null,
+        raw_json: '{"domesticprestige":0,"internationalprestige":"invalid","transferbudget":0}',
       }),
     ).toMatchObject({
       leagueId: null,
@@ -118,7 +119,48 @@ describe('database row mapping fallbacks', () => {
       countryName: '',
       countryCode: '',
       overall: null,
+      domesticPrestige: 0,
+      internationalPrestige: null,
+      budget: 0,
       foundationYear: null,
+    });
+    expect(
+      mapper.toTeamRow({
+        key: '22:1',
+        version: 22,
+        team_id: 1,
+        team_name: 'Current Team',
+        squad_size: 25,
+        overall: 80,
+        attack: 81,
+        midfield: 79,
+        defence: 78,
+        foundation_year: 1900,
+        raw_json: '{"domesticprestige":7,"internationalprestige":8,"transferbudget":75000000}',
+      }),
+    ).toMatchObject({
+      domesticPrestige: 7,
+      internationalPrestige: 8,
+      budget: 75_000_000,
+    });
+    expect(
+      mapper.toTeamRow({
+        key: '23:1',
+        version: 23,
+        team_id: 1,
+        team_name: 'Current Team',
+        squad_size: 25,
+        overall: 80,
+        attack: 81,
+        midfield: 79,
+        defence: 78,
+        foundation_year: 1900,
+        raw_json: '{}',
+      }),
+    ).toMatchObject({
+      domesticPrestige: null,
+      internationalPrestige: null,
+      budget: null,
     });
     expect(
       mapper.toLeagueRow({

@@ -58,6 +58,16 @@ describe('finder columns', () => {
       'midfield',
       'defence',
     ]);
+    expect(finderColumns.teams.slice(-3).map(({ key }) => key)).toEqual([
+      'domesticPrestige',
+      'internationalPrestige',
+      'budget',
+    ]);
+    expect(
+      defaultFinderColumns('teams').some((key) =>
+        ['domesticPrestige', 'internationalPrestige', 'budget'].includes(key),
+      ),
+    ).toBe(false);
     expect(defaultFinderColumns('leagues')).toEqual([
       'name',
       'originalId',

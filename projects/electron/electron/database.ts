@@ -50,6 +50,9 @@ const sortColumns: Record<SearchRequest['sort'], string> = {
   potential: 'p.potential',
   bestRating: 'p.best_rating',
 };
+const teamRawIntegerSort = (key: string): string =>
+  `CASE WHEN json_type(t.raw_json, '$.${key}') IN ('integer', 'real')
+    THEN CAST(json_extract(t.raw_json, '$.${key}') AS INTEGER) END`;
 const teamSortColumns: Record<TeamSearchRequest['sort'], string> = {
   name: 't.team_name COLLATE NOCASE',
   version: 't.version',
@@ -59,6 +62,9 @@ const teamSortColumns: Record<TeamSearchRequest['sort'], string> = {
   attack: 't.attack',
   midfield: 't.midfield',
   defence: 't.defence',
+  domesticPrestige: teamRawIntegerSort('domesticprestige'),
+  internationalPrestige: teamRawIntegerSort('internationalprestige'),
+  budget: teamRawIntegerSort('transferbudget'),
 };
 const leagueSortColumns: Record<LeagueSearchRequest['sort'], string> = {
   name: 'l.league_name COLLATE NOCASE',
@@ -94,6 +100,10 @@ const nullableNumber = (value: string | number | null): number | null =>
   value === null ? null : Number(value);
 const nullableBoolean = (value: string | number | null): boolean | null =>
   value === null ? null : Boolean(Number(value));
+const rawInteger = (raw: Readonly<Record<string, unknown>>, key: string): number | null => {
+  const value = raw[key];
+  return typeof value === 'number' && Number.isSafeInteger(value) ? value : null;
+};
 const positiveRawNumber = (
   value: string | number | null | undefined,
   key: string,
@@ -680,6 +690,7 @@ export class PlayerDatabase {
   }
 
   private toTeamRow(row: Row): TeamEditionRow {
+    const raw = parseObject<Record<string, unknown>>(String(row['raw_json'] ?? '{}'));
     return {
       key: `${this.databaseInfo.id}:${String(row['key'])}`,
       databaseId: this.databaseInfo.id,
@@ -698,6 +709,9 @@ export class PlayerDatabase {
       attack: nullableNumber(row['attack']),
       midfield: nullableNumber(row['midfield']),
       defence: nullableNumber(row['defence']),
+      domesticPrestige: rawInteger(raw, 'domesticprestige'),
+      internationalPrestige: rawInteger(raw, 'internationalprestige'),
+      budget: rawInteger(raw, 'transferbudget'),
       foundationYear: nullableNumber(row['foundation_year']),
     };
   }

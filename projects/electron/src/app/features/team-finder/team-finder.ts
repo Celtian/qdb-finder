@@ -66,6 +66,7 @@ interface TeamDisplay extends TeamEditionRow {
   attackClass: string;
   midfieldClass: string;
   defenceClass: string;
+  budgetLabel: string;
 }
 
 const scoreClass = (value: number | null): string => (value === null ? '' : scoreBadgeClass(value));
@@ -75,6 +76,7 @@ const teamDisplay = (row: TeamEditionRow): TeamDisplay => ({
   attackClass: scoreClass(row.attack),
   midfieldClass: scoreClass(row.midfield),
   defenceClass: scoreClass(row.defence),
+  budgetLabel: row.budget === null ? '—' : row.budget.toLocaleString(),
 });
 const validVersion = (value: string | null): number | undefined => {
   const version = Number(value);

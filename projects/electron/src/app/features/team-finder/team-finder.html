@@ -293,6 +293,20 @@
                 <span [class]="row.defenceClass">{{ row.defence ?? '—' }}</span>
               </td>
             </ng-container>
+            <ng-container matColumnDef="domesticPrestige">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="domesticPrestige">Domestic</th>
+              <td *matCellDef="let row" mat-cell>{{ row.domesticPrestige ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="internationalPrestige">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="internationalPrestige">
+                International
+              </th>
+              <td *matCellDef="let row" mat-cell>{{ row.internationalPrestige ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="budget">
+              <th *matHeaderCellDef mat-header-cell mat-sort-header="budget">Budget</th>
+              <td *matCellDef="let row" mat-cell>{{ row.budgetLabel }}</td>
+            </ng-container>
             <tr *matHeaderRowDef="columns(); sticky: true" mat-header-row></tr>
             <tr *matRowDef="let row; columns: columns()" mat-row (dblclick)="openTeam(row)"></tr>
           </table>

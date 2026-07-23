@@ -162,6 +162,9 @@ describe('TeamFinder', () => {
       attack: 81,
       midfield: 79,
       defence: 78,
+      domesticPrestige: 7,
+      internationalPrestige: 8,
+      budget: 75_000_000,
       foundationYear: 1900,
     };
     const testable = component as unknown as {
@@ -189,7 +192,7 @@ describe('TeamFinder', () => {
     expect(element.querySelector('td.cdk-column-database')).toBeNull();
     expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
     expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 1 hidden',
+      'Choose columns, 4 hidden',
     );
 
     testable.columns.set(['name', 'originalId', 'database']);
@@ -197,6 +200,17 @@ describe('TeamFinder', () => {
     const databaseCell = element.querySelector<HTMLElement>('td.cdk-column-database');
     expect(databaseCell?.textContent?.trim()).toBe('Built-in FIFA 11–23');
     expect(getComputedStyle(databaseCell!).whiteSpace).toBe('nowrap');
+
+    testable.columns.set(['name', 'domesticPrestige', 'internationalPrestige', 'budget']);
+    await fixture.whenStable();
+    expect(element.querySelector('td.cdk-column-domesticPrestige')?.textContent?.trim()).toBe('7');
+    expect(element.querySelector('td.cdk-column-internationalPrestige')?.textContent?.trim()).toBe(
+      '8',
+    );
+    expect(element.querySelector('td.cdk-column-budget')?.textContent?.trim()).toBe(
+      (75_000_000).toLocaleString(),
+    );
+    expect(element.querySelector('th.cdk-column-budget .mat-sort-header-container')).toBeTruthy();
   });
 
   it('supports the complete interactive filter, paging, sorting and detail workflow', async () => {
@@ -227,6 +241,9 @@ describe('TeamFinder', () => {
       attack: 81,
       midfield: 79,
       defence: 78,
+      domesticPrestige: 7,
+      internationalPrestige: 8,
+      budget: null,
       foundationYear: 1878,
     } satisfies TeamEditionRow;
     const testable = component as unknown as {

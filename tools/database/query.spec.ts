@@ -177,6 +177,38 @@ integration('player queries', () => {
     expect(legacy.rows[0]).toMatchObject({ overall: null, attack: null, foundationYear: null });
   });
 
+  it.each([
+    ['domestic prestige', 'domesticPrestige'],
+    ['international prestige', 'internationalPrestige'],
+    ['budget', 'budget'],
+  ] as const)('sorts teams numerically by %s', (_label, sort) => {
+    const rows = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      versions: [22],
+      sort,
+      direction: 'desc',
+      pageSize: 200,
+    }).rows;
+    const values = rows.map((row) => row[sort]);
+
+    expect(values.length).toBeGreaterThan(1);
+    expect(values.every((value) => value !== null)).toBe(true);
+    expect(values.every((value, index) => index === 0 || values[index - 1]! >= value!)).toBe(true);
+  });
+
+  it('returns a null budget when the source edition has no transfer budget', () => {
+    const rows = database.searchTeams({
+      ...defaultTeamSearchRequest(),
+      versions: [23],
+      sort: 'budget',
+      direction: 'asc',
+      pageSize: 10,
+    }).rows;
+
+    expect(rows).not.toHaveLength(0);
+    expect(rows.every((row) => row.budget === null)).toBe(true);
+  });
+
   it('returns league country codes, counts and edition previews', () => {
     const leagues = database.searchLeagues({
       ...defaultLeagueSearchRequest(),

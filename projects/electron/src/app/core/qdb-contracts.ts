@@ -13,7 +13,17 @@ export type SortField =
 export type SortDirection = 'asc' | 'desc';
 export type Gender = 'men' | 'women';
 export type TeamSortField =
-  'name' | 'version' | 'league' | 'squadSize' | 'overall' | 'attack' | 'midfield' | 'defence';
+  | 'name'
+  | 'version'
+  | 'league'
+  | 'squadSize'
+  | 'overall'
+  | 'attack'
+  | 'midfield'
+  | 'defence'
+  | 'domesticPrestige'
+  | 'internationalPrestige'
+  | 'budget';
 export type LeagueSortField =
   'name' | 'version' | 'country' | 'level' | 'teamCount' | 'playerCount';
 export type RefereeSortField =
@@ -138,6 +148,9 @@ export interface TeamEditionRow extends TeamEditionKey {
   attack: number | null;
   midfield: number | null;
   defence: number | null;
+  domesticPrestige: number | null;
+  internationalPrestige: number | null;
+  budget: number | null;
   foundationYear: number | null;
 }
 

@@ -91,53 +91,54 @@
             </div>
 
             @if (format() === 'text-folder') {
-              <div class="source-field">
-                <mat-form-field appearance="outline">
-                  <mat-label>Source folder</mat-label>
-                  <input matInput readonly [value]="textSource()?.displayPath ?? ''" />
-                </mat-form-field>
+              <mat-form-field class="source-picker" appearance="outline">
+                <mat-label>Source folder</mat-label>
+                <input matInput readonly [value]="textSource()?.displayPath ?? ''" />
                 <button
                   type="button"
-                  mat-stroked-button
+                  mat-icon-button
+                  matSuffix
+                  [attr.aria-label]="textSource() ? 'Change source folder' : 'Select source folder'"
                   [disabled]="busy()"
                   (click)="selectTextSource()"
                 >
                   <mat-icon>folder_open</mat-icon>
-                  Browse
                 </button>
-              </div>
+              </mat-form-field>
             } @else {
               <div class="source-fields">
-                <div class="source-field">
-                  <mat-form-field appearance="outline">
-                    <mat-label>t3db database</mat-label>
-                    <input matInput readonly [value]="t3dbDatabaseFile()?.displayPath ?? ''" />
-                  </mat-form-field>
+                <mat-form-field class="source-picker" appearance="outline">
+                  <mat-label>t3db database</mat-label>
+                  <input matInput readonly [value]="t3dbDatabaseFile()?.displayPath ?? ''" />
                   <button
                     type="button"
-                    mat-stroked-button
+                    mat-icon-button
+                    matSuffix
+                    [attr.aria-label]="
+                      t3dbDatabaseFile() ? 'Change t3db database file' : 'Select t3db database file'
+                    "
                     [disabled]="busy()"
                     (click)="selectT3dbDatabase()"
                   >
-                    <mat-icon>storage</mat-icon>
-                    Browse
+                    <mat-icon>folder_open</mat-icon>
                   </button>
-                </div>
-                <div class="source-field">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Metadata XML</mat-label>
-                    <input matInput readonly [value]="t3dbMetadataFile()?.displayPath ?? ''" />
-                  </mat-form-field>
+                </mat-form-field>
+                <mat-form-field class="source-picker" appearance="outline">
+                  <mat-label>Metadata XML</mat-label>
+                  <input matInput readonly [value]="t3dbMetadataFile()?.displayPath ?? ''" />
                   <button
                     type="button"
-                    mat-stroked-button
+                    mat-icon-button
+                    matSuffix
+                    [attr.aria-label]="
+                      t3dbMetadataFile() ? 'Change metadata XML file' : 'Select metadata XML file'
+                    "
                     [disabled]="busy()"
                     (click)="selectT3dbMetadata()"
                   >
-                    <mat-icon>description</mat-icon>
-                    Browse
+                    <mat-icon>folder_open</mat-icon>
                   </button>
-                </div>
+                </mat-form-field>
               </div>
             }
 

@@ -194,6 +194,103 @@ describe('Databases', () => {
     expect(validationProgressListener).toBeTypeOf('function');
   });
 
+  it('uses an accessible folder suffix action for the text-table source', async () => {
+    const stepper = await loader.getHarness(MatStepperHarness);
+    await stepper.selectStep({ label: 'Source' });
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const sourceField = element.querySelector<HTMLElement>('.source-picker');
+    const path = sourceField?.querySelector<HTMLInputElement>('input');
+    const button = await loader.getHarness(
+      MatButtonHarness.with({
+        selector: 'button[aria-label="Select source folder"]',
+        variant: 'icon',
+        iconName: 'folder_open',
+      }),
+    );
+
+    expect(path?.value).toBe('');
+    expect(sourceField?.querySelectorAll('button[matSuffix]')).toHaveLength(1);
+    expect(element.querySelector('app-folder-selector')).toBeNull();
+
+    await button.click();
+    await fixture.whenStable();
+
+    expect(selectTextDatabaseSource).toHaveBeenCalledOnce();
+    expect(path?.value).toBe('/examples/FIP16 V9.2 AFC');
+    expect(sourceField?.querySelector('button[aria-label="Change source folder"]')).toBeTruthy();
+
+    const testable = fixture.componentInstance as unknown as {
+      selecting: WritableSignal<boolean>;
+    };
+    testable.selecting.set(true);
+    await fixture.whenStable();
+
+    expect(await button.isDisabled()).toBe(true);
+  });
+
+  it('uses accessible folder suffix actions for both t3db files', async () => {
+    const stepper = await loader.getHarness(MatStepperHarness);
+    await stepper.selectStep({ label: 'Source' });
+    const testable = fixture.componentInstance as unknown as {
+      selecting: WritableSignal<boolean>;
+      changeFormat(format: DatabaseSourceKind): void;
+    };
+    testable.changeFormat('t3db');
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const sourceFields = element.querySelector<HTMLElement>('.source-fields');
+    const databaseButton = await loader.getHarness(
+      MatButtonHarness.with({
+        selector: 'button[aria-label="Select t3db database file"]',
+        variant: 'icon',
+        iconName: 'folder_open',
+      }),
+    );
+    const metadataButton = await loader.getHarness(
+      MatButtonHarness.with({
+        selector: 'button[aria-label="Select metadata XML file"]',
+        variant: 'icon',
+        iconName: 'folder_open',
+      }),
+    );
+
+    expect(sourceFields?.querySelectorAll('button[matSuffix]')).toHaveLength(2);
+    expect(sourceFields?.querySelector('.source-field')).toBeNull();
+    expect(sourceFields?.textContent).not.toContain('Browse');
+
+    await databaseButton.click();
+    await metadataButton.click();
+    await fixture.whenStable();
+
+    const [databaseInput, metadataInput] = [
+      ...(sourceFields?.querySelectorAll<HTMLInputElement>('input') ?? []),
+    ];
+    expect(selectT3dbDatabaseFile).toHaveBeenCalledOnce();
+    expect(selectT3dbMetadataFile).toHaveBeenCalledOnce();
+    expect(databaseInput?.value).toBe('/game/fifa_ng_db.db');
+    expect(metadataInput?.value).toBe('/game/fifa_ng_db-meta.xml');
+    expect(
+      sourceFields?.querySelector('button[aria-label="Change t3db database file"]'),
+    ).toBeTruthy();
+    expect(
+      sourceFields?.querySelector('button[aria-label="Change metadata XML file"]'),
+    ).toBeTruthy();
+
+    testable.selecting.set(true);
+    await fixture.whenStable();
+
+    const suffixButtons = await loader.getAllHarnesses(
+      MatButtonHarness.with({ selector: '.source-fields button' }),
+    );
+    expect(await Promise.all(suffixButtons.map((button) => button.isDisabled()))).toEqual([
+      true,
+      true,
+    ]);
+  });
+
   it('validates and imports a text-table source before resetting the wizard', async () => {
     const testable = fixture.componentInstance as unknown as {
       format: WritableSignal<DatabaseSourceKind>;

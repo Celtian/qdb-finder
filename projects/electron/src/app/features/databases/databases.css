@@ -98,16 +98,8 @@ main {
   display: grid;
   gap: 1rem;
 }
-.source-field {
-  display: flex;
-  align-items: start;
-  gap: 0.75rem;
-}
-.source-field mat-form-field {
-  flex: 1;
-}
-.source-field button {
-  margin-top: 0.25rem;
+.source-picker {
+  width: 100%;
 }
 .details-fields {
   display: grid;
@@ -343,12 +335,6 @@ section {
   .import-summary,
   .database-grid {
     grid-template-columns: 1fr;
-  }
-  .source-field {
-    flex-direction: column;
-  }
-  .source-field button {
-    margin-top: -0.5rem;
   }
   .import-summary div + div {
     border-top: 1px solid var(--mat-sys-outline-variant);

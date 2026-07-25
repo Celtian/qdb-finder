@@ -120,8 +120,8 @@
   <header class="entity-topbar">
     <app-navigation-trigger />
     <div>
-      <p class="eyebrow">Grounds across every edition</p>
-      <h1>Browse stadium editions</h1>
+      <p class="eyebrow">Stadium finder</p>
+      <h1>Search stadiums across editions</h1>
     </div>
   </header>
   <main>
@@ -187,14 +187,14 @@
       } @else if (error()) {
         <div class="state error">
           <mat-icon>database_off</mat-icon>
-          <h2>Stadiums unavailable</h2>
+          <h2>Stadium search unavailable</h2>
           <p>{{ error() }}</p>
           <button type="button" mat-flat-button (click)="retrySearch()">Try again</button>
         </div>
       } @else if (!rows().length) {
         <div class="state">
           <mat-icon>stadium</mat-icon>
-          <h2>No stadiums match these filters</h2>
+          <h2>No stadiums match your search and filters</h2>
         </div>
       } @else {
         <div class="table-scroll">

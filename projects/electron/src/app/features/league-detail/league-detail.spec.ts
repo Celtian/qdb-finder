@@ -111,6 +111,12 @@ describe('LeagueDetail', () => {
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 league · Built-in FIFA 11–23 · Original ID 13');
+    expect(element.querySelector('#league-teams-heading')?.textContent?.trim()).toBe(
+      'Top-rated teams',
+    );
+    expect(element.querySelector('#league-referees-heading')?.textContent?.trim()).toBe(
+      'Assigned referees',
+    );
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

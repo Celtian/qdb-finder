@@ -49,6 +49,9 @@ describe('FinderColumnDrawer', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('form')?.getAttribute('aria-labelledby'),
     ).toBe('finder-column-title');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#finder-column-title')?.textContent,
+    ).toBe('Choose columns');
     expect(await name.isChecked()).toBe(true);
     expect(await name.isDisabled()).toBe(true);
     expect(await database.isChecked()).toBe(true);

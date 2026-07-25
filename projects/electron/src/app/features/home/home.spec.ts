@@ -58,7 +58,7 @@ describe('Home', () => {
     expect(header?.querySelector('.eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       '1 searchable database',
     );
-    expect(header?.querySelector('h1')?.textContent?.trim()).toBe('Explore every edition');
+    expect(header?.querySelector('h1')?.textContent?.trim()).toBe('Explore FIFA editions');
     expect(header?.querySelector('.lead')).toBeNull();
     expect(lead?.textContent).toContain('Browse players, teams, leagues, referees and stadiums');
   });

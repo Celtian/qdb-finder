@@ -82,8 +82,13 @@ describe('Settings', () => {
     const fixture = TestBed.createComponent(Settings);
     await fixture.whenStable();
     const loader = TestbedHarnessEnvironment.loader(fixture);
+    const element = fixture.nativeElement as HTMLElement;
 
-    expect(fixture.nativeElement.textContent).toContain('1 custom database installed');
+    expect(element.querySelector('#finder-heading')?.textContent?.trim()).toBe(
+      'Saved finder filters',
+    );
+    expect(element.textContent).toContain('Restore default filters for every finder.');
+    expect(element.textContent).toContain('1 custom database installed');
     const dark = await loader.getHarness(MatRadioButtonHarness.with({ label: /Dark/ }));
     await dark.check();
     await fixture.whenStable();

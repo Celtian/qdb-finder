@@ -308,9 +308,7 @@ describe('Databases', () => {
     expect(validateDatabaseSource).toHaveBeenCalledWith(
       expect.objectContaining({ selectionId: 'text-selection', version: 16 }),
     );
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Source validation completed',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Source ready to import');
 
     testable.model.update((value) => ({ ...value, name: ' Custom FIFA 16 ' }));
     testable.continueToSummary();
@@ -451,6 +449,7 @@ describe('Databases', () => {
     await fixture.whenStable();
 
     const alert = (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Source cannot be imported');
     expect(alert?.textContent).toContain('players table · playerid');
     expect(alert?.textContent).toContain('Record 2');
     expect(importDatabase).not.toHaveBeenCalled();
@@ -465,15 +464,13 @@ describe('Databases', () => {
     await testable.selectTextSource();
     testable.validateSource();
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Source validation completed',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Source ready to import');
 
     testable.model.update((value) => ({ ...value, version: 17 }));
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain(
-      'Source validation completed',
+      'Source ready to import',
     );
   });
 

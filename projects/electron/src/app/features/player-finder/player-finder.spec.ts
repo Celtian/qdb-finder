@@ -68,13 +68,18 @@ describe('PlayerFinder', () => {
   afterEach(() => TestBed.inject(MatDialog).closeAll());
 
   it('should create', () => {
+    const element = fixture.nativeElement as HTMLElement;
+
     expect(component).toBeTruthy();
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-navigation-trigger'),
-    ).toBeTruthy();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.search')?.textContent).toContain(
+    expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(element.querySelector('.topbar .eyebrow')?.textContent?.trim()).toBe('Player finder');
+    expect(element.querySelector('.topbar h1')?.textContent?.trim()).toBe(
+      'Search players across editions',
+    );
+    expect(element.querySelector('.search')?.textContent).toContain(
       'Search players, teams, leagues, countries or Original ID',
     );
+    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe('Search for a player');
   });
 
   it('centers the search field', () => {
@@ -103,6 +108,9 @@ describe('PlayerFinder', () => {
     testable.error.set('Unavailable');
     await fixture.whenStable();
     expectControls();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.state h2')?.textContent?.trim(),
+    ).toBe('Player search unavailable');
     testable.error.set('');
     await fixture.whenStable();
     expectControls();

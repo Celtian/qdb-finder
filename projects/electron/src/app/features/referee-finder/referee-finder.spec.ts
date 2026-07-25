@@ -65,18 +65,22 @@ describe('RefereeFinder', () => {
   afterEach(() => TestBed.inject(MatDialog).closeAll());
 
   it('renders the empty state after loading', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+
     expect(component).toBeTruthy();
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-navigation-trigger'),
-    ).toBeTruthy();
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
-    ).toContain('Search referees or Original ID');
+    expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
+      'Referee finder',
+    );
+    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+      'Search referees across editions',
+    );
+    expect(element.querySelector('.entity-search')?.textContent).toContain(
+      'Search referees or Original ID',
+    );
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-        'No referees match these filters',
-      );
+      expect(element.textContent).toContain('No referees match your search and filters');
     });
   });
 

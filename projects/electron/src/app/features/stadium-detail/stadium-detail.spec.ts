@@ -85,6 +85,9 @@ describe('StadiumDetail', () => {
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 stadium · Built-in FIFA 11–23 · Original ID 1');
+    expect(element.querySelector('#stadium-teams-heading')?.textContent?.trim()).toBe(
+      'Top-rated teams',
+    );
   });
 
   it('renders Overview by default and raw fields in the final tab', async () => {

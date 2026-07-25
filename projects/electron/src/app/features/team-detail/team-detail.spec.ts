@@ -113,6 +113,12 @@ describe('TeamDetail', () => {
     expect(
       element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 team · Built-in FIFA 11–23 · Original ID 1');
+    expect(element.querySelector('#team-roster-heading')?.textContent?.trim()).toBe(
+      'Top-rated players',
+    );
+    expect(
+      element.querySelector('#team-roster-heading')?.previousElementSibling?.textContent?.trim(),
+    ).toBe('Squad');
     const metrics = new Map(
       [...element.querySelectorAll<HTMLElement>('.metric-grid > div')].map((metric) => [
         metric.querySelector('span')?.textContent?.trim(),

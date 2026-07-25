@@ -69,6 +69,13 @@ describe('FinderColumnLayouts', () => {
         .querySelector('mat-card.column-layouts')
         ?.classList.contains('mat-mdc-card-outlined'),
     ).toBe(false);
+    const resetCard = (fixture.nativeElement as HTMLElement).querySelector('.reset-layouts');
+    expect(resetCard?.querySelector('mat-card-title')?.textContent?.trim()).toBe(
+      'Reset column layouts',
+    );
+    expect(resetCard?.querySelector('mat-card-subtitle')?.textContent?.trim()).toBe(
+      'Restore default column visibility and order for every finder.',
+    );
     expect([...(fixture.nativeElement as HTMLElement).querySelectorAll('mat-card')].length).toBe(2);
   });
 

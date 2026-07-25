@@ -62,8 +62,11 @@ main {
 
 .browse-tile mat-card {
   height: 100%;
+  overflow: hidden;
   border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 16px;
   background: var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease;

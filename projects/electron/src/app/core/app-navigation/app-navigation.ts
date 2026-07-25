@@ -40,7 +40,10 @@ export class AppNavigation {
   protected readonly groups: readonly NavigationGroup[] = [
     {
       id: 'home',
-      links: [{ path: '/', icon: 'home', label: 'Home', exact: true }],
+      links: [
+        { path: '/', icon: 'home', label: 'Overview', exact: true },
+        { path: '/databases', icon: 'storage', label: 'Databases' },
+      ],
     },
     {
       id: 'football',
@@ -48,18 +51,9 @@ export class AppNavigation {
         { path: '/leagues', icon: 'emoji_events', label: 'Leagues' },
         { path: '/teams', icon: 'shield', label: 'Teams' },
         { path: '/players', icon: 'groups', label: 'Players' },
-      ],
-    },
-    {
-      id: 'venues-and-officials',
-      links: [
         { path: '/referees', icon: 'sports', label: 'Referees' },
         { path: '/stadiums', icon: 'stadium', label: 'Stadiums' },
       ],
-    },
-    {
-      id: 'management',
-      links: [{ path: '/databases', icon: 'storage', label: 'Databases' }],
     },
   ];
 

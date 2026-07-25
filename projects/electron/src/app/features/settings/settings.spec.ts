@@ -92,7 +92,7 @@ describe('Settings', () => {
     expect(document.documentElement.dataset['theme']).toBe('dark');
   });
 
-  it('confirms and resets saved filters and columns without changing the theme', async () => {
+  it('confirms and resets saved filters without changing columns or the theme', async () => {
     window.localStorage.setItem(finderFilterPreferenceKey('players'), '{}');
     window.localStorage.setItem(finderColumnPreferenceKey('players'), '["name"]');
     window.localStorage.setItem(themePreferenceKey, 'light');
@@ -101,13 +101,13 @@ describe('Settings', () => {
     await fixture.whenStable();
 
     const button = await TestbedHarnessEnvironment.loader(fixture).getHarness(
-      MatButtonHarness.with({ text: 'Reset filters and columns' }),
+      MatButtonHarness.with({ text: 'Reset filters' }),
     );
     await button.click();
     await fixture.whenStable();
 
     expect(window.localStorage.getItem(finderFilterPreferenceKey('players'))).toBeNull();
-    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).toBeNull();
+    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).not.toBeNull();
     expect(window.localStorage.getItem(themePreferenceKey)).toBe('light');
     expect(fixture.nativeElement.textContent).toContain('were reset');
   });
@@ -150,16 +150,16 @@ describe('Settings', () => {
     expect(context.databases()).toEqual([builtIn, custom]);
   });
 
-  it('keeps finder preferences when their reset is cancelled', async () => {
+  it('keeps finder filters when their reset is cancelled', async () => {
     window.localStorage.setItem(finderFilterPreferenceKey('players'), '{}');
     window.localStorage.setItem(finderColumnPreferenceKey('players'), '["name"]');
     const fixture = TestBed.createComponent(Settings);
     await fixture.whenStable();
     const testable = fixture.componentInstance as unknown as {
-      resetFinderPreferences(): Promise<void>;
+      resetFinderFilters(): Promise<void>;
     };
 
-    await testable.resetFinderPreferences();
+    await testable.resetFinderFilters();
 
     expect(window.localStorage.getItem(finderFilterPreferenceKey('players'))).not.toBeNull();
     expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).not.toBeNull();

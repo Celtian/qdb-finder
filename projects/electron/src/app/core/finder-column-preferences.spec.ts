@@ -281,7 +281,31 @@ describe('finder columns', () => {
     expect(window.localStorage.getItem(finderFilterPreferenceKey('players'))).toBeNull();
     expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).not.toBeNull();
 
+    window.localStorage.setItem(finderFilterPreferenceKey('teams'), '{}');
+    expect(preferences.resetColumns('players')).toBe(true);
+    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).toBeNull();
+    expect(window.localStorage.getItem(finderFilterPreferenceKey('teams'))).not.toBeNull();
+
+    window.localStorage.setItem(finderColumnPreferenceKey('players'), JSON.stringify(['name']));
+    expect(preferences.resetAllColumns()).toBe(true);
+    expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).toBeNull();
+    expect(window.localStorage.getItem(finderFilterPreferenceKey('teams'))).not.toBeNull();
+
+    window.localStorage.setItem(finderColumnPreferenceKey('players'), JSON.stringify(['name']));
     preferences.resetAll();
     expect(window.localStorage.getItem(finderColumnPreferenceKey('players'))).toBeNull();
+    expect(window.localStorage.getItem(finderFilterPreferenceKey('teams'))).toBeNull();
+  });
+
+  it('reports unavailable storage when column layouts cannot be reset', () => {
+    const preferences = TestBed.inject(FinderPreferences);
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('Storage unavailable');
+    });
+
+    expect(preferences.resetColumns('players')).toBe(false);
+    expect(preferences.resetAllColumns()).toBe(false);
+    expect(() => preferences.resetAll()).not.toThrow();
+    removeItem.mockRestore();
   });
 });

@@ -201,7 +201,8 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         title: 'Appearance and finder preferences',
         paragraphs: [
           'Settings can follow the operating system appearance or force the light or dark application theme. The selected theme is saved locally.',
-          'Each finder also saves its applied database and data filters plus its column visibility and order. Reset filters and columns clears those saved finder preferences, including the saved column order, after confirmation without changing search text, installed databases or the application theme.',
+          'The Finder column layouts section in Settings configures visibility and order for players, teams, leagues, referees and stadiums. Changes save immediately and remain shared with the Columns drawer in each finder. Reset one finder or all column layouts without changing filters.',
+          'Each finder also saves its applied database and data filters. Reset filters clears only those saved selections after confirmation without changing column layouts, search text, installed databases or the application theme.',
         ],
         links: [
           { label: 'Searching and filters', href: '/searching' },

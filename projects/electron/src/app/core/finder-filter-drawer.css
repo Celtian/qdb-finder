@@ -8,7 +8,7 @@
 .filter-drawer {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  background: var(--mat-sys-surface);
+  background: var(--mat-sys-surface-container-lowest);
 }
 
 .drawer-header,

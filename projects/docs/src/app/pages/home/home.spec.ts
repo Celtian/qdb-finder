@@ -82,9 +82,12 @@ describe('Home', () => {
     expect(text).toContain('source folder or files are never modified');
     expect(text).toContain('system appearance');
     expect(text).toContain('light or dark application theme');
-    expect(text).toContain('Reset filters and columns');
-    expect(text).toContain('column visibility and order');
-    expect(text).toContain('including the saved column order');
+    expect(text).toContain('Reset one finder or all column layouts');
+    expect(text).toContain('Reset filters clears only');
+    expect(text).toContain('configures visibility and order');
+    expect(text).toContain('Changes save immediately');
+    expect(text).toContain('shared with the Columns drawer');
+    expect(text).toContain('without changing column layouts');
     expect(text).toContain('remove all custom databases');
     expect(element.querySelector('a[href="/database"]')?.textContent).toContain(
       'Database generation for developers',

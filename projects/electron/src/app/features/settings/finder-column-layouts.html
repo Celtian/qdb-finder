@@ -1,0 +1,100 @@
+<section aria-labelledby="finder-column-layout-heading">
+  <mat-card class="column-layouts">
+    <mat-card-header>
+      <div mat-card-avatar class="column-layouts-icon">
+        <mat-icon aria-hidden="true">view_column</mat-icon>
+      </div>
+      <mat-card-title id="finder-column-layout-heading">Finder column layouts</mat-card-title>
+      <mat-card-subtitle>Set column visibility and order across every finder.</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <mat-tab-group
+        class="finder-column-tabs"
+        animationDuration="0ms"
+        aria-labelledby="finder-column-layout-heading"
+        [preserveContent]="true"
+      >
+        @for (tab of tabs; track tab.finder) {
+          <mat-tab [label]="tab.label">
+            <div class="column-tab-content">
+              <p [id]="'column-order-instructions-' + tab.finder">
+                Choose and reorder the columns shown in the {{ tab.finder }} table. Drag a handle or
+                focus it and use the Up and Down arrow keys. Changes are saved automatically.
+              </p>
+              <div
+                class="column-list"
+                cdkDropList
+                cdkDropListLockAxis="y"
+                role="list"
+                [cdkDropListData]="orderedColumns()[tab.finder]"
+                (cdkDropListDropped)="drop(tab.finder, $event)"
+              >
+                @for (column of orderedColumns()[tab.finder]; track column.key) {
+                  <div class="column-row" cdkDrag role="listitem" [cdkDragData]="column">
+                    <mat-checkbox
+                      [checked]="column.required || visibleColumns()[tab.finder][column.key]"
+                      [disabled]="column.required"
+                      (change)="setColumnVisibility(tab.finder, column, $event.checked)"
+                    >
+                      {{ column.label }}
+                    </mat-checkbox>
+                    <button
+                      class="drag-handle"
+                      cdkDragHandle
+                      matIconButton
+                      type="button"
+                      [attr.aria-describedby]="'column-order-instructions-' + tab.finder"
+                      [attr.aria-label]="'Reorder ' + column.label + ' column'"
+                      (keydown.arrowup)="
+                        moveColumn(tab.finder, column, -1); $event.preventDefault()
+                      "
+                      (keydown.arrowdown)="
+                        moveColumn(tab.finder, column, 1); $event.preventDefault()
+                      "
+                    >
+                      <mat-icon aria-hidden="true">drag_indicator</mat-icon>
+                    </button>
+                    <ng-template cdkDragPreview [matchSize]="true">
+                      <div class="column-drag-preview" aria-hidden="true">
+                        <span>{{ column.label }}</span>
+                        <mat-icon>drag_indicator</mat-icon>
+                      </div>
+                    </ng-template>
+                  </div>
+                }
+              </div>
+              <div class="column-tab-actions">
+                <button matButton="outlined" type="button" (click)="reset(tab.finder, tab.label)">
+                  Reset {{ tab.singularLabel }} columns
+                </button>
+              </div>
+            </div>
+          </mat-tab>
+        }
+      </mat-tab-group>
+      <p class="live-announcement" aria-live="polite">{{ announcement() }}</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="reset-layouts settings-card">
+    <mat-card-header>
+      <div mat-card-avatar class="reset-layouts-icon">
+        <mat-icon aria-hidden="true">restart_alt</mat-icon>
+      </div>
+      <mat-card-title>Original layouts</mat-card-title>
+      <mat-card-subtitle>Restore every finder to its original columns.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <p>
+        Reset column visibility and order for league, team, player, referee and stadium finders.
+        Filters, search text, databases and the application theme are not affected.
+      </p>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button matButton="outlined" type="button" (click)="resetAll()">
+        Reset all column layouts
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</section>

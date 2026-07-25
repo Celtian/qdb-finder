@@ -65,15 +65,23 @@ describe('TeamFinder', () => {
 
   it('creates with newest-edition sorting', () => {
     const testable = component as unknown as { request(): TeamSearchRequest };
+    const element = fixture.nativeElement as HTMLElement;
 
     expect(component).toBeTruthy();
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-navigation-trigger'),
-    ).toBeTruthy();
+    expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
+      'Team finder',
+    );
+    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+      'Search teams across editions',
+    );
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
-    ).toContain('Search teams or Original ID');
+    expect(element.querySelector('.entity-search')?.textContent).toContain(
+      'Search teams or Original ID',
+    );
+    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe(
+      'No teams match your search and filters',
+    );
   });
 
   it('persists visible columns and resets a hidden active sort without clearing filters', async () => {

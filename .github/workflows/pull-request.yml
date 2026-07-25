@@ -23,24 +23,30 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
 
       - name: 🛠️ Install dependencies
         uses: ./.github/actions/cached-deps
 
       - name: 🗃️ Build database
-        run: yarn db:build
+        run: bun run db:build
 
       - name: 🔎 Validate database
-        run: yarn db:validate
+        run: bun run db:validate
 
       - name: 🧹 Check formatting
-        run: yarn format:check
+        run: bun run format:check
 
       - name: 🧹 Lint
-        run: yarn lint
+        run: bun run lint
 
       - name: 🧪 Test with coverage
-        run: yarn test:coverage
+        run: bun run test:coverage
 
       - name: 📊 Set Electron coverage report to PR
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
@@ -67,10 +73,10 @@ jobs:
           comment-header: node-tools-coverage-report
 
       - name: 🏗️ Build applications
-        run: yarn build
+        run: bun run build
 
       - name: 📦 Package Windows x64 application
-        run: yarn electron-forge package --arch=x64 --platform=win32
+        run: bun run forge package --arch=x64 --platform=win32
 
       - name: 🔎 Verify artifact layout
         run: |

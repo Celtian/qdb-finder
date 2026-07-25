@@ -45,12 +45,14 @@ body {
 }
 
 .finder-column-drawer-panel {
+  --mat-dialog-container-color: var(--mat-sys-surface-container-lowest);
   --mat-dialog-container-shape: 0;
 
   animation: finder-column-drawer-enter 250ms ease-out;
 }
 
 .finder-filter-drawer-panel {
+  --mat-dialog-container-color: var(--mat-sys-surface-container-lowest);
   --mat-dialog-container-shape: 0;
 
   animation: finder-filter-drawer-enter 250ms ease-out;

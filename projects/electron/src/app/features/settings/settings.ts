@@ -18,6 +18,7 @@ import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 import { ThemePreferences, type ThemePreference } from '../../core/theme-preferences';
+import { FinderColumnLayouts } from './finder-column-layouts';
 
 interface ThemeOption {
   value: ThemePreference;
@@ -44,7 +45,14 @@ export class ConfirmCustomDatabaseRemoval {
 
 @Component({
   selector: 'app-settings',
-  imports: [AppNavigationTrigger, MatButtonModule, MatCardModule, MatIconModule, MatRadioModule],
+  imports: [
+    AppNavigationTrigger,
+    FinderColumnLayouts,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatRadioModule,
+  ],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
@@ -92,7 +100,7 @@ export class Settings {
     this.showSuccess(`Theme set to ${preference}.`);
   }
 
-  protected async resetFinderPreferences(): Promise<void> {
+  protected async resetFinderFilters(): Promise<void> {
     const confirmed = await firstValueFrom(
       this.dialog
         .open(ConfirmPreferenceReset, {
@@ -104,8 +112,8 @@ export class Settings {
         .afterClosed(),
     );
     if (!confirmed) return;
-    this.finderPreferences.resetAll();
-    this.showSuccess('All saved finder filters and columns were reset.');
+    this.finderPreferences.resetFilters();
+    this.showSuccess('All saved finder filters were reset.');
   }
 
   protected async removeCustomDatabases(): Promise<void> {

@@ -8,11 +8,7 @@
     <mat-icon>{{ report().valid ? 'verified' : 'error' }}</mat-icon>
     <div>
       <h3 id="source-validation-heading">
-        {{
-          report().valid
-            ? 'Source validation completed'
-            : 'Source data is corrupted and cannot be imported'
-        }}
+        {{ report().valid ? 'Source ready to import' : 'Source cannot be imported' }}
       </h3>
       <p>
         {{ report().errorCount }} blocking {{ report().errorCount === 1 ? 'error' : 'errors' }} and

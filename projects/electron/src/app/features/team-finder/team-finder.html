@@ -129,8 +129,8 @@
   <header class="entity-topbar">
     <app-navigation-trigger />
     <div>
-      <p class="eyebrow">Club and national squads</p>
-      <h1>Browse team editions</h1>
+      <p class="eyebrow">Team finder</p>
+      <h1>Search teams across editions</h1>
     </div>
   </header>
   <main>
@@ -219,14 +219,14 @@
       } @else if (error()) {
         <div class="state error">
           <mat-icon>database_off</mat-icon>
-          <h2>Teams unavailable</h2>
+          <h2>Team search unavailable</h2>
           <p>{{ error() }}</p>
           <button type="button" mat-flat-button (click)="retrySearch()">Try again</button>
         </div>
       } @else if (!rows().length) {
         <div class="state">
           <mat-icon>shield</mat-icon>
-          <h2>No teams match these filters</h2>
+          <h2>No teams match your search and filters</h2>
         </div>
       } @else {
         <div class="table-scroll">

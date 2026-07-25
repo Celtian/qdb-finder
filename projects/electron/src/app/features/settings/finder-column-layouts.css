@@ -1,40 +1,70 @@
 :host {
   display: block;
-  height: 100%;
+  margin-top: 1rem;
 }
 
-.column-form {
-  display: flex;
+section {
+  display: grid;
+  gap: 1rem;
+}
+
+mat-card {
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 16px;
   background: var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
 }
 
-.drawer-header {
+mat-card-header {
+  padding: 1rem 1rem 0;
+}
+
+mat-card-content {
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.55;
+}
+
+.column-layouts mat-card-content {
+  padding: 1rem 0 0;
+}
+
+.column-layouts-icon,
+.reset-layouts-icon {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  justify-content: center;
 }
 
-h2 {
-  margin: 0;
-  font-size: 1.25rem;
+.column-layouts-icon {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
 }
 
-.column-fields {
-  flex: 1;
-  overflow: auto;
-  padding: 1.25rem 1rem;
+.reset-layouts-icon {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
 }
 
-.column-fields p {
-  margin: 0 0 0.5rem;
-  color: var(--mat-sys-on-surface-variant);
+.column-tab-content {
+  padding: 1.25rem 1rem 1rem;
+}
+
+.column-tab-content > p {
+  margin: 0 0 0.75rem;
+}
+
+.column-tab-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.settings-card mat-card-content {
+  padding-top: 1.25rem;
 }
 
 .column-list {
@@ -100,18 +130,6 @@ h2 {
   white-space: nowrap;
 }
 
-.drawer-footer {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-}
-
-.drawer-footer span {
-  flex: 1;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .column-drag-preview.cdk-drag-animating,
   .column-list.cdk-drop-list-dragging .column-row:not(.cdk-drag-placeholder) {
@@ -119,12 +137,8 @@ h2 {
   }
 }
 
-@media (max-width: 520px) {
-  .drawer-footer {
-    flex-wrap: wrap;
-  }
-
-  .drawer-footer span {
-    display: none;
+@media (max-width: 560px) {
+  section {
+    gap: 1rem;
   }
 }

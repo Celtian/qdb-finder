@@ -65,27 +65,25 @@ describe('AppNavigation', () => {
 
     expect(element.querySelector('.brand')?.textContent).toContain('QDB Finder');
     expect(items).toEqual([
-      'Home',
+      'Overview',
+      'Databases',
       'divider',
       'Leagues',
       'Teams',
       'Players',
-      'divider',
       'Referees',
       'Stadiums',
-      'divider',
-      'Databases',
     ]);
     expect(icons).toEqual([
       'home',
+      'storage',
       'emoji_events',
       'shield',
       'groups',
       'sports',
       'stadium',
-      'storage',
     ]);
-    expect(navigation?.querySelectorAll('mat-divider')).toHaveLength(3);
+    expect(navigation?.querySelectorAll('mat-divider')).toHaveLength(1);
     expect(element.querySelector('.utility-actions mat-divider')).toBeTruthy();
     expect(
       [...element.querySelectorAll<HTMLElement>('.utility-actions a, .utility-actions button')].map(

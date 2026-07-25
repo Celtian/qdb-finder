@@ -60,15 +60,23 @@ describe('LeagueFinder', () => {
 
   it('creates with newest-edition sorting', () => {
     const testable = component as unknown as { request(): LeagueSearchRequest };
+    const element = fixture.nativeElement as HTMLElement;
 
     expect(component).toBeTruthy();
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('app-navigation-trigger'),
-    ).toBeTruthy();
+    expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
+      'League finder',
+    );
+    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+      'Search leagues across editions',
+    );
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.entity-search')?.textContent,
-    ).toContain('Search leagues or Original ID');
+    expect(element.querySelector('.entity-search')?.textContent).toContain(
+      'Search leagues or Original ID',
+    );
+    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe(
+      'No leagues match your search and filters',
+    );
   });
 
   it('centers the search field', () => {

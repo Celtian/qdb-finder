@@ -217,8 +217,8 @@
   <header class="topbar">
     <app-navigation-trigger />
     <div>
-      <p class="eyebrow">Offline FIFA database</p>
-      <h1>Find any player, any edition</h1>
+      <p class="eyebrow">Player finder</p>
+      <h1>Search players across editions</h1>
     </div>
   </header>
   <main>
@@ -286,7 +286,7 @@
       } @else if (error()) {
         <div class="state error">
           <mat-icon>database_off</mat-icon>
-          <h2>Database unavailable</h2>
+          <h2>Player search unavailable</h2>
           <p>{{ error() }}</p>
           <button type="button" mat-flat-button (click)="retrySearch()">Try again</button>
         </div>
@@ -296,8 +296,8 @@
           <h2>
             {{
               hasSearchOrFilters()
-                ? 'No players match these filters'
-                : 'Start with a player name or Original ID'
+                ? 'No players match your search and filters'
+                : 'Search for a player'
             }}
           </h2>
           <p>

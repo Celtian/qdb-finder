@@ -345,9 +345,21 @@ export class FinderPreferences {
     for (const finder of finderKinds) this.clearFilters(finder);
   }
 
+  resetColumns(finder: FinderKind): boolean {
+    return this.remove(finderColumnPreferenceKey(finder));
+  }
+
+  resetAllColumns(): boolean {
+    let reset = true;
+    for (const finder of finderKinds) {
+      if (!this.resetColumns(finder)) reset = false;
+    }
+    return reset;
+  }
+
   resetAll(): void {
     this.resetFilters();
-    for (const finder of finderKinds) this.remove(finderColumnPreferenceKey(finder));
+    this.resetAllColumns();
   }
 
   private isStoredColumnPreference(
@@ -411,11 +423,13 @@ export class FinderPreferences {
     }
   }
 
-  private remove(key: string): void {
+  private remove(key: string): boolean {
     try {
       window.localStorage.removeItem(key);
+      return true;
     } catch {
       // Finder preferences remain optional when local storage is unavailable.
+      return false;
     }
   }
 }

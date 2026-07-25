@@ -41,12 +41,12 @@ The Angular workspace configuration lives at the repository root and uses `newPr
 Requirements:
 
 - Node.js 24.18
-- Yarn Classic 1.22.22
+- Bun 1.3.14
 
 ```sh
-yarn install --frozen-lockfile
-yarn db:build
-yarn start
+bun install --frozen-lockfile
+bun run db:build
+bun run start
 ```
 
 Database generation processes 306 available supported-name files, preserves verified tables using `fifatables@0.2.10`, and builds 227,572 player editions, 8,907 team editions, 560 league editions, 2,516 referee editions, 1,371 stadium editions, 3,001 referee-league links, 8,890 stadium-team links, and 241,640 team-player links. The FIFA 23 `dcplayernames` file is header-only and has no definition, so it is recorded as a skipped source without inventing a schema.
@@ -64,28 +64,28 @@ Each successful import is stored as a separate SQLite file in Electron's applica
 Run the complete source validation:
 
 ```sh
-yarn validate
+bun run validate
 ```
 
 Or run individual checks and builds:
 
 ```sh
-yarn format:check
-yarn lint
-yarn test
-yarn build
-yarn db:build
-yarn db:validate
+bun run format:check
+bun run lint
+bun run test
+bun run build
+bun run db:build
+bun run db:validate
 ```
 
-`yarn test` runs the Electron renderer, documentation, and Node tools suites in parallel. The
-full FIFA 11–23 corpus gate remains `yarn db:build && yarn db:validate`; pull-request and release
+`bun run test` runs the Electron renderer, documentation, and Node tools suites in parallel. The
+full FIFA 11–23 corpus gate remains `bun run db:build && bun run db:validate`; pull-request and release
 workflows run both commands before their test and packaging steps.
 
 ## 📦 Distribution
 
 ```sh
-yarn make
+bun run make
 ```
 
 Electron Forge creates a Windows x64 Squirrel installer and ZIP. A `v*` tag matching `package.json` and pointing at `master` runs the `🚀 Build & Publish` workflow, rebuilds and validates the full database, uploads the Windows artifacts to a draft GitHub Release, and then publishes it. Non-beta tags also deploy the prerendered documentation to the `gh-pages` branch. The repository must provide an `ACTIONS_DEPLOY_KEY` secret whose matching public deploy key has write access, and GitHub Pages must publish from the root of `gh-pages`.
@@ -96,16 +96,16 @@ Initial Windows artifacts are unsigned and may trigger SmartScreen. See [Windows
 
 ## 🏷️ Versioning and changelog
 
-Release commands follow the same npm lifecycle used by `quick-commitlint`:
+Release commands use Bun's version lifecycle:
 
 ```sh
-yarn release:beta
-yarn release:patch
-yarn release:minor
-yarn release:major
+bun run release:beta
+bun run release:patch
+bun run release:minor
+bun run release:major
 ```
 
-`npm version` updates `package.json` and `yarn.lock`, runs `auto-changelog -p`, stages `CHANGELOG.md`, creates the release commit and tag, and then pushes the commit and tags. The pushed `v*` tag starts the Build & Publish workflow.
+`bun pm version` updates `package.json`, runs `auto-changelog -p`, stages `CHANGELOG.md`, creates the release commit and tag, and then pushes the commit and tags. The pushed `v*` tag starts the Build & Publish workflow.
 
 Review the generated [changelog](CHANGELOG.md) before publishing a release. Release commands intentionally push to the configured Git remote through the `postversion` lifecycle script.
 

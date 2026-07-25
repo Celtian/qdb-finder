@@ -5,7 +5,7 @@
       {{ availableDatabases().length }} searchable
       {{ availableDatabases().length === 1 ? 'database' : 'databases' }}
     </p>
-    <h1>Explore every edition</h1>
+    <h1>Explore FIFA editions</h1>
   </div>
 </header>
 <main>
@@ -21,7 +21,7 @@
   } @else if (error()) {
     <div class="state error">
       <mat-icon>database_off</mat-icon>
-      <h2>Database unavailable</h2>
+      <h2>Database summary unavailable</h2>
       <p>{{ error() }}</p>
       <button type="button" mat-flat-button (click)="retry()">Try again</button>
     </div>

@@ -48,7 +48,7 @@
           <ng-template matStepLabel>Format</ng-template>
           <div class="step-content">
             <div>
-              <h2>Choose the source format</h2>
+              <h2>Choose source format</h2>
               <p>Both formats use the same validation and searchable database builder.</p>
             </div>
             <mat-radio-group
@@ -80,7 +80,7 @@
           <ng-template matStepLabel>Source</ng-template>
           <div class="step-content">
             <div>
-              <h2>Select the source</h2>
+              <h2>Select source</h2>
               <p>
                 {{
                   format() === 'text-folder'
@@ -91,53 +91,54 @@
             </div>
 
             @if (format() === 'text-folder') {
-              <div class="source-field">
-                <mat-form-field appearance="outline">
-                  <mat-label>Source folder</mat-label>
-                  <input matInput readonly [value]="textSource()?.displayPath ?? ''" />
-                </mat-form-field>
+              <mat-form-field class="source-picker" appearance="outline">
+                <mat-label>Source folder</mat-label>
+                <input matInput readonly [value]="textSource()?.displayPath ?? ''" />
                 <button
                   type="button"
-                  mat-stroked-button
+                  mat-icon-button
+                  matSuffix
+                  [attr.aria-label]="textSource() ? 'Change source folder' : 'Select source folder'"
                   [disabled]="busy()"
                   (click)="selectTextSource()"
                 >
                   <mat-icon>folder_open</mat-icon>
-                  Browse
                 </button>
-              </div>
+              </mat-form-field>
             } @else {
               <div class="source-fields">
-                <div class="source-field">
-                  <mat-form-field appearance="outline">
-                    <mat-label>t3db database</mat-label>
-                    <input matInput readonly [value]="t3dbDatabaseFile()?.displayPath ?? ''" />
-                  </mat-form-field>
+                <mat-form-field class="source-picker" appearance="outline">
+                  <mat-label>t3db database</mat-label>
+                  <input matInput readonly [value]="t3dbDatabaseFile()?.displayPath ?? ''" />
                   <button
                     type="button"
-                    mat-stroked-button
+                    mat-icon-button
+                    matSuffix
+                    [attr.aria-label]="
+                      t3dbDatabaseFile() ? 'Change t3db database file' : 'Select t3db database file'
+                    "
                     [disabled]="busy()"
                     (click)="selectT3dbDatabase()"
                   >
-                    <mat-icon>storage</mat-icon>
-                    Browse
+                    <mat-icon>folder_open</mat-icon>
                   </button>
-                </div>
-                <div class="source-field">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Metadata XML</mat-label>
-                    <input matInput readonly [value]="t3dbMetadataFile()?.displayPath ?? ''" />
-                  </mat-form-field>
+                </mat-form-field>
+                <mat-form-field class="source-picker" appearance="outline">
+                  <mat-label>Metadata XML</mat-label>
+                  <input matInput readonly [value]="t3dbMetadataFile()?.displayPath ?? ''" />
                   <button
                     type="button"
-                    mat-stroked-button
+                    mat-icon-button
+                    matSuffix
+                    [attr.aria-label]="
+                      t3dbMetadataFile() ? 'Change metadata XML file' : 'Select metadata XML file'
+                    "
                     [disabled]="busy()"
                     (click)="selectT3dbMetadata()"
                   >
-                    <mat-icon>description</mat-icon>
-                    Browse
+                    <mat-icon>folder_open</mat-icon>
                   </button>
-                </div>
+                </mat-form-field>
               </div>
             }
 
@@ -166,7 +167,7 @@
           <ng-template matStepLabel>Validate</ng-template>
           <div class="step-content">
             <div>
-              <h2>Validate the source</h2>
+              <h2>Validate source</h2>
               <p>Confirm the edition and scan every imported table before creating output.</p>
             </div>
 
@@ -235,7 +236,7 @@
           <ng-template matStepLabel>Summary</ng-template>
           <div class="step-content">
             <div>
-              <h2>Review the import</h2>
+              <h2>Review import</h2>
               <p>No source files are changed. QDB Finder creates a separate searchable copy.</p>
             </div>
 

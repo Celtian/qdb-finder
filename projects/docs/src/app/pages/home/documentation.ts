@@ -368,14 +368,14 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
   development: {
     eyebrow: 'Contributing',
     title: 'Development commands',
-    lead: 'Node 24.18 and Yarn Classic 1.22.22 are the supported toolchain.',
+    lead: 'Node 24.18 and Bun 1.3.14 are the supported toolchain.',
     sections: [
       {
         title: 'Run and verify',
         paragraphs: [
           'Generate the database before starting Electron and run the complete validation before publishing changes.',
         ],
-        code: 'yarn install --frozen-lockfile\nyarn db:build\nyarn start\n\nyarn format:check\nyarn lint\nyarn test\nyarn build',
+        code: 'bun install --frozen-lockfile\nbun run db:build\nbun run start\n\nbun run format:check\nbun run lint\nbun run test\nbun run build',
         links: [
           {
             label: 'Browse the repository',
@@ -396,7 +396,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
         paragraphs: [
           'Headers, row structure, numeric values and canonical identifiers are checked against fifatables before raw tables, canonical indexes and the FTS5 player-search index are generated. Published range and relationship anomalies remain visible as advisory warnings for modified databases. Integrity, foreign-key, ANALYZE and VACUUM checks finish the build.',
         ],
-        code: 'yarn db:build\nyarn db:validate',
+        code: 'bun run db:build\nbun run db:validate',
       },
       {
         title: 'Read-only runtime',
@@ -447,7 +447,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Release flow',
         paragraphs: [
-          'A matching v* tag installs from yarn.lock, generates and validates SQLite, runs checks, uploads the Squirrel and ZIP artifacts to a draft release, and then publishes it. Non-beta tags also deploy this prerendered documentation to GitHub Pages.',
+          'A matching v* tag installs from bun.lock, generates and validates SQLite, runs checks, uploads the Squirrel and ZIP artifacts to a draft release, and then publishes it. Non-beta tags also deploy this prerendered documentation to GitHub Pages.',
           `This documentation build identifies itself as ${siteMetadata.versionLabel} and links to the immutable source tag used to produce it.`,
         ],
         links: [

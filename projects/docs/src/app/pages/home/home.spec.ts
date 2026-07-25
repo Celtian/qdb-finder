@@ -123,9 +123,9 @@ describe('Home', () => {
     await harness.navigateByUrl('/development', Home);
     const commandCard = await loader.getHarness(MatCardHarness.with({ selector: '.code-card' }));
     expect(harness.routeNativeElement?.querySelector('pre code')?.textContent).toContain(
-      'yarn db:build',
+      'bun run db:build',
     );
-    expect(await commandCard.getText()).toContain('yarn build');
+    expect(await commandCard.getText()).toContain('bun run build');
   });
 
   it('introduces all five connected entity finders', async () => {

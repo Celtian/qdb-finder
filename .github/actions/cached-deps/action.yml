@@ -1,5 +1,5 @@
 name: 💾 Get & Cache Dependencies
-description: Install Yarn dependencies and cache node_modules
+description: Install Bun dependencies and cache node_modules
 inputs:
   caching:
     description: Whether to cache dependencies
@@ -14,16 +14,16 @@ runs:
       uses: actions/cache@v6
       with:
         path: node_modules
-        key: ${{ runner.os }}-node-24-yarn-${{ hashFiles('yarn.lock') }}
+        key: ${{ runner.os }}-${{ runner.arch }}-bun-${{ hashFiles('.bun-version', 'bun.lock') }}
         restore-keys: |
-          ${{ runner.os }}-node-24-yarn-
+          ${{ runner.os }}-${{ runner.arch }}-bun-
 
     - name: 🛠️ Install dependencies
       if: steps.cache.outputs.cache-hit != 'true' || inputs.caching != 'true'
-      run: yarn install --frozen-lockfile
+      run: bun install --frozen-lockfile
       shell: bash
 
     - name: 🪝 Restore lifecycle setup
       if: steps.cache.outputs.cache-hit == 'true' && inputs.caching == 'true'
-      run: yarn prepare
+      run: bun run prepare
       shell: bash

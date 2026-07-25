@@ -4,4 +4,4 @@ dist/
 .electron/
 out/
 resources/database/
-yarn.lock
+bun.lock

@@ -8,7 +8,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { DatabaseSync, type SQLInputValue } from './runtime-sqlite';
 import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
   'resolution-mode': 'import',
 };

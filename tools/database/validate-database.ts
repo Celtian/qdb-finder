@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 import {
   DATABASE_SCHEMA_VERSION,
   EXPECTED_EDITIONS,
@@ -13,37 +13,65 @@ import {
 } from './importer';
 
 const path = process.argv[2] ?? resolve(process.cwd(), 'resources', 'database', 'qdb.sqlite');
-const db = new DatabaseSync(path, { readOnly: true });
-const integrity = db.prepare('PRAGMA integrity_check').get()?.['integrity_check'];
-const schemaVersion = db.prepare('PRAGMA user_version').get()?.['user_version'];
+const db = new Database(path, { readonly: true });
+const integrity = db
+  .prepare<{ integrity_check: string }, []>('PRAGMA integrity_check')
+  .get()?.integrity_check;
+const schemaVersion = db
+  .prepare<{ user_version: number }, []>('PRAGMA user_version')
+  .get()?.user_version;
 const metadataSchemaVersion = db
-  .prepare("SELECT value FROM metadata WHERE key = 'schema_version'")
-  .get()?.['value'];
-const players = db.prepare('SELECT count(*) AS count FROM player_edition').get()?.['count'];
-const links = db.prepare('SELECT count(*) AS count FROM player_team').get()?.['count'];
-const teams = db.prepare('SELECT count(*) AS count FROM team_edition').get()?.['count'];
-const leagues = db.prepare('SELECT count(*) AS count FROM league_edition').get()?.['count'];
-const referees = db.prepare('SELECT count(*) AS count FROM referee_edition').get()?.['count'];
-const stadiums = db.prepare('SELECT count(*) AS count FROM stadium_edition').get()?.['count'];
-const refereeLeagueLinks = db.prepare('SELECT count(*) AS count FROM referee_league').get()?.[
-  'count'
-];
-const stadiumTeamLinks = db.prepare('SELECT count(*) AS count FROM stadium_team').get()?.['count'];
+  .prepare<{ value: string }, []>("SELECT value FROM metadata WHERE key = 'schema_version'")
+  .get()?.value;
+const players = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM player_edition')
+  .get()?.count;
+const links = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM player_team')
+  .get()?.count;
+const teams = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM team_edition')
+  .get()?.count;
+const leagues = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM league_edition')
+  .get()?.count;
+const referees = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM referee_edition')
+  .get()?.count;
+const stadiums = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM stadium_edition')
+  .get()?.count;
+const refereeLeagueLinks = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM referee_league')
+  .get()?.count;
+const stadiumTeamLinks = db
+  .prepare<{ count: number }, []>('SELECT count(*) AS count FROM stadium_team')
+  .get()?.count;
 const legacyWomenPlayers = db
-  .prepare('SELECT count(*) AS count FROM player_edition WHERE version < 16 AND gender = 1')
-  .get()?.['count'];
+  .prepare<{ count: number }, []>(
+    'SELECT count(*) AS count FROM player_edition WHERE version < 16 AND gender = 1',
+  )
+  .get()?.count;
 const currentWomenPlayers = db
-  .prepare('SELECT count(*) AS count FROM player_edition WHERE version >= 16 AND gender = 1')
-  .get()?.['count'];
+  .prepare<{ count: number }, []>(
+    'SELECT count(*) AS count FROM player_edition WHERE version >= 16 AND gender = 1',
+  )
+  .get()?.count;
 const legacyWomenReferees = db
-  .prepare('SELECT count(*) AS count FROM referee_edition WHERE version < 16 AND gender = 1')
-  .get()?.['count'];
+  .prepare<{ count: number }, []>(
+    'SELECT count(*) AS count FROM referee_edition WHERE version < 16 AND gender = 1',
+  )
+  .get()?.count;
 const currentWomenReferees = db
-  .prepare('SELECT count(*) AS count FROM referee_edition WHERE version >= 16 AND gender = 1')
-  .get()?.['count'];
+  .prepare<{ count: number }, []>(
+    'SELECT count(*) AS count FROM referee_edition WHERE version >= 16 AND gender = 1',
+  )
+  .get()?.count;
 const fts = db
-  .prepare("SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'")
-  .get()?.['count'];
+  .prepare<{ count: number }, []>(
+    "SELECT count(*) AS count FROM player_search WHERE player_search MATCH 'messi'",
+  )
+  .get()?.count;
 db.close();
 if (integrity !== 'ok') throw new Error(`Integrity check failed: ${String(integrity)}`);
 if (

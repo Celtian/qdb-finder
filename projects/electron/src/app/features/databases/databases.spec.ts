@@ -172,6 +172,9 @@ describe('Databases', () => {
     ]);
 
     const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.page-heading')?.classList.contains('app-page-header')).toBe(
+      true,
+    );
     expect(element.querySelector('h1')?.textContent).toContain('Manage FIFA databases');
     expect(element.querySelector('.wizard-card .database-icon mat-icon')?.textContent?.trim()).toBe(
       'upload_file',

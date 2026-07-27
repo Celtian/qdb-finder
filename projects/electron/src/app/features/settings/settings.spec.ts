@@ -84,6 +84,9 @@ describe('Settings', () => {
     const loader = TestbedHarnessEnvironment.loader(fixture);
     const element = fixture.nativeElement as HTMLElement;
 
+    expect(element.querySelector('.page-heading')?.classList.contains('app-page-header')).toBe(
+      true,
+    );
     expect(element.querySelector('#finder-heading')?.textContent?.trim()).toBe(
       'Saved finder filters',
     );

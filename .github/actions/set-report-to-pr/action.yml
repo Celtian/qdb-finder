@@ -42,7 +42,7 @@ runs:
         } > "$RUNNER_TEMP/code-coverage-results-$COMMENT_HEADER.md"
 
     - name: Add Coverage PR Comment
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: marocchino/sticky-pull-request-comment@v3
       with:
         number: ${{ steps.finder.outputs.pr }}
         header: ${{ inputs.comment-header }}

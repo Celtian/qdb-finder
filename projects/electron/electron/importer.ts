@@ -8,7 +8,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { DatabaseSync, type SQLInputValue } from './runtime-sqlite';
+import { closeDatabase, DatabaseSync, type SQLInputValue } from './runtime-sqlite';
 import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
   'resolution-mode': 'import',
 };
@@ -2089,16 +2089,28 @@ export const buildDatabase = (options: ImportOptions): ImportSummary => {
       stadiumTeamLinks: canonical.stadiumTeamLinks,
     };
   } finally {
-    db.close();
+    closeDatabase(db);
   }
   runPhase('Optimizing search data and vacuuming', options.progress, () => {
     const optimizer = new DatabaseSync(options.outputPath);
     try {
-      optimizer.exec(
-        "INSERT INTO player_search(player_search) VALUES('optimize'); ANALYZE; PRAGMA journal_mode = DELETE; VACUUM;",
-      );
+      optimizer.exec("INSERT INTO player_search(player_search) VALUES('optimize')");
+      optimizer.exec('ANALYZE');
     } finally {
-      optimizer.close();
+      closeDatabase(optimizer);
+    }
+
+    const finalizer = new DatabaseSync(options.outputPath);
+    try {
+      finalizer.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+      finalizer.exec('PRAGMA journal_mode = DELETE');
+      const journalMode = finalizer.prepare('PRAGMA journal_mode').get()?.['journal_mode'];
+      if (journalMode !== 'delete') {
+        throw new Error(`Failed to finalize SQLite journal mode: ${String(journalMode)}`);
+      }
+      finalizer.exec('VACUUM');
+    } finally {
+      closeDatabase(finalizer);
     }
   });
   return summary;

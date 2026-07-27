@@ -19,3 +19,16 @@ if (!databaseConstructor) {
 export const DatabaseSync: typeof NodeDatabaseSync = databaseConstructor;
 export type DatabaseSync = NodeDatabaseSync;
 export type { SQLInputValue };
+
+export const closeDatabase = (database: NodeDatabaseSync): void => {
+  database.close();
+  if (process.versions['bun']) {
+    // Bun defers sqlite3_close_v2 until its unreferenced prepared statements are collected.
+    const bun = (
+      globalThis as typeof globalThis & {
+        readonly Bun?: { gc(force?: boolean): void };
+      }
+    ).Bun;
+    bun?.gc(true);
+  }
+};

@@ -51,9 +51,10 @@ describe('Home', () => {
 
   it('renders the compact page header and keeps the introduction in the content', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const header = element.querySelector('header.page-heading');
+    const header = element.querySelector<HTMLElement>('header.page-heading');
     const lead = element.querySelector('main > .lead');
 
+    expect(header?.classList.contains('app-page-header')).toBe(true);
     expect(header?.querySelector('app-navigation-trigger')).toBeTruthy();
     expect(header?.querySelector('.eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       '1 searchable database',

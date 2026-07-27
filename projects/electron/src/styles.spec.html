@@ -1,0 +1,16 @@
+<header class="app-page-header page-heading"></header>
+<header class="app-page-header topbar"></header>
+<header class="app-page-header entity-topbar"></header>
+<button type="button" matButton="tonal">Filters</button>
+<table mat-table [dataSource]="rows">
+  <ng-container matColumnDef="name">
+    <th *matHeaderCellDef mat-header-cell>Name</th>
+    <td *matCellDef="let row" mat-cell>{{ row.name }}</td>
+  </ng-container>
+  <tr
+    *matHeaderRowDef="columns; sticky: true"
+    mat-header-row
+    [style.z-index]="materialStickyHeaderZIndex"
+  ></tr>
+  <tr *matRowDef="let row; columns: columns" mat-row></tr>
+</table>

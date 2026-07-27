@@ -69,6 +69,9 @@ describe('TeamFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(element.querySelector('.entity-topbar')?.classList.contains('app-page-header')).toBe(
+      true,
+    );
     expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
       'Team finder',
     );

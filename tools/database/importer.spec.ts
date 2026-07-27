@@ -415,6 +415,7 @@ describe('FIFA text importer', () => {
       ).map(({ key, value }) => [key, value]),
     );
     expect(database.prepare('PRAGMA user_version').get()?.['user_version']).toBe(3);
+    expect(database.prepare('PRAGMA journal_mode').get()?.['journal_mode']).toBe('delete');
     expect(metadata).toMatchObject({
       database_name: 'My FIFA 16 and 23',
       database_kind: 'custom',

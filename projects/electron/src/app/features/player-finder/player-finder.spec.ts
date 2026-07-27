@@ -72,6 +72,7 @@ describe('PlayerFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
+    expect(element.querySelector('.topbar')?.classList.contains('app-page-header')).toBe(true);
     expect(element.querySelector('.topbar .eyebrow')?.textContent?.trim()).toBe('Player finder');
     expect(element.querySelector('.topbar h1')?.textContent?.trim()).toBe(
       'Search players across editions',

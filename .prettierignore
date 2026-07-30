@@ -5,3 +5,4 @@ dist/
 out/
 resources/database/
 bun.lock
+projects/electron/src/app/core/country-flag/generated-flags.ts

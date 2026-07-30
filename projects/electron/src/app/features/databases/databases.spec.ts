@@ -8,6 +8,7 @@ import { MatStepperHarness } from '@angular/material/stepper/testing';
 import { provideRouter } from '@angular/router';
 import axe from 'axe-core';
 import { of } from 'rxjs';
+import { ConfettiService } from '../../core/confetti/confetti.service';
 import { Qdb } from '../../core/qdb';
 import type {
   DatabaseDescriptor,
@@ -123,6 +124,7 @@ describe('Databases', () => {
   const removeDatabase = vi.fn(async () => undefined);
   const cancelDatabaseImport = vi.fn(async () => true);
   const cancelDatabaseSourceValidation = vi.fn(async () => true);
+  const celebrate = vi.fn();
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -152,6 +154,7 @@ describe('Databases', () => {
             },
           },
         },
+        { provide: ConfettiService, useValue: { celebrate } },
       ],
     }).compileComponents();
     vi.clearAllMocks();
@@ -331,6 +334,7 @@ describe('Databases', () => {
     );
     expect(testable.model()).toEqual({ name: '', version: 0 });
     expect(testable.format()).toBe('text-folder');
+    expect(celebrate).toHaveBeenCalledOnce();
     const [selectedStep] = await (
       await loader.getHarness(MatStepperHarness)
     ).getSteps({ selected: true });
@@ -686,6 +690,7 @@ describe('Databases', () => {
     testable.import();
     await fixture.whenStable();
     expect(testable.validationReport()).toBe(corruptedReport);
+    expect(celebrate).not.toHaveBeenCalled();
   });
 
   it('formats empty, singular, and non-contiguous edition ranges', () => {

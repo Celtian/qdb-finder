@@ -52,4 +52,12 @@ describe('CountryFlag', () => {
     expect(element.querySelector('picture')?.getAttribute('aria-hidden')).toBe('true');
     expect(element.querySelector('img')?.getAttribute('alt')).toBe('');
   });
+
+  it('maps the legacy AN code to the current Curaçao flag', async () => {
+    fixture.componentRef.setInput('code', 'an');
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('img')?.getAttribute('src')).toBe('flags/20x15/cw.png');
+  });
 });

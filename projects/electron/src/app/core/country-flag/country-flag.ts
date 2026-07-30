@@ -1,6 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { booleanAttribute, Component, computed, input } from '@angular/core';
 
+import { FLAG_PUBLIC_PATHS, type CountryCode, type FlagSize } from './generated-flags';
+
 export type CountryFlagSize = 'sm' | 'lg';
 
 interface FlagImageSource {
@@ -9,6 +11,13 @@ interface FlagImageSource {
   width: number;
   height: number;
 }
+
+const FLAG_CODE_ALIASES: Readonly<Record<string, CountryCode>> = {
+  an: 'cw',
+};
+
+const getFlagPath = (code: string, size: FlagSize): string =>
+  `${FLAG_PUBLIC_PATHS.png}/${size}/${FLAG_CODE_ALIASES[code] ?? code}.png`;
 
 @Component({
   selector: 'app-country-flag',
@@ -29,15 +38,15 @@ export class CountryFlag {
     const code = this.code();
     if (this.size() === 'lg') {
       return {
-        src: `flags/40x30/${code}.png`,
-        srcset: `flags/40x30/${code}.png 1x, flags/80x60/${code}.png 2x, flags/120x90/${code}.png 3x`,
+        src: getFlagPath(code, '40x30'),
+        srcset: `${getFlagPath(code, '40x30')} 1x, ${getFlagPath(code, '80x60')} 2x, ${getFlagPath(code, '120x90')} 3x`,
         width: 40,
         height: 30,
       };
     }
     return {
-      src: `flags/20x15/${code}.png`,
-      srcset: `flags/20x15/${code}.png 1x, flags/40x30/${code}.png 2x, flags/60x45/${code}.png 3x`,
+      src: getFlagPath(code, '20x15'),
+      srcset: `${getFlagPath(code, '20x15')} 1x, ${getFlagPath(code, '40x30')} 2x, ${getFlagPath(code, '60x45')} 3x`,
       width: 20,
       height: 15,
     };

@@ -3,6 +3,7 @@
 # Compiled output
 /dist
 /.electron
+/.flag-resizer
 /resources/database/*.sqlite*
 /out
 .env

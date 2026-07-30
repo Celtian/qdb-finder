@@ -30,6 +30,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { firstValueFrom } from 'rxjs';
 import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
+import { ConfettiService } from '../../core/confetti/confetti.service';
 import { Qdb } from '../../core/qdb';
 import type {
   DatabaseDescriptor,
@@ -65,6 +66,7 @@ import { SourceValidationReport } from './source-validation-report';
 export class Databases {
   private readonly qdb = inject(Qdb);
   private readonly dialog = inject(MatDialog);
+  private readonly confetti = inject(ConfettiService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly applicationRef = inject(ApplicationRef);
   private readonly stepper = viewChild(MatStepper);
@@ -279,6 +281,7 @@ export class Databases {
         if (result.status === 'completed') {
           this.resetWizard();
           this.success.set(`“${result.database.name}” was imported and is ready to search.`);
+          this.confetti.celebrate();
           await this.load();
         } else if (result.status === 'cancelled')
           this.success.set('Import cancelled. No database was added.');

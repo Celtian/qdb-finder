@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+
 import { PlayerDatabase } from '../../projects/electron/electron/database';
 import {
   defaultLeagueSearchRequest,

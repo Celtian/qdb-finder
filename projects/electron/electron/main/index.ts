@@ -1,27 +1,28 @@
 import {
-  app,
   BrowserWindow,
+  type IpcMainInvokeEvent,
+  Menu,
+  type OpenDialogOptions,
+  app,
   dialog,
   ipcMain,
-  Menu,
   shell,
-  type IpcMainInvokeEvent,
-  type OpenDialogOptions,
 } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { basename, extname, join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { updateElectronApp } from 'update-electron-app';
+
 import type {
-  EntityFacetRequest,
+  DatabaseImportError,
   DatabaseImportRequest,
   DatabaseImportResult,
-  DatabaseImportError,
+  DatabaseSourceFileSelection,
+  DatabaseSourcePreparationResult,
   DatabaseSourceValidationReport,
   DatabaseSourceValidationRequest,
   DatabaseSourceValidationResult,
-  DatabaseSourceFileSelection,
-  DatabaseSourcePreparationResult,
+  EntityFacetRequest,
   FilterSuggestionRequest,
   LeagueEditionKey,
   LeagueSearchRequest,
@@ -31,9 +32,9 @@ import type {
   SearchRequest,
   StadiumEditionKey,
   StadiumSearchRequest,
+  T3dbDatabaseSourcePreparationRequest,
   TeamEditionKey,
   TeamSearchRequest,
-  T3dbDatabaseSourcePreparationRequest,
 } from '../../src/app/core/qdb-contracts';
 import { DatabaseLibrary } from '../database-library';
 import { DatabaseRegistry } from '../database-registry';
@@ -42,7 +43,7 @@ import {
   type SelectedDatabaseSource,
   type SelectedT3dbFileKind,
 } from '../database-source-selections';
-import { inspectSourceHeaders, SUPPORTED_FIFA_VERSIONS } from '../importer';
+import { SUPPORTED_FIFA_VERSIONS, inspectSourceHeaders } from '../importer';
 import { inspectT3dbSource, t3dbSourceErrorMessage } from '../t3db-source';
 
 let databaseLibrary: DatabaseLibrary;

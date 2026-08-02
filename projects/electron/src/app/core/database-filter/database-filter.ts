@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+
 import type { DatabaseDescriptor } from '../qdb-contracts';
 
 const ALL_DATABASES = '__all__';

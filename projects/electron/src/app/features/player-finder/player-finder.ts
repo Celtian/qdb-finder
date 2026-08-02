@@ -1,14 +1,14 @@
 import {
   Component,
+  TemplateRef,
   computed,
   effect,
   inject,
   signal,
-  TemplateRef,
   untracked,
   viewChild,
 } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { FormField, form } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -22,26 +22,31 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { scoreBadgeClass } from '../../core/attribute-value';
-import { Qdb } from '../../core/qdb';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
-import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
-import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
+import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
 import {
+  type FinderColumnKey,
+  type FinderColumnPreference,
   finderColumns,
   isFinderSortVisible,
   visibleFinderColumns,
-  type FinderColumnPreference,
-  type FinderColumnKey,
 } from '../../core/finder-columns';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import { FinderPreferences } from '../../core/finder-preferences';
 import {
-  defaultSearchRequest,
+  formatDateOnly,
+  preferredFootLabel as formatPreferredFoot,
+} from '../../core/player-profile-value';
+import { positionBadgeClass } from '../../core/position';
+import { Qdb } from '../../core/qdb';
+import {
   type FilterKind,
   type FilterSuggestion,
   type Gender,
@@ -51,13 +56,9 @@ import {
   type SearchResultPage,
   type SortField,
   type TeamDetails,
+  defaultSearchRequest,
 } from '../../core/qdb-contracts';
 import { PlayerDetail } from '../player-detail/player-detail';
-import { positionBadgeClass } from '../../core/position';
-import {
-  formatDateOnly,
-  preferredFootLabel as formatPreferredFoot,
-} from '../../core/player-profile-value';
 
 type ExactFilterField = 'nationalities' | 'teams' | 'leagues';
 type GenderFilter = 'all' | Gender;

@@ -5,8 +5,8 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
+
 import { scoreBadgeClass, scoreValueClass } from '../../core/attribute-value';
-import type { PlayerDetails } from '../../core/qdb-contracts';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import {
   normalizeInternationalReputation,
@@ -17,6 +17,7 @@ import {
   preferredFootLabel as formatPreferredFoot,
 } from '../../core/player-profile-value';
 import { positionBadgeClass, positionRatingRows } from '../../core/position';
+import type { PlayerDetails } from '../../core/qdb-contracts';
 
 @Component({
   selector: 'app-player-detail',

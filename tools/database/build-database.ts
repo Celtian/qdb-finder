@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
-import { buildDatabase, FIFAS } from './importer';
+
+import { FIFAS, buildDatabase } from './importer';
 
 const root = resolve(process.cwd());
 const summary = buildDatabase({

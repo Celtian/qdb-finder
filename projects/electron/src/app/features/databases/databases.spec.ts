@@ -1,25 +1,27 @@
-import type { WritableSignal } from '@angular/core';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import type { HarnessLoader } from '@angular/cdk/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import type { WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { MatButtonHarness } from '@angular/material/button/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { MatStepperHarness } from '@angular/material/stepper/testing';
 import { provideRouter } from '@angular/router';
+
 import axe from 'axe-core';
 import { of } from 'rxjs';
+
 import { ConfettiService } from '../../core/confetti/confetti.service';
 import { Qdb } from '../../core/qdb';
 import type {
   DatabaseDescriptor,
+  DatabaseImportProgress,
   DatabaseImportRequest,
   DatabaseImportResult,
-  DatabaseImportProgress,
   DatabaseSourceFileSelection,
   DatabaseSourceKind,
-  DatabaseSourceValidationResult,
   DatabaseSourceValidationProgress,
   DatabaseSourceValidationReport,
+  DatabaseSourceValidationResult,
   TextDatabaseSourceSelection,
 } from '../../core/qdb-contracts';
 import { Databases } from './databases';

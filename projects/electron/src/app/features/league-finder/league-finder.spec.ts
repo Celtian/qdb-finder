@@ -3,16 +3,16 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
-import { Qdb } from '../../core/qdb';
 import {
-  defaultFinderColumnPreference,
   type FinderColumnKey,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
 } from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
 } from '../../core/finder-preferences';
+import { Qdb } from '../../core/qdb';
 import type {
   EntityFacetOption,
   LeagueDetails,

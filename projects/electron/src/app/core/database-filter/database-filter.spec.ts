@@ -1,6 +1,7 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
+
 import type { DatabaseDescriptor } from '../qdb-contracts';
 import { DatabaseFilter } from './database-filter';
 

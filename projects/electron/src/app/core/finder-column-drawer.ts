@@ -8,18 +8,19 @@ import {
 } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { Component, computed, inject, signal } from '@angular/core';
-import { disabled, form, FormField, submit } from '@angular/forms/signals';
+import { FormField, disabled, form, submit } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+
 import {
-  defaultFinderColumnPreference,
-  fromFinderColumnVisibility,
-  toFinderColumnVisibility,
   type FinderColumnDefinition,
   type FinderColumnPreference,
   type FinderKind,
+  defaultFinderColumnPreference,
+  fromFinderColumnVisibility,
+  toFinderColumnVisibility,
 } from './finder-columns';
 
 export interface FinderColumnDrawerData {

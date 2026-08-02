@@ -5,7 +5,8 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatNavListHarness, MatNavListItemHarness } from '@angular/material/list/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { MatToolbarHarness } from '@angular/material/toolbar/testing';
-import { provideRouter, Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+
 import { provideAppVersion } from 'ngx-app-version';
 import { BehaviorSubject } from 'rxjs';
 

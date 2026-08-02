@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
+
 import { DatabaseLibrary } from '../../projects/electron/electron/database-library';
 import { DatabaseRegistry } from '../../projects/electron/electron/database-registry';
 import { defaultSearchRequest } from '../../projects/electron/src/app/core/qdb-contracts';

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { t3dbSourceErrorMessage } from '../../projects/electron/electron/t3db-source';
 
 describe('t3db source errors', () => {

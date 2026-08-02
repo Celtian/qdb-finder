@@ -1,5 +1,5 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import { DATABASE_SCHEMA_VERSION } from './importer';
+
 import type {
   DatabaseInfo,
   EntityFacetOption,
@@ -33,6 +33,7 @@ import type {
   TeamResultPage,
   TeamSearchRequest,
 } from '../src/app/core/qdb-contracts';
+import { DATABASE_SCHEMA_VERSION } from './importer';
 
 type Row = Record<string, string | number | null>;
 

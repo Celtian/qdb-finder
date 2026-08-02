@@ -1,7 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
-import { booleanAttribute, Component, computed, input } from '@angular/core';
+import { Component, booleanAttribute, computed, input } from '@angular/core';
 
-import { FLAG_PUBLIC_PATHS, type CountryCode, type FlagSize } from './generated-flags';
+import { type CountryCode, FLAG_PUBLIC_PATHS, type FlagSize } from './generated-flags';
 
 export type CountryFlagSize = 'sm' | 'lg';
 

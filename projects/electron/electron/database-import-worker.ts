@@ -1,5 +1,6 @@
 import { parentPort, workerData } from 'node:worker_threads';
-import { buildDatabase, fifaForVersion, ImportSourceValidationError } from './importer';
+
+import { ImportSourceValidationError, buildDatabase, fifaForVersion } from './importer';
 import { createT3dbImportSource } from './t3db-source';
 
 interface ImportWorkerData {

@@ -2,10 +2,12 @@ import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+
 import { NgxAppVersionDirective } from 'ngx-app-version';
 import { filter } from 'rxjs';
-import { AppNavigation } from './core/app-navigation/app-navigation';
+
 import { AppNavigationState } from './core/app-navigation-state';
+import { AppNavigation } from './core/app-navigation/app-navigation';
 
 @Component({
   selector: 'app-root',

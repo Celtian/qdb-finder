@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Service, signal } from '@angular/core';
+import { Service, inject, signal } from '@angular/core';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 

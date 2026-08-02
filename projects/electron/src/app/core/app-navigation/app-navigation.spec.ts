@@ -5,9 +5,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogHarness } from '@angular/material/dialog/testing';
-import { provideRouter, Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+
 import axe from 'axe-core';
 import { BehaviorSubject } from 'rxjs';
+
 import { APP_NAVIGATION_BREAKPOINT, AppNavigationState } from '../app-navigation-state';
 import { AppNavigation } from './app-navigation';
 

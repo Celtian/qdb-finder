@@ -6,11 +6,12 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatCheckboxHarness } from '@angular/material/checkbox/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabGroupHarness } from '@angular/material/tabs/testing';
+
 import {
-  defaultFinderColumnPreference,
-  finderColumns,
   type FinderColumnDefinition,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
+  finderColumns,
 } from '../../core/finder-columns';
 import {
   FinderPreferences,

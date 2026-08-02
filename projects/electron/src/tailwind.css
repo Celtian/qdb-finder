@@ -1,6 +1,8 @@
 @layer theme, base, components, utilities;
+
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css';
+
 @source './app';
 @source './styles.spec.html';
 
@@ -38,7 +40,7 @@
     overflow: hidden;
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     width: 100vw !important;
   }
 
@@ -63,7 +65,7 @@
     overflow: hidden;
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     width: 100vw !important;
   }
 
@@ -161,7 +163,7 @@
     padding: 1.5rem 1.5rem 0;
   }
 
-  @media (max-width: 480px) {
+  @media (width <= 480px) {
     app-about-dialog & {
       padding: 1.25rem 1rem 0;
     }
@@ -407,7 +409,6 @@
     width: 1px;
     height: 1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
   }
@@ -426,13 +427,13 @@
     flex: 1;
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     app-finder-column-drawer & {
       flex-wrap: wrap;
     }
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     app-finder-column-drawer & span {
       display: none;
     }
@@ -441,7 +442,6 @@
 
 @utility filter-drawer {
   app-finder-filter-drawer & {
-    display: block;
     height: 100%;
     min-height: 0;
     display: grid;
@@ -490,13 +490,13 @@
     flex: 1;
   }
 
-  @media (max-width: 420px) {
+  @media (width <= 420px) {
     app-finder-filter-drawer & {
       flex-wrap: wrap;
     }
   }
 
-  @media (max-width: 420px) {
+  @media (width <= 420px) {
     app-finder-filter-drawer & span {
       display: none;
     }
@@ -538,7 +538,7 @@
     font-size: 1.4rem;
   }
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     app-databases & {
       padding: 1rem;
     }
@@ -633,7 +633,7 @@
     background: var(--mat-sys-secondary-container);
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-databases & {
       grid-template-columns: 1fr;
     }
@@ -672,7 +672,7 @@
     grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr);
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-databases & {
       grid-template-columns: 1fr;
     }
@@ -744,13 +744,13 @@
     font-weight: 700;
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-databases & {
       grid-template-columns: 1fr;
     }
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-databases & div + div {
       border-top: 1px solid var(--mat-sys-outline-variant);
       border-left: 0;
@@ -887,7 +887,7 @@
     font-weight: 700;
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-databases & {
       grid-template-columns: 1fr;
     }
@@ -929,7 +929,7 @@
     height: 3px;
     margin: 0 0.65rem 0.2rem 0;
     border-radius: 50%;
-    background: currentColor;
+    background: currentcolor;
   }
 }
 
@@ -951,7 +951,7 @@
     height: 3px;
     margin: 0 0.65rem 0.2rem 0;
     border-radius: 50%;
-    background: currentColor;
+    background: currentcolor;
   }
 }
 
@@ -1219,7 +1219,7 @@
     font-size: 1.35rem;
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-league-detail &,
     app-referee-detail &,
     app-stadium-detail &,
@@ -1268,7 +1268,7 @@
     grid-template-columns: minmax(160px, 1fr) auto auto;
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-league-detail &,
     app-referee-detail &,
     app-stadium-detail &,
@@ -1277,7 +1277,7 @@
     }
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-league-detail & > :nth-child(2),
     app-referee-detail & > :nth-child(2),
     app-stadium-detail & > :nth-child(2),
@@ -1286,7 +1286,7 @@
     }
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-league-detail & > :nth-child(3),
     app-referee-detail & > :nth-child(3),
     app-stadium-detail & > :nth-child(3),
@@ -1360,7 +1360,7 @@
     margin: 0;
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-league-detail &,
     app-referee-detail &,
     app-stadium-detail &,
@@ -1369,7 +1369,7 @@
     }
   }
 
-  @media (max-width: 720px) {
+  @media (width <= 720px) {
     app-league-detail & dd:not(:last-child),
     app-referee-detail & dd:not(:last-child),
     app-stadium-detail & dd:not(:last-child),
@@ -1483,7 +1483,7 @@
     font-size: 1.4rem;
   }
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     app-league-finder &,
     app-referee-finder &,
     app-stadium-finder &,
@@ -1621,7 +1621,7 @@
     gap: 0.5rem;
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     app-league-finder &,
     app-referee-finder &,
     app-stadium-finder &,
@@ -1630,7 +1630,7 @@
     }
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     app-league-finder & button,
     app-referee-finder & button,
     app-stadium-finder & button,
@@ -1792,7 +1792,7 @@
     font-size: 1.4rem;
   }
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     app-home & {
       padding: 1rem;
     }
@@ -1826,13 +1826,13 @@
     gap: 1.25rem;
   }
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     app-home & {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 620px) {
+  @media (width <= 620px) {
     app-home & {
       grid-template-columns: 1fr;
     }
@@ -1973,7 +1973,7 @@
     font-size: 1.4rem;
   }
 
-  @media (max-width: 650px) {
+  @media (width <= 650px) {
     app-player-detail & {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -2015,13 +2015,13 @@
     overflow-wrap: anywhere;
   }
 
-  @media (max-width: 650px) {
+  @media (width <= 650px) {
     app-player-detail & {
       grid-template-columns: minmax(0, 1fr);
     }
   }
 
-  @media (max-width: 650px) {
+  @media (width <= 650px) {
     app-player-detail & dd:not(:last-child) {
       margin-bottom: 0.5rem;
     }
@@ -2086,7 +2086,7 @@
     border-bottom: 0;
   }
 
-  @media (max-width: 650px) {
+  @media (width <= 650px) {
     app-player-detail & {
       gap: 0.3rem;
       margin: 0.75rem 0;
@@ -2105,7 +2105,7 @@
     min-height: 3rem;
   }
 
-  @media (max-width: 650px) {
+  @media (width <= 650px) {
     app-player-detail & {
       gap: 0.3rem;
       min-height: 2.5rem;
@@ -2130,7 +2130,7 @@
     box-shadow: 0 1px 2px color-mix(in srgb, var(--mat-sys-shadow) 12%, transparent);
   }
 
-  @media (max-width: 650px) {
+  @media (width <= 650px) {
     app-player-detail & {
       min-height: 2.5rem;
       padding: 0.2rem 0.1rem;
@@ -2148,13 +2148,13 @@
     padding: 1rem;
   }
 
-  @media (max-width: 800px) {
+  @media (width <= 800px) {
     app-player-detail & {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 500px) {
+  @media (width <= 500px) {
     app-player-detail & {
       grid-template-columns: minmax(0, 1fr);
       gap: 0.75rem;
@@ -2313,7 +2313,7 @@
     font-size: 1.4rem;
   }
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     app-player-finder & {
       padding: 1rem;
     }
@@ -2423,13 +2423,13 @@
     gap: 0.5rem;
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     app-player-finder & {
       width: 100%;
     }
   }
 
-  @media (max-width: 520px) {
+  @media (width <= 520px) {
     app-player-finder & button {
       flex: 1;
     }
@@ -2706,7 +2706,6 @@
     width: 1px;
     height: 1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
   }
@@ -2738,7 +2737,7 @@
     font-size: 1.4rem;
   }
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     app-confirm-preference-reset & {
       padding: 1rem;
     }
@@ -2815,7 +2814,7 @@
     line-height: 1.35;
   }
 
-  @media (max-width: 560px) {
+  @media (width <= 560px) {
     app-confirm-preference-reset & {
       align-items: flex-start;
     }

@@ -36,7 +36,7 @@ mat-radio-button {
   padding: 0.5rem 0;
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
   main {
     padding: 1.5rem 1rem;
   }

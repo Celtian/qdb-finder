@@ -41,7 +41,7 @@ pre {
   line-height: 1.6;
 }
 
-@media (max-width: 620px) {
+@media (width <= 620px) {
   section {
     margin: 2rem 0;
   }

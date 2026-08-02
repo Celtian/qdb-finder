@@ -30,7 +30,6 @@ import type { PlayerDetails } from '../../core/qdb-contracts';
     MatTabsModule,
   ],
   templateUrl: './player-detail.html',
-  styleUrl: './player-detail.css',
 })
 export class PlayerDetail {
   private readonly router = inject(Router);

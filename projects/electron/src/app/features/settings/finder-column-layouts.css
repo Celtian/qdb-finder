@@ -26,7 +26,7 @@ mat-card-content {
   line-height: 1.55;
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
   section {
     gap: 1rem;
   }

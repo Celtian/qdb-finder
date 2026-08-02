@@ -3,13 +3,16 @@
   height: 100%;
   min-width: 0;
 }
+
 main {
   padding: 1.5rem 2rem;
 }
+
 table {
   width: 100%;
   min-width: 1240px;
 }
+
 .mat-column-originalId,
 .mat-column-database,
 .mat-column-birthDate,
@@ -17,7 +20,8 @@ table {
 .mat-column-preferredFoot {
   white-space: nowrap;
 }
-@media (max-width: 900px) {
+
+@media (width <= 900px) {
   main {
     padding: 1rem;
   }

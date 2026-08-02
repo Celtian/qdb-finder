@@ -1,7 +1,10 @@
 @layer theme, base, components, utilities;
+
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css';
+
 @source './app';
+
 @utility skip-link {
   app-root & {
     position: fixed;
@@ -16,10 +19,12 @@
     text-decoration: none;
     transform: translateY(-150%);
   }
+
   app-root &:focus {
     transform: translateY(0);
   }
 }
+
 @utility site-header {
   app-root & {
     position: sticky;
@@ -28,17 +33,20 @@
     flex: 0 0 auto;
   }
 }
+
 @utility navigation-trigger {
   app-root & {
     display: none;
     margin-right: 0.25rem;
   }
-  @media (max-width: 900px) {
+
+  @media (width <= 900px) {
     app-root & {
       display: inline-flex;
     }
   }
 }
+
 @utility brand {
   app-root & {
     display: inline-flex;
@@ -50,30 +58,36 @@
     font-weight: 700;
     text-decoration: none;
   }
+
   app-root & img {
     border-radius: 6px;
   }
 }
+
 @utility documentation-label {
   app-root & {
     color: #686f7d;
     font-weight: 400;
   }
+
   app-root &::before {
     content: '·';
     margin-right: 0.65rem;
   }
-  @media (max-width: 620px) {
+
+  @media (width <= 620px) {
     app-root & {
       display: none;
     }
   }
 }
+
 @utility toolbar-spacer {
   app-root & {
     flex: 1;
   }
 }
+
 @utility navigation-heading {
   app-root & {
     margin: 1.5rem 1rem 0.5rem;
@@ -84,6 +98,7 @@
     text-transform: uppercase;
   }
 }
+
 @utility content-shell {
   app-root & {
     display: flex;
@@ -91,6 +106,7 @@
     flex-direction: column;
   }
 }
+
 @utility scroll-to-top {
   app-root & {
     position: fixed;
@@ -99,6 +115,7 @@
     bottom: 1.25rem;
   }
 }
+
 @utility footer-inner {
   app-root & {
     display: flex;
@@ -109,20 +126,24 @@
     margin: auto;
     padding: 1rem clamp(1rem, 4vw, 2rem);
   }
+
   app-root & p {
     margin: 0;
   }
+
   app-root & p a {
     color: var(--qdb-brand);
     text-underline-offset: 0.2em;
   }
-  @media (max-width: 620px) {
+
+  @media (width <= 620px) {
     app-root & {
       align-items: flex-start;
       flex-direction: column;
     }
   }
 }
+
 @utility footer-links {
   app-root & {
     display: flex;
@@ -130,12 +151,14 @@
     justify-content: flex-end;
     gap: 0.25rem;
   }
-  @media (max-width: 620px) {
+
+  @media (width <= 620px) {
     app-root & {
       justify-content: flex-start;
     }
   }
 }
+
 @utility eyebrow {
   app-home & {
     margin-top: 0;
@@ -146,6 +169,7 @@
     text-transform: uppercase;
   }
 }
+
 @utility lead {
   app-home & {
     max-width: 700px;
@@ -154,34 +178,40 @@
     font-size: 1.1rem;
     line-height: 1.6;
   }
-  @media (max-width: 620px) {
+
+  @media (width <= 620px) {
     app-home & {
       margin-bottom: 2.25rem;
     }
   }
 }
+
 @utility note {
   app-home & {
     margin-top: 1.25rem;
     border: 1px solid var(--mat-sys-outline-variant);
     background: var(--mat-sys-surface-container-lowest);
   }
+
   app-home & mat-card-content {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
     padding: 1rem;
   }
+
   app-home & mat-icon {
     flex: 0 0 auto;
     color: var(--qdb-brand);
   }
+
   app-home & p {
     margin: 0;
     color: #324565;
     line-height: 1.6;
   }
 }
+
 @utility code-card {
   app-home & {
     margin-top: 1.25rem;
@@ -189,10 +219,12 @@
     background: var(--mat-sys-surface-container-lowest);
     overflow: hidden;
   }
+
   app-home & mat-card-content {
     padding: 0;
   }
 }
+
 @utility section-links {
   app-home & {
     display: flex;
@@ -200,9 +232,11 @@
     gap: 0.65rem;
     margin-top: 1.25rem;
   }
+
   app-home & a {
     color: var(--qdb-brand);
   }
+
   app-home & mat-icon {
     margin-left: 0.3rem;
   }

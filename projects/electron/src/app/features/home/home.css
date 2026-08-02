@@ -23,7 +23,7 @@ mat-card-actions {
   font-weight: 700;
 }
 
-@media (max-width: 620px) {
+@media (width <= 620px) {
   main {
     padding: 1.5rem 1rem;
   }

@@ -9,11 +9,12 @@ main {
   margin: 0 auto;
   padding: clamp(1.5rem, 4vw, 3.5rem);
 }
+
 section {
   margin-top: 2rem;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   form {
     grid-template-columns: 1fr;
   }

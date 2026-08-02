@@ -44,6 +44,12 @@ jobs:
       - name: 🛠️ Install dependencies
         uses: ./.github/actions/cached-deps
 
+      - name: ♻️ Check circular dependencies
+        run: bun run check-circular-deps
+
+      - name: 🗜️ Restore ESLint cache
+        uses: ./.github/actions/cached-eslint
+
       - name: 🗃️ Build database
         run: bun run db:build
 

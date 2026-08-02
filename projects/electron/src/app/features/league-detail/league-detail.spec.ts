@@ -109,7 +109,7 @@ describe('LeagueDetail', () => {
     expect(element.textContent).toContain('Arsenal');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(
-      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+      element.querySelector('header p:first-child')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 league · Built-in FIFA 11–23 · Original ID 13');
     expect(element.querySelector('#league-teams-heading')?.textContent?.trim()).toBe(
       'Top-rated teams',

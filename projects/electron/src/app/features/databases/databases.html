@@ -1,39 +1,53 @@
-<header class="app-page-header page-heading">
+<header
+  class="sticky top-0 z-200 flex items-center gap-4 border-b border-outline-variant bg-surface-container-lowest px-8 py-4 max-nav:p-4"
+>
   <app-navigation-trigger />
   <div>
-    <p class="eyebrow">Database library</p>
+    <p class="text-xs font-bold tracking-section text-primary uppercase">Database library</p>
     <h1>Manage FIFA databases</h1>
   </div>
 </header>
 <main>
-  <p class="lead">
+  <p class="mb-8 max-w-205 leading-lead text-on-surface-variant">
     Import one FIFA edition from exported text tables or directly from a PC t3db database. QDB
     Finder creates a private searchable copy and leaves the selected source unchanged.
   </p>
 
   @if (error()) {
-    <div class="message error" role="alert">
+    <div
+      class="my-4 flex items-center gap-chip rounded-lg bg-error-container px-4 py-row text-on-error-container"
+      role="alert"
+    >
       <mat-icon>error</mat-icon>
       <span>{{ error() }}</span>
     </div>
   }
   @if (success()) {
-    <div class="message success" role="status">
+    <div
+      class="my-4 flex items-center gap-chip rounded-lg bg-success-container px-4 py-row text-on-success-container"
+      role="status"
+    >
       <mat-icon>check_circle</mat-icon>
       <span>{{ success() }}</span>
     </div>
   }
 
-  <mat-card class="wizard-card">
+  <mat-card
+    class="mb-6 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-card"
+    data-wizard-card
+  >
     <mat-card-header>
-      <div mat-card-avatar class="database-icon">
+      <div
+        mat-card-avatar
+        class="grid place-items-center rounded-xl bg-secondary-container text-on-secondary-container"
+      >
         <mat-icon aria-hidden="true">upload_file</mat-icon>
       </div>
       <mat-card-title>Import custom database</mat-card-title>
       <mat-card-subtitle>Choose a source, validate it, and review the import.</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      <mat-stepper class="qdb-wizard" linear aria-label="Database import wizard">
+      <mat-stepper data-qdb-wizard linear aria-label="Database import wizard">
         <ng-template let-index="index" matStepperIcon="number">
           <span aria-hidden="true">{{ index + 1 }}</span>
         </ng-template>
@@ -46,31 +60,32 @@
 
         <mat-step [completed]="true">
           <ng-template matStepLabel>Format</ng-template>
-          <div class="step-content">
+          <div class="grid gap-6 pt-5 pb-2">
             <div>
               <h2>Choose source format</h2>
               <p>Both formats use the same validation and searchable database builder.</p>
             </div>
             <mat-radio-group
-              class="format-options"
+              class="grid max-w-208 grid-cols-2 gap-3 max-tablet:grid-cols-1"
+              data-format-options
               aria-label="Database source format"
               [value]="format()"
               (change)="changeFormat($event.value)"
             >
               <mat-radio-button value="text-folder">
-                <span class="choice-label">
+                <span class="grid gap-micro">
                   <strong>Text-table folder</strong>
                   <small>Import exported FIFA 11–23 files such as players.txt and teams.txt.</small>
                 </span>
               </mat-radio-button>
               <mat-radio-button value="t3db">
-                <span class="choice-label">
+                <span class="grid gap-micro">
                   <strong>t3db database</strong>
                   <small>Import fifa_ng_db.db with its matching metadata XML schema.</small>
                 </span>
               </mat-radio-button>
             </mat-radio-group>
-            <div class="step-actions">
+            <div class="flex items-center justify-end gap-3">
               <button type="button" mat-flat-button matStepperNext>Next</button>
             </div>
           </div>
@@ -78,7 +93,7 @@
 
         <mat-step [completed]="sourcePrepared()">
           <ng-template matStepLabel>Source</ng-template>
-          <div class="step-content">
+          <div class="grid gap-6 pt-5 pb-2">
             <div>
               <h2>Select source</h2>
               <p>
@@ -91,7 +106,7 @@
             </div>
 
             @if (format() === 'text-folder') {
-              <mat-form-field class="source-picker" appearance="outline">
+              <mat-form-field class="w-full" appearance="outline" data-source-picker>
                 <mat-label>Source folder</mat-label>
                 <input matInput readonly [value]="textSource()?.displayPath ?? ''" />
                 <button
@@ -106,8 +121,8 @@
                 </button>
               </mat-form-field>
             } @else {
-              <div class="source-fields">
-                <mat-form-field class="source-picker" appearance="outline">
+              <div class="grid gap-4" data-source-fields>
+                <mat-form-field class="w-full" appearance="outline">
                   <mat-label>t3db database</mat-label>
                   <input matInput readonly [value]="t3dbDatabaseFile()?.displayPath ?? ''" />
                   <button
@@ -123,7 +138,7 @@
                     <mat-icon>folder_open</mat-icon>
                   </button>
                 </mat-form-field>
-                <mat-form-field class="source-picker" appearance="outline">
+                <mat-form-field class="w-full" appearance="outline">
                   <mat-label>Metadata XML</mat-label>
                   <input matInput readonly [value]="t3dbMetadataFile()?.displayPath ?? ''" />
                   <button
@@ -143,13 +158,13 @@
             }
 
             @if (preparing()) {
-              <div class="import-progress" aria-live="polite">
+              <div data-import-progress aria-live="polite">
                 <mat-progress-bar mode="indeterminate" aria-label="Inspecting t3db source" />
                 <p>Inspecting the t3db database and metadata schema…</p>
               </div>
             }
 
-            <div class="step-actions">
+            <div class="flex items-center justify-end gap-3">
               <button type="button" mat-button matStepperPrevious [disabled]="busy()">Back</button>
               <button
                 type="button"
@@ -165,13 +180,13 @@
 
         <mat-step [completed]="sourceValidated()">
           <ng-template matStepLabel>Validate</ng-template>
-          <div class="step-content">
+          <div class="grid gap-6 pt-5 pb-2">
             <div>
               <h2>Validate source</h2>
               <p>Confirm the edition and scan every imported table before creating output.</p>
             </div>
 
-            <div class="details-fields">
+            <div class="grid grid-cols-details gap-4 max-tablet:grid-cols-1">
               <mat-form-field appearance="outline">
                 <mat-label>Database name</mat-label>
                 <input matInput autocomplete="off" [formField]="importForm.name" />
@@ -194,7 +209,7 @@
             </div>
 
             @if (sourceStatus()) {
-              <p class="source-status" role="status">
+              <p class="-mt-1 flex items-center gap-2 text-on-surface-variant" role="status">
                 <mat-icon>info</mat-icon>
                 <span>{{ sourceStatus() }}</span>
               </p>
@@ -205,13 +220,13 @@
             }
 
             @if (validating()) {
-              <div class="import-progress" aria-live="polite">
+              <div data-import-progress aria-live="polite">
                 <mat-progress-bar mode="indeterminate" aria-label="Validating database source" />
                 <p>{{ validationProgress() }}</p>
               </div>
             }
 
-            <div class="step-actions">
+            <div class="flex items-center justify-end gap-3">
               <button type="button" mat-button matStepperPrevious [disabled]="busy()">Back</button>
               @if (validating()) {
                 <button type="button" mat-stroked-button (click)="cancelValidation()">
@@ -234,13 +249,16 @@
 
         <mat-step>
           <ng-template matStepLabel>Summary</ng-template>
-          <div class="step-content">
+          <div class="grid gap-6 pt-5 pb-2">
             <div>
               <h2>Review import</h2>
               <p>No source files are changed. QDB Finder creates a separate searchable copy.</p>
             </div>
 
-            <dl class="import-summary">
+            <dl
+              class="m-0 grid grid-cols-4 overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low max-tablet:grid-cols-1"
+              data-import-summary
+            >
               <div>
                 <dt>Name</dt>
                 <dd>{{ model().name.trim() }}</dd>
@@ -261,7 +279,7 @@
                 </dd>
               </div>
             </dl>
-            <div class="source-summary">
+            <div class="grid gap-2" data-source-summary data-source-summary>
               <h3>Selected source</h3>
               <ul>
                 @for (path of sourcePaths(); track path) {
@@ -271,13 +289,13 @@
             </div>
 
             @if (importing()) {
-              <div class="import-progress" aria-live="polite">
+              <div data-import-progress aria-live="polite">
                 <mat-progress-bar mode="indeterminate" aria-label="Importing database" />
                 <p>{{ progress() }}</p>
               </div>
             }
 
-            <div class="step-actions">
+            <div class="flex items-center justify-end gap-3">
               <button type="button" mat-button matStepperPrevious [disabled]="busy()">Back</button>
               @if (importing()) {
                 <button type="button" mat-stroked-button (click)="cancelImport()">
@@ -306,19 +324,27 @@
     @if (loading()) {
       <p aria-live="polite">Loading database library…</p>
     } @else {
-      <div class="database-grid">
+      <div class="grid grid-cols-2 gap-4 max-tablet:grid-cols-1" data-database-grid>
         @for (database of databaseCards(); track database.id) {
           <mat-card
             [class.custom]="database.kind === 'custom'"
             [class.incompatible]="database.status === 'incompatible'"
           >
             <mat-card-header>
-              <div mat-card-avatar class="database-icon">
+              <div
+                mat-card-avatar
+                class="grid place-items-center rounded-xl bg-secondary-container text-on-secondary-container"
+              >
                 <mat-icon aria-hidden="true">storage</mat-icon>
               </div>
               <mat-card-title>{{ database.name }}</mat-card-title>
-              <mat-card-subtitle class="database-summary">
-                <span class="database-kind">
+              <mat-card-subtitle
+                class="mt-1 flex flex-wrap items-center gap-x-brand-gap gap-y-attribute"
+              >
+                <span
+                  data-database-kind
+                  class="rounded-full bg-secondary-container px-country py-pixel text-xs leading-normal font-bold text-on-secondary-container"
+                >
                   {{ database.kind === 'built-in' ? 'Built-in' : 'Custom' }}
                 </span>
                 <span>
@@ -330,7 +356,7 @@
             </mat-card-header>
             @if (database.kind === 'custom') {
               <button
-                class="remove-database"
+                class="absolute top-brand-gap right-brand-gap text-on-surface-variant"
                 type="button"
                 mat-icon-button
                 [attr.aria-label]="'Remove ' + database.name"
@@ -342,7 +368,7 @@
             }
             <mat-card-content>
               @if (database.status === 'incompatible') {
-                <p class="compatibility-error">{{ database.error }}</p>
+                <p class="text-error">{{ database.error }}</p>
               } @else {
                 <dl>
                   <div>
@@ -357,7 +383,10 @@
                     <dt>Leagues</dt>
                     <dd>{{ database.leagueEditions.toLocaleString() }}</dd>
                   </div>
-                  <div class="database-date">
+                  <div
+                    data-database-date
+                    class="col-span-full flex flex-row items-center justify-between gap-4 border-t border-outline-variant"
+                  >
                     <dt>
                       <mat-icon aria-hidden="true">calendar_today</mat-icon>
                       {{ database.kind === 'built-in' ? 'Updated' : 'Imported' }}

@@ -51,23 +51,23 @@ describe('Home', () => {
 
   it('renders the compact page header and keeps the introduction in the content', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const header = element.querySelector<HTMLElement>('header.page-heading');
-    const lead = element.querySelector('main > .lead');
+    const header = element.querySelector<HTMLElement>('header');
+    const lead = element.querySelector('main > p');
 
-    expect(header?.classList.contains('app-page-header')).toBe(true);
+    expect(header?.classList.contains('sticky')).toBe(true);
     expect(header?.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(header?.querySelector('.eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(header?.querySelector('p:first-child')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       '1 searchable database',
     );
     expect(header?.querySelector('h1')?.textContent?.trim()).toBe('Explore FIFA editions');
-    expect(header?.querySelector('.lead')).toBeNull();
+    expect(header?.querySelector('p + p')).toBeNull();
     expect(lead?.textContent).toContain('Browse players, teams, leagues, referees and stadiums');
   });
 
   it('renders all database-backed entity links', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    const tiles = [...element.querySelectorAll<HTMLAnchorElement>('.browse-tile')];
+    const tiles = [...element.querySelectorAll<HTMLAnchorElement>('[data-browse-tile]')];
 
     expect(tiles.map((tile) => tile.textContent)).toEqual([
       expect.stringContaining('227,572 editions'),

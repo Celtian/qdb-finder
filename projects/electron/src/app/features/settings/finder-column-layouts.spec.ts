@@ -67,7 +67,7 @@ describe('FinderColumnLayouts', () => {
     expect(await name.isDisabled()).toBe(true);
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('mat-card.column-layouts')
+        .querySelector('mat-card[data-column-layouts]')
         ?.classList.contains('mat-mdc-card-outlined'),
     ).toBe(false);
     const resetCard = (fixture.nativeElement as HTMLElement).querySelector(

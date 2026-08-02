@@ -12,6 +12,11 @@ mat-toolbar {
   color: var(--mat-sys-on-surface, #1a1b20);
 }
 
+mat-toolbar a span + span::before {
+  content: '·';
+  margin-right: 0.65rem;
+}
+
 mat-sidenav-container {
   min-height: calc(100vh - 56px);
   flex: 1 0 auto;
@@ -56,6 +61,15 @@ footer {
   border-top: 1px solid #dfe3ed;
   background: var(--mat-sys-surface, #fff);
   color: #565d6b;
+}
+
+footer p {
+  margin: 0;
+}
+
+footer p a {
+  color: var(--qdb-brand);
+  text-underline-offset: 0.2em;
 }
 
 a:focus-visible {

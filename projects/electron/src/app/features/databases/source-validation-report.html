@@ -1,10 +1,11 @@
 <section
-  class="validation-report"
+  class="rounded-lg border border-on-success-container bg-success-container p-4 text-on-success-container"
+  data-validation-report
   aria-labelledby="source-validation-heading"
   [class.invalid]="!report().valid"
   [attr.role]="report().valid ? 'status' : 'alert'"
 >
-  <div class="summary">
+  <div class="flex items-start gap-3" data-validation-summary data-validation-summary>
     <mat-icon>{{ report().valid ? 'verified' : 'error' }}</mat-icon>
     <div>
       <h3 id="source-validation-heading">
@@ -19,7 +20,7 @@
   </div>
 
   @if (errors().length) {
-    <div class="issue-section">
+    <div class="mt-4" data-issue-section data-issue-section>
       <h4>Blocking errors</h4>
       <ul>
         @for (issue of errors(); track issue.key) {
@@ -31,7 +32,7 @@
                 {{ issue.count === 1 ? 'occurrence' : 'occurrences' }})
               </summary>
               @if (issue.samples.length) {
-                <ul class="samples">
+                <ul class="mt-2 mb-0 pl-5">
                   @for (
                     sample of issue.samples;
                     track (sample.line ?? sample.record) + ':' + (sample.value ?? '')
@@ -54,7 +55,7 @@
   }
 
   @if (warnings().length) {
-    <div class="issue-section warnings">
+    <div class="mt-4" data-issue-section data-warnings data-issue-section>
       <h4>Warnings</h4>
       <p>Modified databases may intentionally exceed the published FIFA table metadata.</p>
       <ul>
@@ -67,7 +68,7 @@
                 {{ issue.count === 1 ? 'occurrence' : 'occurrences' }})
               </summary>
               @if (issue.samples.length) {
-                <ul class="samples">
+                <ul class="mt-2 mb-0 pl-5">
                   @for (
                     sample of issue.samples;
                     track (sample.line ?? sample.record) + ':' + (sample.value ?? '')
@@ -90,7 +91,7 @@
   }
 
   @if (report().omittedIssueGroups) {
-    <p class="omitted">
+    <p class="mt-4 mb-0 font-semibold">
       {{ report().omittedIssueGroups }} additional issue groups were omitted from this display.
     </p>
   }

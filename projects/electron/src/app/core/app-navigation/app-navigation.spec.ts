@@ -65,7 +65,9 @@ describe('AppNavigation', () => {
         : item.querySelector('.mdc-button__label span')?.textContent?.trim(),
     );
 
-    expect(element.querySelector('.brand')?.textContent).toContain('QDB Finder');
+    expect(element.querySelector('a[aria-label="QDB Finder home"]')?.textContent).toContain(
+      'QDB Finder',
+    );
     expect(items).toEqual([
       'Overview',
       'Databases',
@@ -86,13 +88,13 @@ describe('AppNavigation', () => {
       'stadium',
     ]);
     expect(navigation?.querySelectorAll('mat-divider')).toHaveLength(1);
-    expect(element.querySelector('.utility-actions mat-divider')).toBeTruthy();
+    expect(element.querySelector('nav + div > mat-divider')).toBeTruthy();
     expect(
-      [...element.querySelectorAll<HTMLElement>('.utility-actions a, .utility-actions button')].map(
-        (item) => item.querySelector('.mdc-button__label span')?.textContent?.trim(),
+      [...element.querySelectorAll<HTMLElement>('nav + div a, nav + div button')].map((item) =>
+        item.querySelector('.mdc-button__label span')?.textContent?.trim(),
       ),
     ).toEqual(['Settings', 'About']);
-    expect(element.querySelector('.utility-actions button')?.textContent).toContain('About');
+    expect(element.querySelector('nav + div button')?.textContent).toContain('About');
   });
 
   it('navigates and marks only the active destination as the current page', async () => {
@@ -131,9 +133,7 @@ describe('AppNavigation', () => {
     document.body.append(trigger);
     navigation.open(trigger);
 
-    (fixture.nativeElement as HTMLElement)
-      .querySelector<HTMLButtonElement>('.utility-actions button')
-      ?.click();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button')?.click();
     await fixture.whenStable();
     expect(navigation.mobileOpen()).toBe(false);
     const dialog = await documentLoader.getHarness(MatDialogHarness);

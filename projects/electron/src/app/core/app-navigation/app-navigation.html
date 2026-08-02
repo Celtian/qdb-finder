@@ -1,10 +1,10 @@
 <a
-  class="brand"
+  class="flex items-center gap-3 px-3 pt-2 pb-5 text-body-lg font-bold text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
   routerLink="/"
   aria-label="QDB Finder home"
   (click)="navigation.destinationSelected()"
 >
-  <img ngSrc="qdb-finder.png" width="28" height="28" alt="" priority />
+  <img class="rounded-lg" ngSrc="qdb-finder.png" width="28" height="28" alt="" priority />
   <span>QDB Finder</span>
 </a>
 
@@ -12,6 +12,7 @@
   @for (group of groups; track group.id; let last = $last) {
     @for (link of group.links; track link.path) {
       <a
+        class="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         data-primary-navigation-link
         matButton
         routerLinkActive="active"
@@ -30,9 +31,10 @@
   }
 </nav>
 
-<div class="utility-actions">
+<div class="mt-auto grid gap-1 pt-3">
   <mat-divider />
   <a
+    class="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     matButton
     routerLink="/settings"
     routerLinkActive="active"
@@ -42,7 +44,12 @@
     <mat-icon>settings</mat-icon>
     <span>Settings</span>
   </a>
-  <button type="button" matButton (click)="openAbout()">
+  <button
+    class="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    type="button"
+    matButton
+    (click)="openAbout()"
+  >
     <mat-icon>info</mat-icon>
     <span>About</span>
   </button>

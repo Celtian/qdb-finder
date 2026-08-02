@@ -69,16 +69,14 @@ describe('StadiumFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(element.querySelector('.entity-topbar')?.classList.contains('app-page-header')).toBe(
-      true,
-    );
-    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
+    expect(element.querySelector('header p:first-child')?.textContent?.trim()).toBe(
       'Stadium finder',
     );
-    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header h1')?.textContent?.trim()).toBe(
       'Search stadiums across editions',
     );
-    expect(element.querySelector('.entity-search')?.textContent).toContain(
+    expect(element.querySelector('main > mat-form-field')?.textContent).toContain(
       'Search stadiums or Original ID',
     );
     await vi.waitFor(() => {
@@ -110,7 +108,7 @@ describe('StadiumFinder', () => {
     ).toMatchObject({ isLicensed: true, capacity: { min: 50_000 } });
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.filter-button')
+        .querySelector('button[aria-label^="Choose filters"]')
         ?.getAttribute('aria-label'),
     ).toBe('Choose filters, 2 active');
   });
@@ -190,12 +188,12 @@ describe('StadiumFinder', () => {
     expect(headers.slice(0, 4)).toEqual(['Stadium', 'Original ID', 'Edition', 'Country']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('1098');
-    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(originalIdCell?.classList.contains('tabular-nums')).toBe(true);
     expect(element.querySelector('td.cdk-column-database')).toBeNull();
     expect(element.querySelector('td.cdk-column-teams')).toBeTruthy();
-    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 1 hidden',
-    );
+    expect(
+      element.querySelector('button[aria-label^="Choose columns"]')?.getAttribute('aria-label'),
+    ).toBe('Choose columns, 1 hidden');
   });
 
   it('supports the complete facet, paging, sorting and detail workflow', async () => {

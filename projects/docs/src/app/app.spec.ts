@@ -68,7 +68,10 @@ describe('App', () => {
     await fixture.whenStable();
     const loader = TestbedHarnessEnvironment.loader(fixture);
     const trigger = await loader.getHarness(
-      MatButtonHarness.with({ selector: '.navigation-trigger', variant: 'icon' }),
+      MatButtonHarness.with({
+        selector: 'button[aria-label="Open documentation navigation"]',
+        variant: 'icon',
+      }),
     );
     const sidenav = await loader.getHarness(MatSidenavHarness);
     const installation = await loader.getHarness(
@@ -89,7 +92,7 @@ describe('App', () => {
     await vi.waitFor(async () => expect(await sidenav.isOpen()).toBe(true));
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.navigation-trigger')
+        .querySelector('button[aria-label="Open documentation navigation"]')
         ?.getAttribute('aria-expanded'),
     ).toBe('true');
 

@@ -17,6 +17,16 @@ mat-sidenav {
   background: var(--mat-sys-surface-container-low);
 }
 
+main {
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--mat-sys-primary) 12%, transparent),
+      transparent 35rem
+    ),
+    var(--mat-sys-surface);
+}
+
 @media (width <= 760px) {
   mat-sidenav {
     width: min(15.5rem, calc(100vw - 2rem));

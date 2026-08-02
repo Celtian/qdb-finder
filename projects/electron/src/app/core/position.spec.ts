@@ -19,8 +19,9 @@ describe('position styling', () => {
     ['GK', 'goalkeeper'],
   ] as const)('classifies %s as a %s', (position, group) => {
     expect(positionGroup(position)).toBe(group);
-    expect(positionValueClass(position)).toBe(`position-${group}`);
-    expect(positionBadgeClass(position)).toBe(`data-badge position-${group}`);
+    expect(positionValueClass(position)).toContain(`bg-position-${group}`);
+    expect(positionValueClass(position)).toContain(`text-on-position-${group}`);
+    expect(positionBadgeClass(position)).toContain('inline-flex');
   });
 
   it('defines every position once in pitch order', () => {
@@ -59,14 +60,14 @@ describe('position styling', () => {
       position: 'ST',
       column: 3,
       value: 82,
-      className: 'score-green',
+      className: 'bg-score-green text-on-score-green',
     });
     expect(rows[6]?.tiles[0]).toEqual({
       position: 'SW',
       column: 3,
       value: 71,
-      className: 'score-lime',
+      className: 'bg-score-lime text-on-score-lime',
     });
-    expect(rows[7]?.tiles[0]?.className).toBe('score-yellow');
+    expect(rows[7]?.tiles[0]?.className).toBe('bg-score-yellow text-on-score-yellow');
   });
 });

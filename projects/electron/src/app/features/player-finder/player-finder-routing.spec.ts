@@ -88,7 +88,7 @@ describe('PlayerFinder contextual routing', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Arsenal');
     testable.applyFilters();
     await harness.fixture.whenStable();
-    expect(harness.routeNativeElement?.querySelector('.context-banner')).toBeNull();
+    expect(harness.routeNativeElement?.querySelector('[data-context-banner]')).toBeNull();
     expect(TestBed.inject(Router).url).toBe('/players');
     TestBed.inject(MatDialog).closeAll();
   });

@@ -1,3 +1,6 @@
+@import 'tailwindcss';
+@import '../../../tailwind.theme.css';
+
 :root {
   --qdb-brand: #2356a8;
   --qdb-accent: #006b5f;

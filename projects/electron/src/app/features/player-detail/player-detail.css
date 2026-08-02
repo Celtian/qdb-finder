@@ -1,0 +1,123 @@
+header h2,
+header p {
+  margin: 0.15rem 0;
+}
+
+header h2 {
+  padding: 0;
+}
+
+[data-metric-grid] > div {
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--mat-sys-secondary-container);
+}
+
+[data-metric-grid] span {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+[data-metric-grid] strong:not([class]) {
+  font-size: 1.4rem;
+}
+
+[data-profile-grid] dt,
+[data-raw-fields] dt {
+  font-weight: 600;
+}
+
+[data-profile-grid] dd,
+[data-raw-fields] dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-position-matrix] {
+  margin: 1rem;
+  border-color: var(--qdb-pitch-line);
+  background-color: var(--qdb-pitch);
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 0.5px),
+      var(--qdb-pitch-line) calc(50% - 0.5px),
+      var(--qdb-pitch-line) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 0 3rem,
+      var(--qdb-pitch-line) 3rem 3.075rem,
+      transparent 3.075rem
+    );
+}
+
+[data-position-matrix]::before,
+[data-position-matrix]::after {
+  position: absolute;
+  left: 32%;
+  z-index: 0;
+  width: 36%;
+  height: 13%;
+  border: 1px solid var(--qdb-pitch-line);
+  content: '';
+}
+
+[data-position-matrix]::before {
+  top: -1px;
+  border-top: 0;
+}
+
+[data-position-matrix]::after {
+  bottom: -1px;
+  border-bottom: 0;
+}
+
+[data-attribute-group] h3 {
+  margin: 0 0 0.5rem;
+  color: var(--qdb-brand);
+  font-size: 1rem;
+}
+
+[data-attribute-group] dl > div dt {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+[data-attribute-group] dl > div dd {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+[data-reputation-star].filled {
+  color: light-dark(#765c00, #ffe083);
+}
+
+@media (width <= 650px) {
+  [data-raw-fields] dd:not(:last-child) {
+    margin-bottom: 0.5rem;
+  }
+
+  [data-position-matrix] {
+    gap: 0.3rem;
+    margin: 0.75rem 0;
+    padding: 0.65rem 0.5rem;
+  }
+
+  [data-position-matrix] > div {
+    min-height: 2.5rem;
+    gap: 0.3rem;
+  }
+
+  [data-position-matrix] > div > span {
+    min-height: 2.5rem;
+    padding: 0.2rem 0.1rem;
+    font-size: 0.7rem;
+  }
+}

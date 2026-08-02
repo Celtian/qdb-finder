@@ -1,3 +1,6 @@
+@import 'tailwindcss';
+@import '../../../tailwind.theme.css';
+
 :root {
   --qdb-brand: var(--mat-sys-primary);
   --qdb-accent: var(--mat-sys-tertiary);
@@ -44,6 +47,40 @@ body {
   box-sizing: border-box;
 }
 
+.finder-column-drawer-panel {
+  --mat-dialog-container-color: var(--mat-sys-surface-container-lowest);
+  --mat-dialog-container-shape: 0;
+
+  animation: finder-column-drawer-enter 250ms ease-out;
+}
+
+.finder-filter-drawer-panel {
+  --mat-dialog-container-color: var(--mat-sys-surface-container-lowest);
+  --mat-dialog-container-shape: 0;
+
+  animation: finder-filter-drawer-enter 250ms ease-out;
+}
+
+.finder-filter-drawer-panel .mat-mdc-dialog-container,
+.finder-filter-drawer-panel .mat-mdc-dialog-inner-container,
+.finder-filter-drawer-panel .mat-mdc-dialog-surface {
+  height: 100%;
+}
+
+.finder-filter-drawer-panel .mat-mdc-dialog-surface {
+  overflow: hidden;
+}
+
+.finder-column-drawer-panel .mat-mdc-dialog-container,
+.finder-column-drawer-panel .mat-mdc-dialog-inner-container,
+.finder-column-drawer-panel .mat-mdc-dialog-surface {
+  height: 100%;
+}
+
+.finder-column-drawer-panel .mat-mdc-dialog-surface {
+  overflow: hidden;
+}
+
 @keyframes finder-column-drawer-enter {
   from {
     transform: translateX(100%);
@@ -61,6 +98,20 @@ body {
 
   to {
     transform: translateX(0);
+  }
+}
+
+@media (width <= 520px) {
+  .finder-column-drawer-panel,
+  .finder-filter-drawer-panel {
+    width: 100vw !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finder-column-drawer-panel,
+  .finder-filter-drawer-panel {
+    animation: none;
   }
 }
 

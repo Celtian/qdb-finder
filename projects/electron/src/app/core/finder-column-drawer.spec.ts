@@ -107,7 +107,7 @@ describe('FinderColumnDrawer', () => {
   it('reorders hidden columns by pointer drop and retains their position when enabled', async () => {
     const loader = TestbedHarnessEnvironment.loader(fixture);
     const dropList = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '.column-list',
+      '[data-column-list]',
     );
     if (!dropList) throw new Error('Column drop list was not created.');
     const debugElement = getDebugNode(dropList) as DebugElement | null;

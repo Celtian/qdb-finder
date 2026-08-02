@@ -1,19 +1,25 @@
-<header class="app-page-header page-heading">
+<header
+  class="sticky top-0 z-200 flex items-center gap-4 border-b border-outline-variant bg-surface-container-lowest px-8 py-4 max-nav:p-4"
+>
   <app-navigation-trigger />
   <div>
-    <p class="eyebrow">Application preferences</p>
+    <p class="text-xs font-bold tracking-section text-primary uppercase">Application preferences</p>
     <h1>Settings</h1>
   </div>
 </header>
 
 <main>
-  <p class="lead">
+  <p class="mb-8 leading-lead text-on-surface-variant">
     Choose how QDB Finder looks, arrange finder columns and reset locally stored finder or database
     data.
   </p>
 
   @if (error()) {
-    <div class="message error" role="alert">
+    <div
+      class="mb-4 flex items-center gap-chip rounded-lg bg-error-container px-4 py-row text-on-error-container"
+      data-message
+      role="alert"
+    >
       <mat-icon>error</mat-icon>
       <span>{{ error() }}</span>
       @if (!removing()) {
@@ -22,7 +28,11 @@
     </div>
   }
   @if (success()) {
-    <div class="message success" role="status">
+    <div
+      class="mb-4 flex items-center gap-chip rounded-lg bg-success-container px-4 py-row text-on-success-container"
+      data-message
+      role="status"
+    >
       <mat-icon>check_circle</mat-icon>
       <span>{{ success() }}</span>
     </div>
@@ -31,20 +41,25 @@
   <section aria-labelledby="appearance-heading">
     <mat-card>
       <mat-card-header>
-        <div mat-card-avatar class="section-icon"><mat-icon>palette</mat-icon></div>
+        <div
+          mat-card-avatar
+          class="grid place-items-center rounded-xl bg-secondary-container text-on-secondary-container"
+        >
+          <mat-icon>palette</mat-icon>
+        </div>
         <mat-card-title id="appearance-heading">Appearance</mat-card-title>
         <mat-card-subtitle>Choose the color theme used throughout the app.</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         <mat-radio-group
-          class="theme-options"
+          class="grid gap-1"
           aria-label="Application theme"
           [value]="theme.preference()"
           (change)="setTheme($event.value)"
         >
           @for (option of themeOptions; track option.value) {
             <mat-radio-button [value]="option.value">
-              <span class="option-content">
+              <span class="flex items-center gap-3 max-small:items-start">
                 <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
                 <span>
                   <strong>{{ option.label }}</strong>
@@ -63,7 +78,12 @@
   <section aria-labelledby="finder-heading">
     <mat-card>
       <mat-card-header>
-        <div mat-card-avatar class="section-icon"><mat-icon>filter_alt_off</mat-icon></div>
+        <div
+          mat-card-avatar
+          class="grid place-items-center rounded-xl bg-secondary-container text-on-secondary-container"
+        >
+          <mat-icon>filter_alt_off</mat-icon>
+        </div>
         <mat-card-title id="finder-heading">Saved finder filters</mat-card-title>
         <mat-card-subtitle>Restore default filters for every finder.</mat-card-subtitle>
       </mat-card-header>
@@ -82,9 +102,14 @@
   </section>
 
   <section aria-labelledby="database-heading">
-    <mat-card class="danger-card">
+    <mat-card class="border-error">
       <mat-card-header>
-        <div mat-card-avatar class="section-icon danger"><mat-icon>delete_sweep</mat-icon></div>
+        <div
+          mat-card-avatar
+          class="grid place-items-center rounded-xl bg-error-container text-on-error-container"
+        >
+          <mat-icon>delete_sweep</mat-icon>
+        </div>
         <mat-card-title id="database-heading">Custom databases</mat-card-title>
         <mat-card-subtitle>
           {{ customDatabases().length }} custom

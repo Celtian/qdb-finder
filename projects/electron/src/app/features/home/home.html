@@ -1,7 +1,9 @@
-<header class="app-page-header page-heading">
+<header
+  class="sticky top-0 z-200 flex items-center gap-4 border-b border-outline-variant bg-surface-container-lowest px-8 py-4 max-nav:p-4"
+>
   <app-navigation-trigger />
   <div>
-    <p class="eyebrow">
+    <p class="text-xs font-bold tracking-section text-primary uppercase">
       {{ availableDatabases().length }} searchable
       {{ availableDatabases().length === 1 ? 'database' : 'databases' }}
     </p>
@@ -9,29 +11,47 @@
   </div>
 </header>
 <main>
-  <p class="lead">
+  <p class="mb-10 max-w-195 text-lead leading-lead text-on-surface-variant">
     Browse players, teams, leagues, referees and stadiums across every compatible installed database
     without an internet connection.
   </p>
   @if (loading()) {
-    <div class="state" aria-live="polite">
+    <div
+      class="flex min-h-80 flex-col items-center justify-center text-center text-on-surface-variant"
+      data-state
+      aria-live="polite"
+    >
       <mat-spinner diameter="42" />
       <p>Loading database summary…</p>
     </div>
   } @else if (error()) {
-    <div class="state error">
+    <div
+      class="flex min-h-80 flex-col items-center justify-center text-center text-on-surface-variant"
+      data-state
+      data-error
+    >
       <mat-icon>database_off</mat-icon>
       <h2>Database summary unavailable</h2>
       <p>{{ error() }}</p>
       <button type="button" mat-flat-button (click)="retry()">Try again</button>
     </div>
   } @else {
-    <section class="tile-grid" aria-label="Browse database">
+    <section
+      class="grid grid-cols-3 gap-5 max-nav:grid-cols-2 max-mobile:grid-cols-1"
+      aria-label="Browse database"
+    >
       @for (tile of tiles(); track tile.route) {
-        <a class="browse-tile" [routerLink]="tile.route">
+        <a
+          class="min-w-0 text-inherit no-underline focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary"
+          data-browse-tile
+          [routerLink]="tile.route"
+        >
           <mat-card>
             <mat-card-header>
-              <div mat-card-avatar class="tile-icon">
+              <div
+                mat-card-avatar
+                class="grid place-items-center rounded-xl bg-secondary-container text-on-secondary-container"
+              >
                 <mat-icon>{{ tile.icon }}</mat-icon>
               </div>
               <mat-card-title>{{ tile.title }}</mat-card-title>

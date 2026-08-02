@@ -4,16 +4,26 @@
   overflow: auto;
 }
 
+header > div {
+  min-width: 0;
+}
+
+header p,
+header h1 {
+  margin: 0;
+}
+
+header h1 {
+  font-size: 1.4rem;
+}
+
 main {
   width: min(840px, 100%);
   margin: 0 auto;
   padding: clamp(1.5rem, 4vw, 3.5rem);
 }
 
-section + section {
-  margin-top: 1rem;
-}
-
+section + section,
 app-finder-column-layouts + section {
   margin-top: 1rem;
 }
@@ -34,6 +44,20 @@ mat-card-content {
 
 mat-radio-button {
   padding: 0.5rem 0;
+}
+
+mat-radio-group > mat-radio-button span > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+mat-radio-group small {
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.35;
+}
+
+[data-message] button {
+  margin-left: auto;
 }
 
 @media (width <= 560px) {

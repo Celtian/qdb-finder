@@ -15,18 +15,22 @@ class PageHeaderStyleHost {
 }
 
 describe('application page header styles', () => {
-  it('applies the Tailwind page-header utility to every route-header variant', async () => {
+  it('applies direct Tailwind page-header classes to every route-header variant', async () => {
     await TestBed.configureTestingModule({ imports: [PageHeaderStyleHost] }).compileComponents();
     const fixture = TestBed.createComponent(PageHeaderStyleHost);
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    const headers = element.querySelectorAll<HTMLElement>('.app-page-header');
+    const headers = element.querySelectorAll<HTMLElement>('header');
     expect(headers).toHaveLength(3);
-    expect([...headers].map((header) => [...header.classList])).toEqual([
-      ['app-page-header', 'page-heading'],
-      ['app-page-header', 'topbar'],
-      ['app-page-header', 'entity-topbar'],
-    ]);
+    expect(
+      [...headers].every(
+        (header) =>
+          header.classList.contains('sticky') &&
+          header.classList.contains('top-0') &&
+          header.classList.contains('z-200') &&
+          header.classList.contains('bg-surface-container-lowest'),
+      ),
+    ).toBe(true);
   });
 });

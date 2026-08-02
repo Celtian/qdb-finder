@@ -160,7 +160,7 @@ module.exports = defineConfig([
     },
     settings: {
       tailwindcss: /** @type {import('eslint-plugin-tailwindcss').PluginSettings} */ ({
-        cssConfigPath: path.join(__dirname, 'projects/tailwind.lint.css'),
+        cssConfigPath: path.join(__dirname, 'projects/electron/src/styles.css'),
       }),
     },
     rules: {

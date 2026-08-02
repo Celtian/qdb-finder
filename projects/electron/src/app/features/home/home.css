@@ -10,6 +10,36 @@ main {
   padding: clamp(2rem, 5vw, 5rem);
 }
 
+header > div {
+  min-width: 0;
+}
+
+header p,
+header h1 {
+  margin: 0;
+}
+
+header h1 {
+  font-size: 1.4rem;
+}
+
+[data-browse-tile] mat-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 16px;
+  background: var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+[data-browse-tile]:hover mat-card {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--mat-sys-shadow) 14%, transparent);
+}
+
 mat-card-content {
   min-height: 7rem;
   padding-top: 1.25rem;
@@ -21,6 +51,21 @@ mat-card-actions {
   gap: 0.35rem;
   color: var(--qdb-brand);
   font-weight: 700;
+}
+
+[data-state] > mat-icon {
+  width: 54px;
+  height: 54px;
+  font-size: 54px;
+}
+
+[data-state] h2 {
+  margin-bottom: 0.25rem;
+  color: var(--mat-sys-on-surface);
+}
+
+[data-state][data-error] mat-icon {
+  color: var(--mat-sys-error);
 }
 
 @media (width <= 620px) {

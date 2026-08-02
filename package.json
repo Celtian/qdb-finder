@@ -54,7 +54,7 @@
     "check-circular-deps": "madge --circular --extensions ts --ts-config tsconfig.json projects/electron/src projects/electron/electron projects/docs/src tools",
     "lint": "bun run --parallel 'lint:*'",
     "lint:angular": "ng lint",
-    "lint:styles": "stylelint 'projects/**/*.css'",
+    "lint:styles": "stylelint 'projects/**/*.css' 'tailwind.theme.css'",
     "lint:tooling": "eslint --cache --cache-location .angular/cache/eslint/tooling --cache-strategy content tools projects/electron/electron",
     "version": "bun run create-version && auto-changelog -p && git add CHANGELOG.md",
     "postversion": "git push && git push --follow-tags",

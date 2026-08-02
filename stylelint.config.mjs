@@ -38,19 +38,15 @@ export default {
   },
   overrides: [
     {
-      files: ['**/tailwind.css', 'projects/tailwind.lint.css'],
+      files: ['projects/*/src/styles.css', 'tailwind.theme.css'],
       rules: {
         'at-rule-no-unknown': [
           true,
           {
-            ignoreAtRules: ['plugin', 'source', 'theme', 'utility'],
+            ignoreAtRules: ['plugin', 'source', 'theme'],
           },
         ],
         'import-notation': null,
-        [maxLinesRuleName]: null,
-        'nesting-selector-no-missing-scoping-root': null,
-        'no-duplicate-selectors': null,
-        'no-invalid-position-declaration': null,
       },
     },
     {

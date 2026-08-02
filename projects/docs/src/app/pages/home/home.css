@@ -32,6 +32,36 @@ ul {
   line-height: 1.65;
 }
 
+[data-code-card] mat-card-content {
+  padding: 0;
+}
+
+section > div a {
+  color: var(--qdb-brand);
+}
+
+section > div mat-icon {
+  margin-left: 0.3rem;
+}
+
+mat-card[role='note'] mat-card-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+mat-card[role='note'] mat-icon {
+  flex: 0 0 auto;
+  color: var(--qdb-brand);
+}
+
+mat-card[role='note'] p {
+  margin: 0;
+  color: #324565;
+  line-height: 1.6;
+}
+
 pre {
   overflow: auto;
   margin: 0;

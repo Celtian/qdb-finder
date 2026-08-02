@@ -71,19 +71,25 @@ describe('PlayerFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(element.querySelector('.topbar')?.classList.contains('app-page-header')).toBe(true);
-    expect(element.querySelector('.topbar .eyebrow')?.textContent?.trim()).toBe('Player finder');
-    expect(element.querySelector('.topbar h1')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
+    expect(element.querySelector('header p:first-child')?.textContent?.trim()).toBe(
+      'Player finder',
+    );
+    expect(element.querySelector('header h1')?.textContent?.trim()).toBe(
       'Search players across editions',
     );
-    expect(element.querySelector('.search')?.textContent).toContain(
+    expect(element.querySelector('main > mat-form-field')?.textContent).toContain(
       'Search players, teams, leagues, countries or Original ID',
     );
-    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe('Search for a player');
+    expect(element.querySelector('[data-state] h2')?.textContent?.trim()).toBe(
+      'Search for a player',
+    );
   });
 
   it('centers the search field', () => {
-    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.search');
+    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      'main > mat-form-field',
+    );
 
     expect(search).toBeTruthy();
     expect(search?.tagName).toBe('MAT-FORM-FIELD');
@@ -96,8 +102,8 @@ describe('PlayerFinder', () => {
     };
     const expectControls = (): void => {
       const element = fixture.nativeElement as HTMLElement;
-      expect(element.querySelector('.filter-button')).toBeTruthy();
-      expect(element.querySelector('.column-button')).toBeTruthy();
+      expect(element.querySelector('button[aria-label^="Choose filters"]')).toBeTruthy();
+      expect(element.querySelector('button[aria-label^="Choose columns"]')).toBeTruthy();
     };
 
     testable.loading.set(true);
@@ -108,7 +114,7 @@ describe('PlayerFinder', () => {
     await fixture.whenStable();
     expectControls();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.state h2')?.textContent?.trim(),
+      (fixture.nativeElement as HTMLElement).querySelector('[data-state] h2')?.textContent?.trim(),
     ).toBe('Player search unavailable');
     testable.error.set('');
     await fixture.whenStable();
@@ -291,7 +297,7 @@ describe('PlayerFinder', () => {
     expect(searchPlayers).not.toHaveBeenCalled();
     const hint = document.body.querySelector('mat-hint');
     expect(document.body.textContent).toContain('Women available from FIFA 16');
-    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+    expect(hint?.closest('mat-form-field')?.classList.contains('mb-2')).toBe(true);
     testable.applyFilters();
     await fixture.whenStable();
 
@@ -471,7 +477,7 @@ describe('PlayerFinder', () => {
     expect(headers.slice(0, 4)).toEqual(['Player', 'Original ID', 'Edition', 'Nationality']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('123456');
-    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(originalIdCell?.classList.contains('tabular-nums')).toBe(true);
     const birthDateCell = element.querySelector<HTMLElement>('td.cdk-column-birthDate');
     expect(birthDateCell?.textContent?.trim()).toBe('29 Feb 2004');
     expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
@@ -483,16 +489,18 @@ describe('PlayerFinder', () => {
     expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('180 cm');
     expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('75 kg');
     expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('Right');
-    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 4 hidden',
-    );
-    expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
-    expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
     expect(
-      element.querySelector('td.cdk-column-positions .data-badge.position-attacker'),
+      element.querySelector('button[aria-label^="Choose columns"]')?.getAttribute('aria-label'),
+    ).toBe('Choose columns, 4 hidden');
+    expect(element.querySelector('td.cdk-column-overall .inline-flex.bg-score-lime')).toBeTruthy();
+    expect(
+      element.querySelector('td.cdk-column-potential .inline-flex.bg-score-green'),
     ).toBeTruthy();
     expect(
-      element.querySelector('td.cdk-column-bestRating .data-badge.position-attacker'),
+      element.querySelector('td.cdk-column-positions .inline-flex.bg-position-attacker'),
+    ).toBeTruthy();
+    expect(
+      element.querySelector('td.cdk-column-bestRating .inline-flex.bg-position-attacker'),
     ).toBeTruthy();
 
     const missingFlagCell = element.querySelectorAll('td.cdk-column-nationality')[1];

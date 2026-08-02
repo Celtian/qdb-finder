@@ -1,7 +1,10 @@
 <section aria-labelledby="finder-column-layout-heading">
-  <mat-card class="column-layouts">
+  <mat-card data-column-layouts>
     <mat-card-header>
-      <div mat-card-avatar class="column-layouts-icon">
+      <div
+        mat-card-avatar
+        class="flex items-center justify-center bg-primary-container text-on-primary-container"
+      >
         <mat-icon aria-hidden="true">view_column</mat-icon>
       </div>
       <mat-card-title id="finder-column-layout-heading">Finder column layouts</mat-card-title>
@@ -16,13 +19,14 @@
       >
         @for (tab of tabs; track tab.finder) {
           <mat-tab [label]="tab.label">
-            <div class="column-tab-content">
+            <div class="px-4 pt-5 pb-4">
               <p [id]="'column-order-instructions-' + tab.finder">
                 Choose and reorder the columns shown in the {{ tab.finder }} table. Drag a handle or
                 focus it and use the Up and Down arrow keys. Changes are saved automatically.
               </p>
               <div
-                class="column-list"
+                class="flex flex-col"
+                data-column-list
                 cdkDropList
                 cdkDropListLockAxis="y"
                 role="list"
@@ -30,7 +34,13 @@
                 (cdkDropListDropped)="drop(tab.finder, $event)"
               >
                 @for (column of orderedColumns()[tab.finder]; track column.key) {
-                  <div class="column-row" cdkDrag role="listitem" [cdkDragData]="column">
+                  <div
+                    class="flex min-h-12 items-center gap-2 rounded-lg bg-surface-container-lowest pl-1"
+                    cdkDrag
+                    data-column-row
+                    role="listitem"
+                    [cdkDragData]="column"
+                  >
                     <mat-checkbox
                       [checked]="column.required || visibleColumns()[tab.finder][column.key]"
                       [disabled]="column.required"
@@ -39,7 +49,7 @@
                       {{ column.label }}
                     </mat-checkbox>
                     <button
-                      class="drag-handle"
+                      class="shrink-0 cursor-grab text-on-surface-variant active:cursor-grabbing"
                       cdkDragHandle
                       matIconButton
                       type="button"
@@ -55,7 +65,11 @@
                       <mat-icon aria-hidden="true">drag_indicator</mat-icon>
                     </button>
                     <ng-template cdkDragPreview [matchSize]="true">
-                      <div class="column-drag-preview" aria-hidden="true">
+                      <div
+                        class="flex items-center justify-between overflow-clip! rounded-lg bg-surface-container-lowest px-3! py-0! text-on-surface shadow-level3 outline -outline-offset-1 outline-outline-variant"
+                        data-column-drag-preview
+                        aria-hidden="true"
+                      >
                         <span>{{ column.label }}</span>
                         <mat-icon>drag_indicator</mat-icon>
                       </div>
@@ -63,7 +77,7 @@
                   </div>
                 }
               </div>
-              <div class="column-tab-actions">
+              <div class="mt-3 flex justify-end border-t border-outline-variant pt-4">
                 <button matButton="outlined" type="button" (click)="reset(tab.finder, tab.label)">
                   Reset {{ tab.singularLabel }} columns
                 </button>
@@ -72,13 +86,16 @@
           </mat-tab>
         }
       </mat-tab-group>
-      <p class="live-announcement" aria-live="polite">{{ announcement() }}</p>
+      <p class="sr-only" aria-live="polite">{{ announcement() }}</p>
     </mat-card-content>
   </mat-card>
 
-  <mat-card class="settings-card" data-testid="reset-layouts">
+  <mat-card data-column-layouts data-testid="reset-layouts">
     <mat-card-header>
-      <div mat-card-avatar class="reset-layouts-icon">
+      <div
+        mat-card-avatar
+        class="flex items-center justify-center bg-secondary-container text-on-secondary-container"
+      >
         <mat-icon aria-hidden="true">restart_alt</mat-icon>
       </div>
       <mat-card-title>Reset column layouts</mat-card-title>

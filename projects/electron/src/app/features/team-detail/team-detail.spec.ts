@@ -108,10 +108,10 @@ describe('TeamDetail', () => {
     expect(element.textContent).toContain('Arsenal');
     expect(element.textContent).toContain('Test Player');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
-    expect(element.querySelector('.data-badge.score-lime')).toBeTruthy();
-    expect(element.querySelector('.data-badge.position-attacker')).toBeTruthy();
+    expect(element.querySelector('.inline-flex.bg-score-lime')).toBeTruthy();
+    expect(element.querySelector('.inline-flex.bg-position-attacker')).toBeTruthy();
     expect(
-      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+      element.querySelector('header p:first-child')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 team · Built-in FIFA 11–23 · Original ID 1');
     expect(element.querySelector('#team-roster-heading')?.textContent?.trim()).toBe(
       'Top-rated players',
@@ -120,7 +120,7 @@ describe('TeamDetail', () => {
       element.querySelector('#team-roster-heading')?.previousElementSibling?.textContent?.trim(),
     ).toBe('Squad');
     const metrics = new Map(
-      [...element.querySelectorAll<HTMLElement>('.metric-grid > div')].map((metric) => [
+      [...element.querySelectorAll<HTMLElement>('[data-metric-grid] > div')].map((metric) => [
         metric.querySelector('span')?.textContent?.trim(),
         metric.querySelector('strong')?.textContent?.trim(),
       ]),
@@ -140,7 +140,7 @@ describe('TeamDetail', () => {
 
       const budgetMetric = [
         ...(missingBudgetFixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
-          '.metric-grid > div',
+          '[data-metric-grid] > div',
         ),
       ].find((metric) => metric.querySelector('span')?.textContent?.trim() === 'Budget');
       expect(budgetMetric?.querySelector('strong')?.textContent?.trim()).toBe('—');

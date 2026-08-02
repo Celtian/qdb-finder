@@ -177,25 +177,23 @@ describe('Databases', () => {
     ]);
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('.page-heading')?.classList.contains('app-page-header')).toBe(
-      true,
-    );
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
     expect(element.querySelector('h1')?.textContent).toContain('Manage FIFA databases');
-    expect(element.querySelector('.wizard-card .database-icon mat-icon')?.textContent?.trim()).toBe(
-      'upload_file',
-    );
+    expect(
+      element.querySelector('[data-wizard-card] [mat-card-avatar] mat-icon')?.textContent?.trim(),
+    ).toBe('upload_file');
     expect(element.textContent).toContain('Text-table folder');
     expect(element.textContent).toContain('t3db database');
-    expect(element.querySelector('.database-summary')?.textContent).toContain('FIFA 11–23');
+    expect(element.querySelector('[data-database-grid]')?.textContent).toContain('FIFA 11–23');
     const removeButtons = await loader.getAllHarnesses(
       MatButtonHarness.with({
-        selector: '.remove-database',
+        selector: 'button[aria-label^="Remove "]',
         variant: 'icon',
         iconName: 'delete_outline',
       }),
     );
     expect(removeButtons).toHaveLength(1);
-    expect(element.querySelector('.remove-database')?.getAttribute('aria-label')).toBe(
+    expect(element.querySelector('button[aria-label^="Remove "]')?.getAttribute('aria-label')).toBe(
       'Remove fifa_ng_db',
     );
     expect(element.querySelector('mat-card-actions')).toBeNull();
@@ -208,7 +206,7 @@ describe('Databases', () => {
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    const sourceField = element.querySelector<HTMLElement>('.source-picker');
+    const sourceField = element.querySelector<HTMLElement>('[data-source-picker]');
     const path = sourceField?.querySelector<HTMLInputElement>('input');
     const button = await loader.getHarness(
       MatButtonHarness.with({
@@ -249,7 +247,7 @@ describe('Databases', () => {
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    const sourceFields = element.querySelector<HTMLElement>('.source-fields');
+    const sourceFields = element.querySelector<HTMLElement>('[data-source-fields]');
     const databaseButton = await loader.getHarness(
       MatButtonHarness.with({
         selector: 'button[aria-label="Select t3db database file"]',
@@ -266,7 +264,7 @@ describe('Databases', () => {
     );
 
     expect(sourceFields?.querySelectorAll('button[matSuffix]')).toHaveLength(2);
-    expect(sourceFields?.querySelector('.source-field')).toBeNull();
+    expect(sourceFields?.querySelector('app-folder-selector')).toBeNull();
     expect(sourceFields?.textContent).not.toContain('Browse');
 
     await databaseButton.click();
@@ -291,7 +289,7 @@ describe('Databases', () => {
     await fixture.whenStable();
 
     const suffixButtons = await loader.getAllHarnesses(
-      MatButtonHarness.with({ selector: '.source-fields button' }),
+      MatButtonHarness.with({ selector: '[data-source-fields] button' }),
     );
     expect(await Promise.all(suffixButtons.map((button) => button.isDisabled()))).toEqual([
       true,

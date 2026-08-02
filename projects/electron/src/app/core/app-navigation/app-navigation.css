@@ -16,19 +16,20 @@ nav mat-divider {
   margin: 0.5rem 0;
 }
 
-nav a {
+nav a,
+:host > div a,
+:host > div button {
   width: 100%;
   justify-content: flex-start;
   color: inherit;
 }
 
-nav a.active {
+nav a.active,
+:host > div a.active {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
 }
 
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--qdb-brand);
-  outline-offset: 2px;
+:host > div mat-divider {
+  margin-bottom: 0.5rem;
 }

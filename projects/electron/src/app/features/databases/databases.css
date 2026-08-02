@@ -1,3 +1,5 @@
+@import url('./database-cards.css');
+
 :host {
   display: block;
   height: 100%;
@@ -10,12 +12,107 @@ main {
   padding: clamp(1.5rem, 4vw, 3.5rem);
 }
 
+header > div {
+  min-width: 0;
+}
+
+header p,
+header h1 {
+  margin: 0;
+}
+
+header h1 {
+  font-size: 1.4rem;
+}
+
+[data-wizard-card] mat-card-content {
+  padding-top: 1.5rem;
+}
+
+[data-qdb-wizard] {
+  --mat-stepper-container-color: transparent;
+}
+
+[data-qdb-wizard] h2,
+[data-qdb-wizard] h3,
+[data-qdb-wizard] p {
+  margin: 0;
+}
+
+[data-qdb-wizard] h2 {
+  font-size: 1.35rem;
+}
+
+[data-import-progress] p {
+  margin: 0.65rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+[data-qdb-wizard] h2 + p {
+  margin-top: 0.35rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+[data-format-options] mat-radio-button {
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+[data-format-options] mat-radio-button:has(input:checked) {
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-secondary-container);
+}
+
+[data-format-options] small {
+  color: var(--mat-sys-on-surface-variant);
+  white-space: normal;
+}
+
+[data-import-summary] div {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+}
+
+[data-import-summary] div + div {
+  border-left: 1px solid var(--mat-sys-outline-variant);
+}
+
+[data-import-summary] dt {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+[data-import-summary] dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+[data-source-summary] h3 {
+  font-size: 1rem;
+}
+
+[data-source-summary] ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+[data-source-summary] li {
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
 section {
   margin-top: 2rem;
 }
 
 @media (width <= 720px) {
-  form {
-    grid-template-columns: 1fr;
+  [data-import-summary] div + div {
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    border-left: 0;
   }
 }

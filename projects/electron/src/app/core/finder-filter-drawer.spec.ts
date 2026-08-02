@@ -35,7 +35,7 @@ describe('FinderFilterDrawer', () => {
 
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.filter-drawer')
+        .querySelector('div[aria-labelledby]')
         ?.getAttribute('aria-labelledby'),
     ).toBe('player-filter-title');
     expect(await clear.isDisabled()).toBe(true);

@@ -68,7 +68,7 @@ export const playerSearchDisplay = (row: PlayerSearchRow): PlayerSearchDisplay =
   })),
   overallClass: scoreBadgeClass(row.overall),
   potentialClass: scoreBadgeClass(row.potential),
-  bestRatingClass: `rating ${positionBadgeClass(row.bestPosition)}`,
+  bestRatingClass: `min-w-rating justify-center whitespace-nowrap ${positionBadgeClass(row.bestPosition)}`,
   birthDateLabel: formatDateOnly(row.birthDate),
   preferredFootLabel: formatPreferredFoot(row.preferredFoot),
 });

@@ -3,11 +3,14 @@ import { scoreValueClass } from './attribute-value';
 export type PositionGroup = 'attacker' | 'midfielder' | 'defender' | 'goalkeeper';
 
 const positionGroupClasses: Readonly<Record<PositionGroup, string>> = {
-  attacker: 'position-attacker',
-  midfielder: 'position-midfielder',
-  defender: 'position-defender',
-  goalkeeper: 'position-goalkeeper',
+  attacker: 'bg-position-attacker text-on-position-attacker',
+  midfielder: 'bg-position-midfielder text-on-position-midfielder',
+  defender: 'bg-position-defender text-on-position-defender',
+  goalkeeper: 'bg-position-goalkeeper text-on-position-goalkeeper',
 };
+
+const badgeClasses =
+  'inline-flex min-h-6 items-center justify-center rounded-full border-0 px-2 py-micro text-xs leading-tight font-bold whitespace-nowrap';
 
 export interface PositionMatrixSlot {
   readonly position: string;
@@ -117,7 +120,7 @@ export const positionValueClass = (position: string): string =>
   positionGroupClasses[positionGroup(position)];
 
 export const positionBadgeClass = (position: string): string =>
-  `data-badge ${positionValueClass(position)}`;
+  `${badgeClasses} ${positionValueClass(position)}`;
 
 export const positionRatingRows = (
   ratings: Readonly<Record<string, number>>,

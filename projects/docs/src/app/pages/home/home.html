@@ -1,7 +1,11 @@
 <article>
-  <p class="eyebrow">{{ page().eyebrow }}</p>
+  <p class="mt-0 text-xs font-bold tracking-section text-primary uppercase">
+    {{ page().eyebrow }}
+  </p>
   <h1>{{ page().title }}</h1>
-  <p class="lead">{{ page().lead }}</p>
+  <p class="mb-12 max-w-175 text-lead leading-lead text-docs-copy-muted max-mobile:mb-9">
+    {{ page().lead }}
+  </p>
   @for (section of page().sections; track section.title) {
     <section>
       <h2>{{ section.title }}</h2>
@@ -16,7 +20,11 @@
         </ul>
       }
       @if (section.note) {
-        <mat-card class="note" appearance="outlined" role="note">
+        <mat-card
+          class="mt-5 border-outline-variant bg-surface-container-lowest"
+          appearance="outlined"
+          role="note"
+        >
           <mat-card-content>
             <mat-icon>info</mat-icon>
             <p><strong>Note:</strong> {{ section.note }}</p>
@@ -24,14 +32,18 @@
         </mat-card>
       }
       @if (section.code) {
-        <mat-card class="code-card" appearance="outlined">
+        <mat-card
+          class="mt-5 overflow-hidden border-outline-variant bg-surface-container-lowest"
+          appearance="outlined"
+          data-code-card
+        >
           <mat-card-content>
             <pre><code>{{ section.code }}</code></pre>
           </mat-card-content>
         </mat-card>
       }
       @if (section.links) {
-        <div class="section-links">
+        <div class="mt-5 flex flex-wrap gap-brand-gap">
           @for (link of section.links; track link.href) {
             @if (link.external) {
               <a mat-stroked-button [href]="link.href">

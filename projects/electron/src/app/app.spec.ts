@@ -55,7 +55,7 @@ describe('App', () => {
     expect(await sidenav.getMode()).toBe('side');
     expect(await sidenav.isOpen()).toBe(true);
     expect(element.querySelector('app-navigation')).toBeTruthy();
-    expect(element.querySelector('main.app-content router-outlet')).toBeTruthy();
+    expect(element.querySelector('main router-outlet')).toBeTruthy();
     expect(element.querySelector('app-window-titlebar')).toBeNull();
     expect(element.querySelector('[aria-label="Open main navigation"]')).toBeNull();
     expect(fixture.nativeElement.getAttribute('app-version')).toBe(VERSION_INFO.version);

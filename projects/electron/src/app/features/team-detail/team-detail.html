@@ -1,11 +1,11 @@
-<header class="detail-header">
+<header class="flex items-start justify-between gap-4 px-6 pt-6">
   <div>
-    <p class="eyebrow">
+    <p class="text-detail-eyebrow font-bold tracking-section text-primary uppercase">
       FIFA {{ team.version }} team · {{ team.databaseName }} ·
-      <span class="original-id">Original ID {{ team.teamId }}</span>
+      <span class="whitespace-nowrap tabular-nums">Original ID {{ team.teamId }}</span>
     </p>
     <h2 mat-dialog-title>{{ team.name }}</h2>
-    <p class="country-line">
+    <p class="mt-brand-gap flex items-center gap-country text-on-surface-variant">
       @if (team.countryCode) {
         <app-country-flag
           size="lg"
@@ -21,7 +21,7 @@
   </div>
   <button
     type="button"
-    class="close-button"
+    class="shrink-0"
     mat-icon-button
     mat-dialog-close
     aria-label="Close team details"
@@ -30,7 +30,7 @@
   </button>
 </header>
 <mat-dialog-content>
-  <div class="metric-grid">
+  <div class="mb-6 grid grid-cols-4 gap-3 max-tablet:grid-cols-2" data-metric-grid>
     @for (metric of metrics; track metric.label) {
       <div>
         <span>{{ metric.label }}</span
@@ -46,27 +46,32 @@
   </div>
   <mat-tab-group>
     <mat-tab label="Overview"
-      ><div class="overview-tab">
+      ><div class="pt-4">
         <section aria-labelledby="team-roster-heading">
-          <div class="section-heading">
+          <div class="mb-3 flex items-end justify-between gap-4">
             <div>
-              <p class="eyebrow">Squad</p>
+              <p class="text-detail-eyebrow font-bold tracking-section text-primary uppercase">
+                Squad
+              </p>
               <h3 id="team-roster-heading">Top-rated players</h3>
             </div>
             <span>{{ players.length }} of {{ team.squadSize }}</span>
           </div>
           @if (players.length) {
-            <div class="preview-list">
+            <div class="overflow-hidden rounded-xl border border-outline-variant">
               @for (player of players; track player.key) {
-                <div class="preview-row">
-                  <span class="player-name">{{ player.name }}</span>
-                  <span class="country-line compact">
+                <div
+                  class="grid min-h-13 items-center gap-3 border-b border-outline-variant px-3 py-row"
+                  data-preview-row
+                >
+                  <span class="font-bold text-primary">{{ player.name }}</span>
+                  <span class="m-0 flex items-center gap-country text-on-surface-variant">
                     @if (player.nationalityCode) {
                       <app-country-flag decorative [code]="player.nationalityCode" />
                     }
                     <span>{{ player.nationality || '—' }}</span>
                   </span>
-                  <span class="position-list">
+                  <span class="flex flex-wrap gap-1">
                     @for (position of player.positions; track position.value) {
                       <span [class]="position.className">{{ position.value }}</span>
                     }
@@ -76,14 +81,18 @@
               }
             </div>
           } @else {
-            <p class="empty-preview">No linked players are available for this team edition.</p>
+            <p class="text-on-surface-variant">
+              No linked players are available for this team edition.
+            </p>
           }
         </section>
         @if (team.stadium; as stadium) {
           <section aria-labelledby="team-stadium-heading">
-            <div class="section-heading">
+            <div class="mb-3 flex items-end justify-between gap-4">
               <div>
-                <p class="eyebrow">Home ground</p>
+                <p class="text-detail-eyebrow font-bold tracking-section text-primary uppercase">
+                  Home ground
+                </p>
                 <h3 id="team-stadium-heading">{{ stadium.name }}</h3>
               </div>
               <span>{{ stadium.capacity.toLocaleString() }} seats</span>
@@ -93,7 +102,7 @@
       </div></mat-tab
     >
     <mat-tab label="Raw fields"
-      ><dl class="raw-fields">
+      ><dl class="grid gap-x-4 gap-y-flag p-4 wrap-anywhere" data-raw-fields>
         @for (field of team.raw | keyvalue; track field.key) {
           <dt>{{ field.key }}</dt>
           <dd>{{ field.value }}</dd>

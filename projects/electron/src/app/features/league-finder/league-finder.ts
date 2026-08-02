@@ -28,7 +28,7 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { openFinderColumnDrawer } from '../../core/finder-column-drawer';
 import {
   type FinderColumnKey,
   type FinderColumnPreference,
@@ -326,33 +326,15 @@ export class LeagueFinder {
   }
 
   protected openColumns(): void {
-    this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
-        FinderColumnDrawer,
-        {
-          ariaLabelledBy: 'finder-column-title',
-          ariaModal: true,
-          autoFocus: 'first-tabbable',
-          data: {
-            finder: 'leagues',
-            columns: this.columnDefinitions,
-            preference: this.preferences.loadColumnPreference('leagues'),
-          },
-          delayFocusTrap: false,
-          disableClose: false,
-          height: '100vh',
-          maxHeight: '100vh',
-          maxWidth: '100vw',
-          panelClass: 'finder-column-drawer-panel',
-          position: { right: '0', top: '0' },
-          restoreFocus: true,
-          width: '28rem',
-        },
-      )
-      .afterClosed()
-      .subscribe((preference) => {
-        if (preference) this.applyColumns(preference);
-      });
+    openFinderColumnDrawer(
+      this.dialog,
+      {
+        finder: 'leagues',
+        columns: this.columnDefinitions,
+        preference: this.preferences.loadColumnPreference('leagues'),
+      },
+      (preference) => this.applyColumns(preference),
+    );
   }
 
   protected async openLeague(row: LeagueEditionRow): Promise<void> {

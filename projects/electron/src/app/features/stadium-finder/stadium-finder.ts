@@ -28,7 +28,7 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { openFinderColumnDrawer } from '../../core/finder-column-drawer';
 import {
   type FinderColumnKey,
   type FinderColumnPreference,
@@ -50,37 +50,14 @@ import {
   defaultStadiumSearchRequest,
 } from '../../core/qdb-contracts';
 import { StadiumDetail } from '../stadium-detail/stadium-detail';
-
-type StadiumFacet = 'country' | 'team';
-type AvailabilityFilter = 'all' | 'licensed' | 'generic';
-
-interface FilterDisplay {
-  key: string;
-  label: string;
-  countryCode?: string;
-}
-
-interface StadiumDisplay extends StadiumEditionRow {
-  pitch: string;
-  licensed: string;
-}
-
-const stadiumDisplay = (row: StadiumEditionRow): StadiumDisplay => ({
-  ...row,
-  pitch:
-    row.pitchLengthMeters === null || row.pitchWidthMeters === null
-      ? '—'
-      : `${row.pitchLengthMeters} × ${row.pitchWidthMeters} m`,
-  licensed: row.isLicensed === null ? '—' : row.isLicensed ? 'Yes' : 'No',
-});
-const validVersion = (value: string | null): number | undefined => {
-  const version = Number(value);
-  return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
-};
-const validId = (value: string | null): number | undefined => {
-  const id = Number(value);
-  return Number.isInteger(id) && id > 0 ? id : undefined;
-};
+import {
+  type AvailabilityFilter,
+  type FilterDisplay,
+  type StadiumFacet,
+  stadiumDisplay,
+  validStadiumId,
+  validStadiumVersion,
+} from './stadium-finder-state';
 
 @Component({
   selector: 'app-stadium-finder',
@@ -396,33 +373,15 @@ export class StadiumFinder {
     void this.search();
   }
   protected openColumns(): void {
-    this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
-        FinderColumnDrawer,
-        {
-          ariaLabelledBy: 'finder-column-title',
-          ariaModal: true,
-          autoFocus: 'first-tabbable',
-          data: {
-            finder: 'stadiums',
-            columns: this.columnDefinitions,
-            preference: this.preferences.loadColumnPreference('stadiums'),
-          },
-          delayFocusTrap: false,
-          disableClose: false,
-          height: '100vh',
-          maxHeight: '100vh',
-          maxWidth: '100vw',
-          panelClass: 'finder-column-drawer-panel',
-          position: { right: '0', top: '0' },
-          restoreFocus: true,
-          width: '28rem',
-        },
-      )
-      .afterClosed()
-      .subscribe((preference) => {
-        if (preference) this.applyColumns(preference);
-      });
+    openFinderColumnDrawer(
+      this.dialog,
+      {
+        finder: 'stadiums',
+        columns: this.columnDefinitions,
+        preference: this.preferences.loadColumnPreference('stadiums'),
+      },
+      (preference) => this.applyColumns(preference),
+    );
   }
   protected async openStadium(row: StadiumEditionRow): Promise<void> {
     const stadium = await this.qdb.getStadium(row);
@@ -463,8 +422,8 @@ export class StadiumFinder {
   private initialContextRequest(): StadiumSearchRequest | undefined {
     const request = defaultStadiumSearchRequest();
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
-    const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
-    const teamId = validId(this.route.snapshot.queryParamMap.get('teamId'));
+    const version = validStadiumVersion(this.route.snapshot.queryParamMap.get('version'));
+    const teamId = validStadiumId(this.route.snapshot.queryParamMap.get('teamId'));
     return version && teamId
       ? {
           ...request,

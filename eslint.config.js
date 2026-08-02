@@ -94,13 +94,11 @@ module.exports = defineConfig([
       '@angular-eslint/prefer-standalone': 'error',
       '@angular-eslint/prefer-signals': 'error',
       '@angular-eslint/prefer-signal-model': 'error',
-      '@angular-eslint/component-max-inline-declarations': [
-        'error',
-        {
-          template: 0,
-          styles: 0,
-        },
-      ],
+      '@angular-eslint/component-max-inline-declarations': ['error', { template: 10, styles: 0 }],
+      '@angular-eslint/inject-at-top': 'error',
+      'no-unused-private-class-members': 'off',
+      '@typescript-eslint/no-unused-private-class-members': 'error',
+      'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: false }],
     },
   },
   {
@@ -114,6 +112,7 @@ module.exports = defineConfig([
       '@angular-eslint/template/button-has-type': 'error',
       '@angular-eslint/template/attributes-order': 'error',
       '@angular-eslint/template/no-any': 'error',
+      '@angular-eslint/template/prefer-contextual-for-variables': 'error',
       'no-restricted-syntax': [
         'error',
         {
@@ -122,7 +121,31 @@ module.exports = defineConfig([
             'Avoid calling functions with arguments in templates. Use signals or properties instead.',
         },
       ],
-      'max-lines': ['warn', { max: 500, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: false }],
+    },
+  },
+  {
+    files: ['projects/electron/src/app/core/country-flag/generated-flags.ts'],
+    rules: {
+      'max-lines': 'off',
+    },
+  },
+  {
+    files: ['**/*.spec.ts'],
+    rules: {
+      'max-lines': ['error', { max: 800, skipBlankLines: false, skipComments: false }],
+    },
+  },
+  {
+    files: ['**/electron/database.ts'],
+    rules: {
+      'max-lines': ['error', { max: 900, skipBlankLines: false, skipComments: false }],
+    },
+  },
+  {
+    files: ['**/electron/importer.ts'],
+    rules: {
+      'max-lines': ['error', { max: 2200, skipBlankLines: false, skipComments: false }],
     },
   },
 ]);

@@ -28,7 +28,7 @@ import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { openFinderColumnDrawer } from '../../core/finder-column-drawer';
 import {
   type FinderColumnKey,
   type FinderColumnPreference,
@@ -39,11 +39,9 @@ import {
 import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
 import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import { FinderPreferences } from '../../core/finder-preferences';
-import { formatDateOnly } from '../../core/player-profile-value';
 import { Qdb } from '../../core/qdb';
 import {
   type EntityFacetOption,
-  type Gender,
   type LeagueEditionRow,
   type RefereeEditionRow,
   type RefereeResultPage,
@@ -52,30 +50,17 @@ import {
   defaultRefereeSearchRequest,
 } from '../../core/qdb-contracts';
 import { RefereeDetail } from '../referee-detail/referee-detail';
-
-type RefereeFacet = 'nationality' | 'league';
-type AvailabilityFilter = 'all' | 'real' | 'generic';
-type GenderFilter = 'all' | Gender;
-
-interface FilterDisplay {
-  key: string;
-  label: string;
-  countryCode?: string;
-}
-
-interface RefereeDisplay extends RefereeEditionRow {
-  birthDateLabel: string;
-  leagueText: string;
-}
-
-const validVersion = (value: string | null): number | undefined => {
-  const version = Number(value);
-  return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
-};
-const validId = (value: string | null): number | undefined => {
-  const id = Number(value);
-  return Number.isInteger(id) && id > 0 ? id : undefined;
-};
+import {
+  type AvailabilityFilter,
+  type FilterDisplay,
+  type GenderFilter,
+  type RefereeDisplay,
+  type RefereeFacet,
+  countRefereeFilters,
+  refereeDisplay,
+  validRefereeId,
+  validRefereeVersion,
+} from './referee-finder-state';
 
 @Component({
   selector: 'app-referee-finder',
@@ -169,32 +154,15 @@ export class RefereeFinder {
     ),
   );
   protected readonly rows = computed<RefereeDisplay[]>(() =>
-    this.result().rows.map((row) => ({
-      ...row,
-      birthDateLabel: formatDateOnly(row.birthDate),
-      leagueText: row.leagues.join(', '),
-    })),
+    this.result().rows.map(refereeDisplay),
   );
-  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
-  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly activeFilterCount = computed(() => countRefereeFilters(this.request()));
+  protected readonly draftHasFilters = computed(() => countRefereeFilters(this.draftRequest()) > 0);
   protected readonly resultStatus = computed(() =>
     this.loading()
       ? 'Searching referees…'
       : `${this.result().total.toLocaleString()} referee editions`,
   );
-
-  private filterCount(request: RefereeSearchRequest): number {
-    return [
-      request.databaseIds.length > 0,
-      request.versions.length > 0,
-      request.gender !== undefined,
-      request.nationalityIds.length > 0,
-      request.leagueKeys.length > 0,
-      Boolean(request.leagueEdition),
-      request.isReal !== undefined,
-      Object.keys(request.age).length > 0,
-    ].filter(Boolean).length;
-  }
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
@@ -406,33 +374,15 @@ export class RefereeFinder {
   }
 
   protected openColumns(): void {
-    this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
-        FinderColumnDrawer,
-        {
-          ariaLabelledBy: 'finder-column-title',
-          ariaModal: true,
-          autoFocus: 'first-tabbable',
-          data: {
-            finder: 'referees',
-            columns: this.columnDefinitions,
-            preference: this.preferences.loadColumnPreference('referees'),
-          },
-          delayFocusTrap: false,
-          disableClose: false,
-          height: '100vh',
-          maxHeight: '100vh',
-          maxWidth: '100vw',
-          panelClass: 'finder-column-drawer-panel',
-          position: { right: '0', top: '0' },
-          restoreFocus: true,
-          width: '28rem',
-        },
-      )
-      .afterClosed()
-      .subscribe((preference) => {
-        if (preference) this.applyColumns(preference);
-      });
+    openFinderColumnDrawer(
+      this.dialog,
+      {
+        finder: 'referees',
+        columns: this.columnDefinitions,
+        preference: this.preferences.loadColumnPreference('referees'),
+      },
+      (preference) => this.applyColumns(preference),
+    );
   }
 
   protected async openReferee(row: RefereeEditionRow): Promise<void> {
@@ -474,8 +424,8 @@ export class RefereeFinder {
   private initialContextRequest(): RefereeSearchRequest | undefined {
     const request = defaultRefereeSearchRequest();
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
-    const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
-    const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
+    const version = validRefereeVersion(this.route.snapshot.queryParamMap.get('version'));
+    const leagueId = validRefereeId(this.route.snapshot.queryParamMap.get('leagueId'));
     return version && leagueId
       ? {
           ...request,

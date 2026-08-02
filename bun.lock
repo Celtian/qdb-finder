@@ -76,6 +76,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "eslint-plugin-tailwindcss@4.2.0": "patches/eslint-plugin-tailwindcss@4.2.0.patch",
+  },
   "overrides": {
     "@hono/node-server": "2.0.10",
     "esbuild": "0.28.1",

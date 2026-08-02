@@ -145,6 +145,9 @@
     "tar": "7.5.20",
     "tmp": "0.2.7"
   },
+  "patchedDependencies": {
+    "eslint-plugin-tailwindcss@4.2.0": "patches/eslint-plugin-tailwindcss@4.2.0.patch"
+  },
   "auto-changelog": {
     "remote": "none",
     "commitUrl": "https://github.com/Celtian/qdb-finder/commit/{id}",

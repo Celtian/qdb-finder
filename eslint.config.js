@@ -1,6 +1,9 @@
 // @ts-check
 const eslint = require('@eslint/js');
 const { defineConfig } = require('eslint/config');
+const boundaries = /** @type {import('eslint').ESLint.Plugin} */ (
+  require('eslint-plugin-boundaries')
+);
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 
@@ -14,7 +17,61 @@ module.exports = defineConfig([
       angular.configs.tsRecommended,
     ],
     processor: angular.processInlineTemplates,
+    plugins: {
+      boundaries,
+    },
+    settings: {
+      'boundaries/root-path': __dirname,
+      'boundaries/elements': [
+        {
+          type: 'docs',
+          pattern: 'projects/docs/src',
+          partialMatch: false,
+        },
+        {
+          type: 'electron-renderer',
+          pattern: 'projects/electron/src',
+          partialMatch: false,
+        },
+        {
+          type: 'electron-main',
+          pattern: 'projects/electron/electron',
+          partialMatch: false,
+        },
+      ],
+      'import/resolver': {
+        typescript: {
+          project: './tsconfig.json',
+        },
+      },
+    },
     rules: {
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'disallow',
+          checkAllOrigins: false,
+          checkUnknownLocals: false,
+          checkInternals: false,
+          policies: [
+            {
+              from: {
+                element: {
+                  type: 'electron-main',
+                },
+              },
+              allow: {
+                to: {
+                  element: {
+                    type: 'electron-renderer',
+                    fileInternalPath: 'app/core/qdb-contracts.ts',
+                  },
+                },
+              },
+            },
+          ],
+        },
+      ],
       '@angular-eslint/directive-selector': [
         'error',
         {

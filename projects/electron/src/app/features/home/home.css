@@ -10,86 +10,6 @@ main {
   padding: clamp(2rem, 5vw, 5rem);
 }
 
-.page-heading {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-lowest);
-}
-
-.page-heading > div {
-  min-width: 0;
-}
-
-.page-heading p,
-.page-heading h1 {
-  margin: 0;
-}
-
-.page-heading h1 {
-  font-size: 1.4rem;
-}
-
-.eyebrow {
-  color: var(--qdb-brand);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.lead {
-  max-width: 780px;
-  margin: 0 0 2.5rem;
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 1.1rem;
-  line-height: 1.6;
-}
-
-.tile-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.browse-tile {
-  min-width: 0;
-  color: inherit;
-  text-decoration: none;
-}
-
-.browse-tile mat-card {
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 16px;
-  background: var(--mat-sys-surface-container-lowest);
-  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.browse-tile:hover mat-card {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 34px color-mix(in srgb, var(--mat-sys-shadow) 14%, transparent);
-}
-
-.browse-tile:focus-visible {
-  outline: 3px solid var(--qdb-brand);
-  outline-offset: 3px;
-}
-
-.tile-icon {
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-}
-
 mat-card-content {
   min-height: 7rem;
   padding-top: 1.25rem;
@@ -103,43 +23,8 @@ mat-card-actions {
   font-weight: 700;
 }
 
-.state {
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.state > mat-icon {
-  width: 54px;
-  height: 54px;
-  font-size: 54px;
-}
-
-.state h2 {
-  margin-bottom: 0.25rem;
-  color: var(--mat-sys-on-surface);
-}
-
-@media (max-width: 900px) {
-  .page-heading {
-    padding: 1rem;
-  }
-
-  .tile-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 620px) {
   main {
     padding: 1.5rem 1rem;
-  }
-
-  .tile-grid {
-    grid-template-columns: 1fr;
   }
 }

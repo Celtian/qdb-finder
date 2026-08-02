@@ -14,7 +14,7 @@ describe('score value styling', () => {
     [99, 'green'],
   ] as const)('classifies %i as %s', (value, band) => {
     expect(scoreValueBand(value)).toBe(band);
-    expect(scoreValueClass(value)).toBe(`score-value score-${band}`);
-    expect(scoreBadgeClass(value)).toBe(`data-badge score-badge score-value score-${band}`);
+    expect(scoreValueClass(value)).toBe(`score-${band}`);
+    expect(scoreBadgeClass(value)).toBe(`data-badge score-badge score-${band}`);
   });
 });

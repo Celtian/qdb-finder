@@ -4,7 +4,7 @@
     aria-label="Primary navigation"
     [mode]="navigation.isSmallScreen() ? 'over' : 'side'"
     [opened]="navigation.expanded()"
-    [autoFocus]="navigation.isSmallScreen() ? '.primary-navigation-link' : false"
+    [autoFocus]="navigation.isSmallScreen() ? '[data-primary-navigation-link]' : false"
     (openedChange)="navigation.drawerStateChanged($event)"
     (backdropClick)="navigation.dismiss()"
     (keydown.escape)="navigation.dismiss()"

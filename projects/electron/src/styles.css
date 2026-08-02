@@ -38,51 +38,10 @@ body {
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
-.app-page-header {
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  background: var(--mat-sys-surface-container-lowest);
-}
-
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-.finder-column-drawer-panel {
-  --mat-dialog-container-color: var(--mat-sys-surface-container-lowest);
-  --mat-dialog-container-shape: 0;
-
-  animation: finder-column-drawer-enter 250ms ease-out;
-}
-
-.finder-filter-drawer-panel {
-  --mat-dialog-container-color: var(--mat-sys-surface-container-lowest);
-  --mat-dialog-container-shape: 0;
-
-  animation: finder-filter-drawer-enter 250ms ease-out;
-}
-
-.finder-filter-drawer-panel .mat-mdc-dialog-container,
-.finder-filter-drawer-panel .mat-mdc-dialog-inner-container,
-.finder-filter-drawer-panel .mat-mdc-dialog-surface {
-  height: 100%;
-}
-
-.finder-filter-drawer-panel .mat-mdc-dialog-surface {
-  overflow: hidden;
-}
-
-.finder-column-drawer-panel .mat-mdc-dialog-container,
-.finder-column-drawer-panel .mat-mdc-dialog-inner-container,
-.finder-column-drawer-panel .mat-mdc-dialog-surface {
-  height: 100%;
-}
-
-.finder-column-drawer-panel .mat-mdc-dialog-surface {
-  overflow: hidden;
 }
 
 @keyframes finder-column-drawer-enter {
@@ -105,94 +64,6 @@ body {
   }
 }
 
-@media (max-width: 520px) {
-  .finder-column-drawer-panel,
-  .finder-filter-drawer-panel {
-    width: 100vw !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .finder-column-drawer-panel,
-  .finder-filter-drawer-panel {
-    animation: none;
-  }
-}
-
-.original-id {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .mat-mdc-header-cell {
   white-space: nowrap;
-}
-
-.position-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.data-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 1.5rem;
-  border: 0;
-  border-radius: 999px;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1.25;
-  white-space: nowrap;
-}
-
-.position-attacker {
-  background: var(--qdb-position-attacker);
-  color: var(--qdb-on-position-attacker);
-}
-
-.position-midfielder {
-  background: var(--qdb-position-midfielder);
-  color: var(--qdb-on-position-midfielder);
-}
-
-.position-defender {
-  background: var(--qdb-position-defender);
-  color: var(--qdb-on-position-defender);
-}
-
-.position-goalkeeper {
-  background: var(--qdb-position-goalkeeper);
-  color: var(--qdb-on-position-goalkeeper);
-}
-
-.score-badge {
-  min-width: 2.25rem;
-}
-
-.score-red {
-  background: var(--qdb-score-red);
-  color: var(--qdb-on-score-red);
-}
-
-.score-orange {
-  background: var(--qdb-score-orange);
-  color: var(--qdb-on-score-orange);
-}
-
-.score-yellow {
-  background: var(--qdb-score-yellow);
-  color: var(--qdb-on-score-yellow);
-}
-
-.score-lime {
-  background: var(--qdb-score-lime);
-  color: var(--qdb-on-score-lime);
-}
-
-.score-green {
-  background: var(--qdb-score-green);
-  color: var(--qdb-on-score-green);
 }

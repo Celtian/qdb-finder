@@ -3,9 +3,3 @@
 table {
   min-width: 1300px;
 }
-
-.league-list {
-  display: block;
-  max-width: 300px;
-  line-height: 1.35;
-}

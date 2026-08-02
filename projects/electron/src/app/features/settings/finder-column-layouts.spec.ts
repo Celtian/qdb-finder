@@ -70,7 +70,9 @@ describe('FinderColumnLayouts', () => {
         .querySelector('mat-card.column-layouts')
         ?.classList.contains('mat-mdc-card-outlined'),
     ).toBe(false);
-    const resetCard = (fixture.nativeElement as HTMLElement).querySelector('.reset-layouts');
+    const resetCard = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="reset-layouts"]',
+    );
     expect(resetCard?.querySelector('mat-card-title')?.textContent?.trim()).toBe(
       'Reset column layouts',
     );

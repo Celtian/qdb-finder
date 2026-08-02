@@ -304,7 +304,7 @@
   <section aria-labelledby="installed-heading">
     <h2 id="installed-heading">Installed databases</h2>
     @if (loading()) {
-      <p class="loading" aria-live="polite">Loading database library…</p>
+      <p aria-live="polite">Loading database library…</p>
     } @else {
       <div class="database-grid">
         @for (database of databaseCards(); track database.id) {

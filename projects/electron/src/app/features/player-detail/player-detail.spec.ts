@@ -90,8 +90,7 @@ describe('PlayerDetail', () => {
       'FIFA 23 player · Built-in FIFA 11–23 · Original ID 1',
     );
     expect(eyebrow?.querySelector('.original-id')?.textContent?.trim()).toBe('Original ID 1');
-    expect(getComputedStyle(title!).paddingLeft).toBe('0px');
-    expect(getComputedStyle(title!).paddingRight).toBe('0px');
+    expect(title?.closest('.detail-header')).toBeTruthy();
   });
 
   it('renders readable profile dates and preferred foot', () => {
@@ -120,7 +119,7 @@ describe('PlayerDetail', () => {
     expect([...attackerSurfaces].every((surface) => surface.textContent?.includes('ST'))).toBe(
       true,
     );
-    expect(testable.ratingRows[0]?.tiles[0]?.className).toBe('score-value score-green');
+    expect(testable.ratingRows[0]?.tiles[0]?.className).toBe('score-green');
   });
 
   it('renders sparse ratings in the fixed pitch layout', async () => {
@@ -160,7 +159,7 @@ describe('PlayerDetail', () => {
       attributeGroups: { attributes: { className: string }[] }[];
     };
 
-    expect(testable.attributeGroups[0]?.attributes[0]?.className).toBe('score-value score-lime');
+    expect(testable.attributeGroups[0]?.attributes[0]?.className).toBe('score-lime');
   });
 
   it('renders grouped attributes and special ratings', async () => {

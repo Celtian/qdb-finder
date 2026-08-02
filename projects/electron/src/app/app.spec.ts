@@ -81,7 +81,7 @@ describe('App', () => {
     navigation.open(trigger);
     await fixture.whenStable();
     expect(await sidenav.isOpen()).toBe(true);
-    expect(document.activeElement?.classList.contains('primary-navigation-link')).toBe(true);
+    expect(document.activeElement?.hasAttribute('data-primary-navigation-link')).toBe(true);
 
     (fixture.nativeElement as HTMLElement)
       .querySelector<HTMLElement>('.mat-drawer-backdrop')

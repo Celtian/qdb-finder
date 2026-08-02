@@ -2,6 +2,13 @@ import { scoreValueClass } from './attribute-value';
 
 export type PositionGroup = 'attacker' | 'midfielder' | 'defender' | 'goalkeeper';
 
+const positionGroupClasses: Readonly<Record<PositionGroup, string>> = {
+  attacker: 'position-attacker',
+  midfielder: 'position-midfielder',
+  defender: 'position-defender',
+  goalkeeper: 'position-goalkeeper',
+};
+
 export interface PositionMatrixSlot {
   readonly position: string;
   readonly column: number;
@@ -107,10 +114,10 @@ export const positionGroup = (position: string): PositionGroup => {
 };
 
 export const positionValueClass = (position: string): string =>
-  `position-value position-${positionGroup(position)}`;
+  positionGroupClasses[positionGroup(position)];
 
 export const positionBadgeClass = (position: string): string =>
-  `data-badge position-badge ${positionValueClass(position)}`;
+  `data-badge ${positionValueClass(position)}`;
 
 export const positionRatingRows = (
   ratings: Readonly<Record<string, number>>,

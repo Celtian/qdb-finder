@@ -142,6 +142,7 @@
               "@fontsource/roboto/700.css",
               "@angular/material/prebuilt-themes/azure-blue.css",
               "material-icons/iconfont/material-icons.css",
+              "projects/docs/src/tailwind.css",
               "projects/docs/src/styles.css"
             ],
             "server": "projects/docs/src/main.server.ts",

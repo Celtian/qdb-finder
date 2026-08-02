@@ -12,7 +12,7 @@
   @for (group of groups; track group.id; let last = $last) {
     @for (link of group.links; track link.path) {
       <a
-        class="primary-navigation-link"
+        data-primary-navigation-link
         matButton
         routerLinkActive="active"
         ariaCurrentWhenActive="page"

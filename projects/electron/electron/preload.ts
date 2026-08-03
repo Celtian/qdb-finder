@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+
 import type { QdbApi } from '../src/app/core/qdb-contracts';
 
 const api: QdbApi = {

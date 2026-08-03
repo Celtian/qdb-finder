@@ -2,7 +2,9 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatDialogRef } from '@angular/material/dialog';
+
 import axe from 'axe-core';
+
 import { finderFilterDialogConfig } from './finder-filter-dialog';
 import { FinderFilterDrawer } from './finder-filter-drawer';
 
@@ -33,7 +35,7 @@ describe('FinderFilterDrawer', () => {
 
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.filter-drawer')
+        .querySelector('div[aria-labelledby]')
         ?.getAttribute('aria-labelledby'),
     ).toBe('player-filter-title');
     expect(await clear.isDisabled()).toBe(true);

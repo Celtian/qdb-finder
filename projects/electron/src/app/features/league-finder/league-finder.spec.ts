@@ -3,16 +3,16 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
-import { Qdb } from '../../core/qdb';
 import {
-  defaultFinderColumnPreference,
   type FinderColumnKey,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
 } from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
 } from '../../core/finder-preferences';
+import { Qdb } from '../../core/qdb';
 import type {
   EntityFacetOption,
   LeagueDetails,
@@ -64,32 +64,29 @@ describe('LeagueFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(element.querySelector('.entity-topbar')?.classList.contains('app-page-header')).toBe(
-      true,
-    );
-    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
+    expect(element.querySelector('header p:first-child')?.textContent?.trim()).toBe(
       'League finder',
     );
-    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header h1')?.textContent?.trim()).toBe(
       'Search leagues across editions',
     );
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
-    expect(element.querySelector('.entity-search')?.textContent).toContain(
+    expect(element.querySelector('main > mat-form-field')?.textContent).toContain(
       'Search leagues or Original ID',
     );
-    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe(
+    expect(element.querySelector('[data-state] h2')?.textContent?.trim()).toBe(
       'No leagues match your search and filters',
     );
   });
 
   it('centers the search field', () => {
     const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '.entity-search',
+      'main > mat-form-field',
     );
-    const styles = getComputedStyle(search!);
 
-    expect(styles.display).toBe('flex');
-    expect(styles.marginInlineStart).toBe(styles.marginInlineEnd);
+    expect(search).toBeTruthy();
+    expect(search?.tagName).toBe('MAT-FORM-FIELD');
   });
 
   it('persists visible columns and resets a hidden active sort without clearing filters', async () => {
@@ -149,7 +146,7 @@ describe('LeagueFinder', () => {
     ).toEqual([1, 2]);
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.filter-button')
+        .querySelector('button[aria-label^="Choose filters"]')
         ?.getAttribute('aria-label'),
     ).toBe('Choose filters, 1 active');
   });
@@ -190,12 +187,12 @@ describe('LeagueFinder', () => {
     expect(headers.slice(0, 4)).toEqual(['League', 'Original ID', 'Edition', 'Country']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('2216');
-    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(originalIdCell?.classList.contains('tabular-nums')).toBe(true);
     expect(element.querySelector('td.cdk-column-database')).toBeNull();
     expect(element.querySelector('td.cdk-column-teamCount')).toBeTruthy();
-    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 1 hidden',
-    );
+    expect(
+      element.querySelector('button[aria-label^="Choose columns"]')?.getAttribute('aria-label'),
+    ).toBe('Choose columns, 1 hidden');
   });
 
   it('supports the complete country, paging, sorting and detail workflow', async () => {

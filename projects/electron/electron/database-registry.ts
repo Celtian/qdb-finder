@@ -30,8 +30,8 @@ import type {
   TeamResultPage,
   TeamSearchRequest,
 } from '../src/app/core/qdb-contracts';
-import { DatabaseLibrary } from './database-library';
 import { PlayerDatabase } from './database';
+import { DatabaseLibrary } from './database-library';
 
 interface SearchPage<Row> {
   rows: Row[];

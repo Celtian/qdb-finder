@@ -50,7 +50,7 @@ describe('player attribute presentation', () => {
     ]);
     expect(
       groups.every((group) =>
-        group.attributes.every((item) => item.className === 'score-value score-lime'),
+        group.attributes.every((item) => item.className === 'bg-score-lime text-on-score-lime'),
       ),
     ).toBe(true);
   });
@@ -71,13 +71,13 @@ describe('player attribute presentation', () => {
           key: 'defensive_awareness',
           label: 'Defensive awareness',
           value: 74,
-          className: 'score-value score-lime',
+          className: 'bg-score-lime text-on-score-lime',
         },
         {
           key: 'zetaSkill',
           label: 'Zeta skill',
           value: 55,
-          className: 'score-value score-orange',
+          className: 'bg-score-orange text-on-score-orange',
         },
       ],
     });

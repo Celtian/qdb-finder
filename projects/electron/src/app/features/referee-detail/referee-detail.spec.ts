@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MAT_TABS_CONFIG } from '@angular/material/tabs';
 import { MatTabGroupHarness } from '@angular/material/tabs/testing';
-import { provideRouter, Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import type { RefereeDetails } from '../../core/qdb-contracts';
 import { RefereeDetail } from './referee-detail';
@@ -77,7 +77,7 @@ describe('RefereeDetail', () => {
     expect(element.textContent).toContain('England Premier League (1)');
     expect(element.querySelector('app-country-flag')).toBeTruthy();
     expect(
-      element.querySelector('.detail-header .eyebrow')?.textContent?.replace(/\s+/g, ' ').trim(),
+      element.querySelector('header p:first-child')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('FIFA 23 referee · Built-in FIFA 11–23 · Original ID 188446');
     expect(element.querySelector('#referee-leagues-heading')?.textContent?.trim()).toBe(
       'Assigned league editions',

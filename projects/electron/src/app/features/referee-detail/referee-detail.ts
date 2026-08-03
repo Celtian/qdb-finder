@@ -5,6 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
+
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import type { RefereeDetails } from '../../core/qdb-contracts';
 

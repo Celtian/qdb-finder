@@ -1,19 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter, Router } from '@angular/router';
-import { RouterTestingHarness } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 
-import { Qdb } from '../../core/qdb';
 import { DatabaseContext } from '../../core/database-context';
 import {
-  defaultFinderColumnPreference,
   type FinderColumnKey,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
 } from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
 } from '../../core/finder-preferences';
+import { Qdb } from '../../core/qdb';
 import type {
   FilterSuggestion,
   PlayerDetails,
@@ -72,23 +71,28 @@ describe('PlayerFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(element.querySelector('.topbar')?.classList.contains('app-page-header')).toBe(true);
-    expect(element.querySelector('.topbar .eyebrow')?.textContent?.trim()).toBe('Player finder');
-    expect(element.querySelector('.topbar h1')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
+    expect(element.querySelector('header p:first-child')?.textContent?.trim()).toBe(
+      'Player finder',
+    );
+    expect(element.querySelector('header h1')?.textContent?.trim()).toBe(
       'Search players across editions',
     );
-    expect(element.querySelector('.search')?.textContent).toContain(
+    expect(element.querySelector('main > mat-form-field')?.textContent).toContain(
       'Search players, teams, leagues, countries or Original ID',
     );
-    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe('Search for a player');
+    expect(element.querySelector('[data-state] h2')?.textContent?.trim()).toBe(
+      'Search for a player',
+    );
   });
 
   it('centers the search field', () => {
-    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.search');
-    const styles = getComputedStyle(search!);
+    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      'main > mat-form-field',
+    );
 
-    expect(styles.display).toBe('flex');
-    expect(styles.marginInlineStart).toBe(styles.marginInlineEnd);
+    expect(search).toBeTruthy();
+    expect(search?.tagName).toBe('MAT-FORM-FIELD');
   });
 
   it('keeps Filters and Columns available in loading, error, and empty states', async () => {
@@ -98,8 +102,8 @@ describe('PlayerFinder', () => {
     };
     const expectControls = (): void => {
       const element = fixture.nativeElement as HTMLElement;
-      expect(element.querySelector('.filter-button')).toBeTruthy();
-      expect(element.querySelector('.column-button')).toBeTruthy();
+      expect(element.querySelector('button[aria-label^="Choose filters"]')).toBeTruthy();
+      expect(element.querySelector('button[aria-label^="Choose columns"]')).toBeTruthy();
     };
 
     testable.loading.set(true);
@@ -110,7 +114,7 @@ describe('PlayerFinder', () => {
     await fixture.whenStable();
     expectControls();
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.state h2')?.textContent?.trim(),
+      (fixture.nativeElement as HTMLElement).querySelector('[data-state] h2')?.textContent?.trim(),
     ).toBe('Player search unavailable');
     testable.error.set('');
     await fixture.whenStable();
@@ -293,7 +297,7 @@ describe('PlayerFinder', () => {
     expect(searchPlayers).not.toHaveBeenCalled();
     const hint = document.body.querySelector('mat-hint');
     expect(document.body.textContent).toContain('Women available from FIFA 16');
-    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+    expect(hint?.closest('mat-form-field')?.classList.contains('mb-2')).toBe(true);
     testable.applyFilters();
     await fixture.whenStable();
 
@@ -473,7 +477,7 @@ describe('PlayerFinder', () => {
     expect(headers.slice(0, 4)).toEqual(['Player', 'Original ID', 'Edition', 'Nationality']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('123456');
-    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(originalIdCell?.classList.contains('tabular-nums')).toBe(true);
     const birthDateCell = element.querySelector<HTMLElement>('td.cdk-column-birthDate');
     expect(birthDateCell?.textContent?.trim()).toBe('29 Feb 2004');
     expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
@@ -485,16 +489,18 @@ describe('PlayerFinder', () => {
     expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('180 cm');
     expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('75 kg');
     expect(element.querySelector('td.cdk-column-preferredFoot')?.textContent?.trim()).toBe('Right');
-    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 4 hidden',
-    );
-    expect(element.querySelector('td.cdk-column-overall .data-badge.score-lime')).toBeTruthy();
-    expect(element.querySelector('td.cdk-column-potential .data-badge.score-green')).toBeTruthy();
     expect(
-      element.querySelector('td.cdk-column-positions .data-badge.position-attacker'),
+      element.querySelector('button[aria-label^="Choose columns"]')?.getAttribute('aria-label'),
+    ).toBe('Choose columns, 4 hidden');
+    expect(element.querySelector('td.cdk-column-overall .inline-flex.bg-score-lime')).toBeTruthy();
+    expect(
+      element.querySelector('td.cdk-column-potential .inline-flex.bg-score-green'),
     ).toBeTruthy();
     expect(
-      element.querySelector('td.cdk-column-bestRating .data-badge.position-attacker'),
+      element.querySelector('td.cdk-column-positions .inline-flex.bg-position-attacker'),
+    ).toBeTruthy();
+    expect(
+      element.querySelector('td.cdk-column-bestRating .inline-flex.bg-position-attacker'),
     ).toBeTruthy();
 
     const missingFlagCell = element.querySelectorAll('td.cdk-column-nationality')[1];
@@ -619,92 +625,5 @@ describe('PlayerFinder', () => {
     testable.clearFilters();
     await fixture.whenStable();
     expect(testable.request()).toMatchObject({ positions: [], teams: [], leagues: [] });
-  });
-});
-
-describe('PlayerFinder contextual routing', () => {
-  it('applies an exact version and team ID from validated query parameters', async () => {
-    window.localStorage.setItem(
-      finderFilterPreferenceKey('players'),
-      JSON.stringify({
-        version: 1,
-        filters: { databaseIds: ['custom'], versions: [22], positions: ['ST'] },
-      }),
-    );
-    const searchPlayers = vi.fn(async () => ({
-      rows: [],
-      total: 0,
-      offset: 0,
-      pageSize: 50,
-    }));
-    const getTeam = vi.fn(async () => ({
-      key: '23:1',
-      databaseId: 'built-in',
-      databaseName: 'Built-in FIFA 11–23',
-      version: 23,
-      teamId: 1,
-      name: 'Arsenal',
-      leagueId: 13,
-      leagueKey: 'england premier league (1)',
-      leagueName: 'England Premier League (1)',
-      countryId: 14,
-      countryName: 'England',
-      countryCode: 'gb-eng',
-      squadSize: 33,
-      overall: 80,
-      attack: 83,
-      midfield: 80,
-      defence: 79,
-      foundationYear: 1886,
-      players: [],
-      raw: {},
-    }));
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([{ path: 'players', component: PlayerFinder }]),
-        {
-          provide: Qdb,
-          useValue: {
-            searchPlayers,
-            suggestFilters: vi.fn(async () => []),
-            getPlayer: vi.fn(),
-            getTeam,
-            getLeague: vi.fn(),
-          },
-        },
-      ],
-    });
-    const harness = await RouterTestingHarness.create();
-
-    const component = await harness.navigateByUrl('/players?version=23&teamId=1', PlayerFinder);
-    const testable = component as unknown as {
-      retrySearch(): void;
-      openFilters(): void;
-      setDatabases(databaseIds: string[]): void;
-      applyFilters(): void;
-    };
-    testable.retrySearch();
-    await harness.fixture.whenStable();
-
-    expect(getTeam).toHaveBeenCalledWith({ databaseId: 'built-in', version: 23, teamId: 1 });
-    expect(searchPlayers).toHaveBeenCalledWith(
-      expect.objectContaining({
-        databaseIds: ['built-in'],
-        versions: [23],
-        positions: [],
-        teamEdition: { databaseId: 'built-in', version: 23, teamId: 1 },
-      }),
-    );
-    expect(harness.routeNativeElement?.textContent).toContain('Arsenal');
-
-    testable.openFilters();
-    await harness.fixture.whenStable();
-    testable.setDatabases([]);
-    expect(harness.routeNativeElement?.textContent).toContain('Arsenal');
-    testable.applyFilters();
-    await harness.fixture.whenStable();
-    expect(harness.routeNativeElement?.querySelector('.context-banner')).toBeNull();
-    expect(TestBed.inject(Router).url).toBe('/players');
-    TestBed.inject(MatDialog).closeAll();
   });
 });

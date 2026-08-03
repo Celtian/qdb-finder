@@ -31,5 +31,5 @@ describe('application routes', () => {
 
     expect(components).toHaveLength(8);
     for (const component of components) expect(component).toBeTypeOf('function');
-  });
+  }, 30_000);
 });

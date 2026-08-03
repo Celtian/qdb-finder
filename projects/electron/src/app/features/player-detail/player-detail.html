@@ -1,11 +1,11 @@
-<header class="detail-header">
+<header class="flex items-start justify-between gap-8 px-6 pt-5">
   <div>
-    <p class="eyebrow">
+    <p class="text-xs font-bold tracking-eyebrow text-primary uppercase">
       FIFA {{ player.version }} player · {{ player.databaseName }} ·
-      <span class="original-id">Original ID {{ player.playerId }}</span>
+      <span class="whitespace-nowrap tabular-nums">Original ID {{ player.playerId }}</span>
     </p>
     <h2 mat-dialog-title>{{ player.name }}</h2>
-    <p class="nationality">
+    <p class="flex items-center gap-brand-gap">
       @if (player.nationalityCode) {
         <app-country-flag
           size="lg"
@@ -16,7 +16,7 @@
       }
       <span>{{ player.nationality }} · {{ teams }}</span>
     </p>
-    <div class="position-list" aria-label="Positions">
+    <div class="flex flex-wrap gap-1" aria-label="Positions">
       @for (position of positions; track position.value) {
         <span [class]="position.className">{{ position.value }}</span>
       }
@@ -24,7 +24,7 @@
   </div>
   <button
     type="button"
-    class="close-button"
+    class="-mt-2 -mr-2 shrink-0"
     mat-icon-button
     mat-dialog-close
     aria-label="Close player details"
@@ -33,7 +33,7 @@
   </button>
 </header>
 <mat-dialog-content>
-  <div class="metric-grid">
+  <div class="mb-5 grid grid-cols-4 gap-3 max-medium:grid-cols-2" data-metric-grid>
     <div>
       <span>Overall</span
       ><strong [class]="overallClass">
@@ -58,7 +58,7 @@
   </div>
   <mat-tab-group>
     <mat-tab label="Profile"
-      ><dl class="profile-grid">
+      ><dl class="grid grid-cols-profile gap-x-4 gap-y-2 p-4" data-profile-grid>
         <dt>Full name</dt>
         <dd>{{ player.firstName }} {{ player.lastName }}</dd>
         <dt>Common / jersey</dt>
@@ -76,12 +76,17 @@
       </dl></mat-tab
     >
     <mat-tab label="Position matrix"
-      ><div class="position-matrix" role="group" aria-label="Position ratings">
+      ><div
+        class="relative isolate grid gap-flag overflow-hidden rounded-xl border p-4"
+        data-position-matrix
+        role="group"
+        aria-label="Position ratings"
+      >
         @for (row of ratingRows; track row.key) {
-          <div class="position-matrix-row" [attr.data-row]="row.key">
+          <div class="relative z-1 grid min-h-12 grid-cols-5 gap-2" [attr.data-row]="row.key">
             @for (rating of row.tiles; track rating.position) {
               <span
-                class="position-rating"
+                class="flex min-h-12 min-w-0 flex-col items-center justify-center gap-pixel rounded-lg border-0 px-1 py-tight text-compact leading-tight shadow-tile"
                 [class]="rating.className"
                 [style.grid-column]="rating.column"
                 [attr.data-position]="rating.position"
@@ -95,14 +100,16 @@
       </div></mat-tab
     >
     <mat-tab label="Attributes"
-      ><div class="attribute-groups">
+      ><div
+        class="grid grid-cols-4 items-start gap-4 p-4 max-wide:grid-cols-2 max-narrow:grid-cols-1 max-narrow:gap-3 max-narrow:px-0 max-narrow:py-3"
+      >
         @for (group of attributeGroups; track group.key) {
-          <section class="attribute-group" [attr.data-group]="group.key">
+          <section class="min-w-0" data-attribute-group [attr.data-group]="group.key">
             <h3>{{ group.label }}</h3>
-            <dl class="attribute-list">
+            <dl class="m-0 grid gap-attribute">
               @for (attribute of group.attributes; track attribute.key) {
                 <div
-                  class="attribute-tile"
+                  class="flex min-h-tile min-w-0 items-center justify-between gap-2 rounded-lg border-0 px-country py-flag shadow-tile"
                   [class]="attribute.className"
                   [attr.data-attribute]="attribute.key"
                 >
@@ -113,23 +120,31 @@
             </dl>
           </section>
         }
-        <section class="attribute-group" data-group="special">
+        <section class="min-w-0" data-attribute-group data-group="special">
           <h3>Special</h3>
-          <dl class="attribute-list">
+          <dl class="m-0 grid gap-attribute">
             <div
-              class="attribute-tile"
+              class="flex min-h-tile min-w-0 items-center justify-between gap-2 rounded-lg border-0 px-country py-flag shadow-tile"
               data-attribute="potential"
               [class]="potentialAttribute.className"
             >
               <dt>Potential</dt>
               <dd>{{ potentialAttribute.value }}</dd>
             </div>
-            <div class="attribute-tile reputation-tile" data-attribute="internationalrep">
+            <div
+              class="flex min-h-tile min-w-0 flex-col items-stretch justify-between gap-2 rounded-lg border-0 bg-surface-container px-country py-flag text-on-surface shadow-tile"
+              data-attribute="internationalrep"
+            >
               <dt>International reputation</dt>
-              <dd class="reputation-value">
-                <span class="reputation-stars" aria-hidden="true">
+              <dd class="flex items-center justify-between gap-attribute">
+                <span class="inline-flex gap-star" aria-hidden="true">
                   @for (star of reputationStars; track star.value) {
-                    <mat-icon class="reputation-star" [class.filled]="star.filled">star</mat-icon>
+                    <mat-icon
+                      class="size-4 text-base text-outline"
+                      data-reputation-star
+                      [class.filled]="star.filled"
+                      >star</mat-icon
+                    >
                   }
                 </span>
                 <strong>{{ reputationLabel }}</strong>
@@ -140,7 +155,10 @@
       </div></mat-tab
     >
     <mat-tab label="Raw fields"
-      ><dl class="raw-fields">
+      ><dl
+        class="grid grid-cols-profile gap-x-4 gap-y-2 p-4 max-medium:grid-cols-1"
+        data-raw-fields
+      >
         @for (field of player.raw | keyvalue; track field.key) {
           <dt>{{ field.key }}</dt>
           <dd>{{ field.value }}</dd>

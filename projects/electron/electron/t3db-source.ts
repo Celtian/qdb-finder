@@ -1,10 +1,11 @@
-import { readFile } from 'node:fs/promises';
 import type { FifaDatabase } from 'fifa-t3db' with { 'resolution-mode': 'import' };
 import type { Fifa } from 'fifatables';
+import { readFile } from 'node:fs/promises';
+
 import {
-  inspectT3dbDatabase,
   type SourceHeaderInspection,
   type T3dbImportSource,
+  inspectT3dbDatabase,
 } from './importer';
 
 export const openT3dbDatabase = async (

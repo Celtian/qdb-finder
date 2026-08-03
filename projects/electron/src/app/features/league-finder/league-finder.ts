@@ -1,14 +1,14 @@
 import {
   Component,
+  TemplateRef,
   computed,
   effect,
   inject,
   signal,
-  TemplateRef,
   untracked,
   viewChild,
 } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { FormField, form } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -22,31 +22,32 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
+
 import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
-import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
+import { openFinderColumnDrawer } from '../../core/finder-column-drawer';
 import {
+  type FinderColumnKey,
+  type FinderColumnPreference,
   finderColumns,
   isFinderSortVisible,
   visibleFinderColumns,
-  type FinderColumnPreference,
-  type FinderColumnKey,
 } from '../../core/finder-columns';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import {
-  defaultLeagueSearchRequest,
   type EntityFacetOption,
   type LeagueEditionRow,
   type LeagueResultPage,
   type LeagueSearchRequest,
   type LeagueSortField,
   type RefereeEditionRow,
+  defaultLeagueSearchRequest,
 } from '../../core/qdb-contracts';
 import { LeagueDetail } from '../league-detail/league-detail';
 
@@ -325,33 +326,15 @@ export class LeagueFinder {
   }
 
   protected openColumns(): void {
-    this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
-        FinderColumnDrawer,
-        {
-          ariaLabelledBy: 'finder-column-title',
-          ariaModal: true,
-          autoFocus: 'first-tabbable',
-          data: {
-            finder: 'leagues',
-            columns: this.columnDefinitions,
-            preference: this.preferences.loadColumnPreference('leagues'),
-          },
-          delayFocusTrap: false,
-          disableClose: false,
-          height: '100vh',
-          maxHeight: '100vh',
-          maxWidth: '100vw',
-          panelClass: 'finder-column-drawer-panel',
-          position: { right: '0', top: '0' },
-          restoreFocus: true,
-          width: '28rem',
-        },
-      )
-      .afterClosed()
-      .subscribe((preference) => {
-        if (preference) this.applyColumns(preference);
-      });
+    openFinderColumnDrawer(
+      this.dialog,
+      {
+        finder: 'leagues',
+        columns: this.columnDefinitions,
+        preference: this.preferences.loadColumnPreference('leagues'),
+      },
+      (preference) => this.applyColumns(preference),
+    );
   }
 
   protected async openLeague(row: LeagueEditionRow): Promise<void> {

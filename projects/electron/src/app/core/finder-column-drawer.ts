@@ -8,18 +8,19 @@ import {
 } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { Component, computed, inject, signal } from '@angular/core';
-import { disabled, form, FormField, submit } from '@angular/forms/signals';
+import { FormField, disabled, form, submit } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+
 import {
-  defaultFinderColumnPreference,
-  fromFinderColumnVisibility,
-  toFinderColumnVisibility,
   type FinderColumnDefinition,
   type FinderColumnPreference,
   type FinderKind,
+  defaultFinderColumnPreference,
+  fromFinderColumnVisibility,
+  toFinderColumnVisibility,
 } from './finder-columns';
 
 export interface FinderColumnDrawerData {
@@ -27,6 +28,33 @@ export interface FinderColumnDrawerData {
   columns: readonly FinderColumnDefinition[];
   preference: FinderColumnPreference;
 }
+
+export const openFinderColumnDrawer = (
+  dialog: MatDialog,
+  data: FinderColumnDrawerData,
+  apply: (preference: FinderColumnPreference) => void,
+): void => {
+  dialog
+    .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(FinderColumnDrawer, {
+      ariaLabelledBy: 'finder-column-title',
+      ariaModal: true,
+      autoFocus: 'first-tabbable',
+      data,
+      delayFocusTrap: false,
+      disableClose: false,
+      height: '100vh',
+      maxHeight: '100vh',
+      maxWidth: '100vw',
+      panelClass: 'finder-column-drawer-panel',
+      position: { right: '0', top: '0' },
+      restoreFocus: true,
+      width: '28rem',
+    })
+    .afterClosed()
+    .subscribe((preference) => {
+      if (preference) apply(preference);
+    });
+};
 
 @Component({
   selector: 'app-finder-column-drawer',

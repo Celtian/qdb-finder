@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
 import { DatabaseContext } from './database-context';
-import type { DatabaseDescriptor } from './qdb-contracts';
 import { Qdb } from './qdb';
+import type { DatabaseDescriptor } from './qdb-contracts';
 
 describe('Qdb', () => {
   let service: Qdb;

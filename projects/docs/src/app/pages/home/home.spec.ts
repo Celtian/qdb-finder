@@ -4,6 +4,7 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatCardHarness } from '@angular/material/card/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+
 import axe from 'axe-core';
 
 import { routes } from '../../app.routes';
@@ -112,7 +113,7 @@ describe('Home', () => {
     await harness.navigateByUrl('/installation', Home);
     const installation = harness.routeNativeElement!;
     const loader = TestbedHarnessEnvironment.loader(harness.fixture);
-    const note = await loader.getHarness(MatCardHarness.with({ selector: '.note' }));
+    const note = await loader.getHarness(MatCardHarness.with({ selector: '[role="note"]' }));
     const release = await loader.getHarness(
       MatButtonHarness.with({ text: /Open the latest release/ }),
     );
@@ -124,7 +125,9 @@ describe('Home', () => {
     expect(await release.getAppearance()).toBe('outlined');
 
     await harness.navigateByUrl('/development', Home);
-    const commandCard = await loader.getHarness(MatCardHarness.with({ selector: '.code-card' }));
+    const commandCard = await loader.getHarness(
+      MatCardHarness.with({ selector: '[data-code-card]' }),
+    );
     expect(harness.routeNativeElement?.querySelector('pre code')?.textContent).toContain(
       'bun run db:build',
     );

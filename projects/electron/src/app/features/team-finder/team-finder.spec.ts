@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter, Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
-import { Qdb } from '../../core/qdb';
 import {
-  defaultFinderColumnPreference,
   type FinderColumnKey,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
 } from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
 } from '../../core/finder-preferences';
+import { Qdb } from '../../core/qdb';
 import type {
   EntityFacetOption,
   TeamDetails,
@@ -69,20 +69,16 @@ describe('TeamFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(element.querySelector('.entity-topbar')?.classList.contains('app-page-header')).toBe(
-      true,
-    );
-    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
-      'Team finder',
-    );
-    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
+    expect(element.querySelector('header p:first-child')?.textContent?.trim()).toBe('Team finder');
+    expect(element.querySelector('header h1')?.textContent?.trim()).toBe(
       'Search teams across editions',
     );
     expect(testable.request()).toMatchObject({ sort: 'version', direction: 'desc' });
-    expect(element.querySelector('.entity-search')?.textContent).toContain(
+    expect(element.querySelector('main > mat-form-field')?.textContent).toContain(
       'Search teams or Original ID',
     );
-    expect(element.querySelector('.state h2')?.textContent?.trim()).toBe(
+    expect(element.querySelector('[data-state] h2')?.textContent?.trim()).toBe(
       'No teams match your search and filters',
     );
   });
@@ -155,7 +151,7 @@ describe('TeamFinder', () => {
     await fixture.whenStable();
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.filter-button')
+        .querySelector('button[aria-label^="Choose filters"]')
         ?.getAttribute('aria-label'),
     ).toBe('Choose filters, 2 active');
   });
@@ -206,12 +202,12 @@ describe('TeamFinder', () => {
     expect(headers.slice(0, 4)).toEqual(['Team', 'Original ID', 'Edition', 'Country']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('116009');
-    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(originalIdCell?.classList.contains('tabular-nums')).toBe(true);
     expect(element.querySelector('td.cdk-column-database')).toBeNull();
     expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
-    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 5 hidden',
-    );
+    expect(
+      element.querySelector('button[aria-label^="Choose columns"]')?.getAttribute('aria-label'),
+    ).toBe('Choose columns, 5 hidden');
 
     testable.columns.set(['name', 'originalId', 'database']);
     await fixture.whenStable();

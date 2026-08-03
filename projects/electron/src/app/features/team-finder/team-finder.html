@@ -6,7 +6,7 @@
     (clearAll)="clearDraftFilters()"
     (apply)="applyFilters()"
   >
-    <div class="filter-content">
+    <div class="w-full min-w-0 overflow-x-hidden p-0" data-filter-content>
       <app-database-filter
         [databases]="databases()"
         [selected]="draftRequest().databaseIds"
@@ -65,7 +65,7 @@
         >
           @for (option of suggestions().country; track option.key) {
             <mat-option [value]="option">
-              <span class="country-with-flag">
+              <span class="inline-flex min-w-0 items-center gap-flag">
                 @if (option.countryCode) {
                   <app-country-flag decorative [code]="option.countryCode" />
                 }
@@ -78,7 +78,7 @@
       <mat-chip-set aria-label="Selected countries">
         @for (filter of selectedCountries(); track filter.key) {
           <mat-chip (removed)="removeFacet('country', filter.key)">
-            <span class="country-with-flag">
+            <span class="inline-flex min-w-0 items-center gap-flag">
               @if (filter.countryCode) {
                 <app-country-flag decorative [code]="filter.countryCode" />
               }
@@ -101,7 +101,7 @@
       @for (rating of ratingFilters; track rating.key) {
         <fieldset>
           <legend>{{ rating.label }}</legend>
-          <div class="range">
+          <div class="grid grid-cols-2 gap-chip *:min-w-0" data-range>
             <label
               >Min<input
                 type="number"
@@ -125,17 +125,22 @@
   </app-finder-filter-drawer>
 </ng-template>
 
-<div class="entity-shell">
-  <header class="app-page-header entity-topbar">
+<div class="h-full overflow-auto">
+  <header
+    class="sticky top-0 z-200 flex items-center gap-4 border-b border-outline-variant bg-surface-container-lowest px-8 py-4 max-nav:p-4"
+  >
     <app-navigation-trigger />
     <div>
-      <p class="eyebrow">Team finder</p>
+      <p class="text-2xs font-bold tracking-label text-primary uppercase">Team finder</p>
       <h1>Search teams across editions</h1>
     </div>
   </header>
   <main>
     @if (contextPlayer(); as player) {
-      <div class="context-banner">
+      <div
+        class="mb-4 flex w-fit max-w-full items-center gap-3 rounded-xl bg-secondary-container px-3 py-2 text-on-secondary-container"
+        data-context-banner
+      >
         <mat-icon>filter_alt</mat-icon>
         <span
           >Showing FIFA {{ player.version }} teams for <strong>{{ player.name }}</strong> in
@@ -145,7 +150,10 @@
       </div>
     }
     @if (contextLeague(); as league) {
-      <div class="context-banner">
+      <div
+        class="mb-4 flex w-fit max-w-full items-center gap-3 rounded-xl bg-secondary-container px-3 py-2 text-on-secondary-container"
+        data-context-banner
+      >
         <mat-icon>filter_alt</mat-icon>
         <span
           >Showing FIFA {{ league.version }} teams from <strong>{{ league.name }}</strong> in
@@ -155,7 +163,10 @@
       </div>
     }
     @if (contextStadium(); as stadium) {
-      <div class="context-banner">
+      <div
+        class="mb-4 flex w-fit max-w-full items-center gap-3 rounded-xl bg-secondary-container px-3 py-2 text-on-secondary-container"
+        data-context-banner
+      >
         <mat-icon>filter_alt</mat-icon>
         <span
           >Showing FIFA {{ stadium.version }} teams for <strong>{{ stadium.name }}</strong> in
@@ -164,7 +175,7 @@
         <button type="button" mat-button (click)="clearFilters()">Clear</button>
       </div>
     }
-    <mat-form-field class="entity-search" appearance="outline">
+    <mat-form-field class="mx-auto flex w-full max-w-190" appearance="outline">
       <mat-label>Search teams or Original ID</mat-label>
       <mat-icon matPrefix>search</mat-icon>
       <input matInput autocomplete="off" [formField]="searchForm.text" />
@@ -179,12 +190,17 @@
         <mat-icon>close</mat-icon>
       </button>
     </mat-form-field>
-    <section class="results" aria-live="polite">
-      <div class="result-header">
-        <div class="result-count">{{ resultStatus() }}</div>
-        <div class="result-actions">
+    <section
+      class="overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-card"
+      aria-live="polite"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant px-5 py-4"
+      >
+        <div>{{ resultStatus() }}</div>
+        <div class="flex items-center gap-2 max-drawer:w-full">
           <button
-            class="filter-button"
+            class="shrink-0 max-drawer:flex-1"
             matButton="tonal"
             type="button"
             [attr.aria-label]="'Choose filters, ' + activeFilterCount() + ' active'"
@@ -193,11 +209,15 @@
             <mat-icon aria-hidden="true">tune</mat-icon>
             Filters
             @if (activeFilterCount()) {
-              <span class="filter-count" aria-hidden="true">{{ activeFilterCount() }}</span>
+              <span
+                class="inline-flex size-5 min-w-5 items-center justify-center rounded-full bg-primary text-xs leading-none text-on-primary"
+                aria-hidden="true"
+                >{{ activeFilterCount() }}</span
+              >
             }
           </button>
           <button
-            class="column-button"
+            class="shrink-0 max-drawer:flex-1"
             matButton="tonal"
             type="button"
             [attr.aria-label]="'Choose columns, ' + hiddenColumnCount() + ' hidden'"
@@ -206,30 +226,44 @@
             <mat-icon aria-hidden="true">view_column</mat-icon>
             Columns
             @if (hiddenColumnCount()) {
-              <span class="column-count" aria-hidden="true">{{ hiddenColumnCount() }}</span>
+              <span
+                class="inline-flex size-5 min-w-5 items-center justify-center rounded-full bg-primary text-xs leading-none text-on-primary"
+                aria-hidden="true"
+                >{{ hiddenColumnCount() }}</span
+              >
             }
           </button>
         </div>
       </div>
       @if (loading()) {
-        <div class="state">
+        <div
+          data-state
+          class="flex min-h-105 flex-col items-center justify-center text-center text-on-surface-variant"
+        >
           <mat-spinner diameter="42" />
           <p>Searching teams…</p>
         </div>
       } @else if (error()) {
-        <div class="state error">
+        <div
+          data-state
+          class="flex min-h-105 flex-col items-center justify-center text-center text-on-surface-variant"
+          data-error
+        >
           <mat-icon>database_off</mat-icon>
           <h2>Team search unavailable</h2>
           <p>{{ error() }}</p>
           <button type="button" mat-flat-button (click)="retrySearch()">Try again</button>
         </div>
       } @else if (!rows().length) {
-        <div class="state">
+        <div
+          data-state
+          class="flex min-h-105 flex-col items-center justify-center text-center text-on-surface-variant"
+        >
           <mat-icon>shield</mat-icon>
           <h2>No teams match your search and filters</h2>
         </div>
       } @else {
-        <div class="table-scroll">
+        <div class="overflow-auto">
           <table
             mat-table
             matSort
@@ -241,14 +275,20 @@
             <ng-container matColumnDef="name">
               <th *matHeaderCellDef mat-header-cell mat-sort-header="name">Team</th>
               <td *matCellDef="let row" mat-cell>
-                <button type="button" class="entity-link" (click)="openTeam(row)">
+                <button
+                  type="button"
+                  class="inline-block max-w-full cursor-pointer border-0 bg-transparent px-0 py-2 text-start leading-tight font-bold text-primary"
+                  (click)="openTeam(row)"
+                >
                   {{ row.name }}
                 </button>
               </td>
             </ng-container>
             <ng-container matColumnDef="originalId">
               <th *matHeaderCellDef mat-header-cell>Original ID</th>
-              <td *matCellDef="let row" class="original-id" mat-cell>{{ row.teamId }}</td>
+              <td *matCellDef="let row" class="whitespace-nowrap tabular-nums" mat-cell>
+                {{ row.teamId }}
+              </td>
             </ng-container>
             <ng-container matColumnDef="database">
               <th *matHeaderCellDef mat-header-cell>Database</th>
@@ -261,7 +301,7 @@
             <ng-container matColumnDef="country">
               <th *matHeaderCellDef mat-header-cell>Country</th>
               <td *matCellDef="let row" mat-cell>
-                <span class="country-with-flag">
+                <span class="inline-flex min-w-0 items-center gap-flag">
                   @if (row.countryCode) {
                     <app-country-flag decorative [code]="row.countryCode" />
                   }

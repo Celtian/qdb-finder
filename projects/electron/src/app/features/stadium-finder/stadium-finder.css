@@ -1,4 +1,4 @@
-@import '../entity-finder.css';
+@import url('../entity-finder.css');
 
 table {
   min-width: 1240px;

@@ -1,3 +1,7 @@
+import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
+  'resolution-mode': 'import',
+};
+import { Datatype, type Field, Fifa, Table, fifaTableConfig } from 'fifatables';
 import {
   copyFileSync,
   existsSync,
@@ -10,24 +14,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
-  'resolution-mode': 'import',
-};
-import { Datatype, Fifa, fifaTableConfig, Table, type Field } from 'fifatables';
+
 import {
+  FIFAS,
+  ImportSourceValidationError,
   buildDatabase,
   collectNationalityCodes,
   decodeFifaText,
+  fifaForVersion,
+  inspectSourceHeaders,
+  inspectT3dbDatabase,
   normalizeGender,
   parseTsvLine,
   readTable,
   resolveNationalityCode,
   sourceSnapshotDate,
-  FIFAS,
-  fifaForVersion,
-  ImportSourceValidationError,
-  inspectSourceHeaders,
-  inspectT3dbDatabase,
   validateSourceData,
   validateTableData,
 } from './importer';

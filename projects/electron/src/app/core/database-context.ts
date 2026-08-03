@@ -1,4 +1,5 @@
-import { computed, Service, signal } from '@angular/core';
+import { Service, computed, signal } from '@angular/core';
+
 import type { DatabaseDescriptor } from './qdb-contracts';
 
 @Service()

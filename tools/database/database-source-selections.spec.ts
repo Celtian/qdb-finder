@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { DatabaseSourceSelections } from '../../projects/electron/electron/database-source-selections';
 
 const ids = (...values: string[]): (() => string) => {

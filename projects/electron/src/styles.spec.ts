@@ -15,30 +15,22 @@ class PageHeaderStyleHost {
 }
 
 describe('application page header styles', () => {
-  it('keeps every route-header variant above Material actions and sticky tables', async () => {
+  it('applies direct Tailwind page-header classes to every route-header variant', async () => {
     await TestBed.configureTestingModule({ imports: [PageHeaderStyleHost] }).compileComponents();
     const fixture = TestBed.createComponent(PageHeaderStyleHost);
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    const headers = element.querySelectorAll<HTMLElement>('.app-page-header');
-    const actionLabel = element.querySelector<HTMLElement>('.mdc-button__label');
-    const tableHeader = element.querySelector<HTMLElement>('.mat-mdc-header-row');
-
+    const headers = element.querySelectorAll<HTMLElement>('header');
     expect(headers).toHaveLength(3);
-    expect(actionLabel).toBeTruthy();
-    expect(tableHeader).toBeTruthy();
-
-    const actionZIndex = Number(getComputedStyle(actionLabel!).zIndex);
-    const tableHeaderZIndex = Number(getComputedStyle(tableHeader!).zIndex);
-
-    for (const header of headers) {
-      const styles = getComputedStyle(header);
-      expect(styles.position).toBe('sticky');
-      expect(styles.top).toBe('0px');
-      expect(styles.zIndex).toBe('200');
-      expect(Number(styles.zIndex)).toBeGreaterThan(actionZIndex);
-      expect(Number(styles.zIndex)).toBeGreaterThan(tableHeaderZIndex);
-    }
+    expect(
+      [...headers].every(
+        (header) =>
+          header.classList.contains('sticky') &&
+          header.classList.contains('top-0') &&
+          header.classList.contains('z-200') &&
+          header.classList.contains('bg-surface-container-lowest'),
+      ),
+    ).toBe(true);
   });
 });

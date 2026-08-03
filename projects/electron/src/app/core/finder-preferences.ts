@@ -1,12 +1,13 @@
 import { Service } from '@angular/core';
+
 import {
+  type FinderColumnKey,
+  type FinderColumnPreference,
+  type FinderKind,
   defaultFinderColumnPreference,
   defaultFinderColumns,
   finderColumns,
   finderKinds,
-  type FinderColumnPreference,
-  type FinderColumnKey,
-  type FinderKind,
 } from './finder-columns';
 import type { Gender, NumberRange } from './qdb-contracts';
 

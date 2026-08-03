@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+
 import type { DatabaseSourceValidationReport as ValidationReport } from '../../core/qdb-contracts';
 
 @Component({

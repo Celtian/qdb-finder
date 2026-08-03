@@ -1,4 +1,5 @@
-import { inject, Service } from '@angular/core';
+import { Service, inject } from '@angular/core';
+
 import { DatabaseContext } from './database-context';
 import type {
   DatabaseDescriptor,
@@ -30,12 +31,12 @@ import type {
   StadiumEditionKey,
   StadiumResultPage,
   StadiumSearchRequest,
+  T3dbDatabaseSourcePreparationRequest,
   TeamDetails,
   TeamEditionKey,
   TeamResultPage,
   TeamSearchRequest,
   TextDatabaseSourceSelection,
-  T3dbDatabaseSourcePreparationRequest,
 } from './qdb-contracts';
 
 @Service()

@@ -7,6 +7,7 @@ import {
   MatDialogContent,
   MatDialogTitle,
 } from '@angular/material/dialog';
+
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
 
 @Component({

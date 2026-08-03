@@ -5,12 +5,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatCheckboxHarness } from '@angular/material/checkbox/testing';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+
 import axe from 'axe-core';
+
 import { FinderColumnDrawer, type FinderColumnDrawerData } from './finder-column-drawer';
 import {
+  type FinderColumnPreference,
   defaultFinderColumnPreference,
   finderColumns,
-  type FinderColumnPreference,
 } from './finder-columns';
 
 describe('FinderColumnDrawer', () => {
@@ -105,7 +107,7 @@ describe('FinderColumnDrawer', () => {
   it('reorders hidden columns by pointer drop and retains their position when enabled', async () => {
     const loader = TestbedHarnessEnvironment.loader(fixture);
     const dropList = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '.column-list',
+      '[data-column-list]',
     );
     if (!dropList) throw new Error('Column drop list was not created.');
     const debugElement = getDebugNode(dropList) as DebugElement | null;

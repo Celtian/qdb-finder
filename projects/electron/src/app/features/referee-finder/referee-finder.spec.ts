@@ -3,16 +3,16 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
-import { Qdb } from '../../core/qdb';
 import {
-  defaultFinderColumnPreference,
   type FinderColumnKey,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
 } from '../../core/finder-columns';
 import {
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
 } from '../../core/finder-preferences';
+import { Qdb } from '../../core/qdb';
 import type {
   EntityFacetOption,
   RefereeDetails,
@@ -69,16 +69,14 @@ describe('RefereeFinder', () => {
 
     expect(component).toBeTruthy();
     expect(element.querySelector('app-navigation-trigger')).toBeTruthy();
-    expect(element.querySelector('.entity-topbar')?.classList.contains('app-page-header')).toBe(
-      true,
-    );
-    expect(element.querySelector('.entity-topbar .eyebrow')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header')?.classList.contains('sticky')).toBe(true);
+    expect(element.querySelector('header p:first-child')?.textContent?.trim()).toBe(
       'Referee finder',
     );
-    expect(element.querySelector('.entity-topbar h1')?.textContent?.trim()).toBe(
+    expect(element.querySelector('header h1')?.textContent?.trim()).toBe(
       'Search referees across editions',
     );
-    expect(element.querySelector('.entity-search')?.textContent).toContain(
+    expect(element.querySelector('main > mat-form-field')?.textContent).toContain(
       'Search referees or Original ID',
     );
     await vi.waitFor(() => {
@@ -110,7 +108,7 @@ describe('RefereeFinder', () => {
     ).toMatchObject({ isReal: true, age: { min: 30 } });
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.filter-button')
+        .querySelector('button[aria-label^="Choose filters"]')
         ?.getAttribute('aria-label'),
     ).toBe('Choose filters, 2 active');
   });
@@ -175,7 +173,7 @@ describe('RefereeFinder', () => {
     expect(searchReferees).not.toHaveBeenCalled();
     const hint = document.body.querySelector('mat-hint');
     expect(document.body.textContent).toContain('Women available from FIFA 16');
-    expect(hint?.closest('mat-form-field')?.classList.contains('filter-with-hint')).toBe(true);
+    expect(hint?.closest('mat-form-field')?.classList.contains('mb-2')).toBe(true);
     testable.applyFilters();
     await fixture.whenStable();
 
@@ -234,7 +232,7 @@ describe('RefereeFinder', () => {
     expect(headers.slice(0, 4)).toEqual(['Referee', 'Original ID', 'Edition', 'Nationality']);
     expect(originalIdHeader?.querySelector('.mat-sort-header-container')).toBeNull();
     expect(originalIdCell?.textContent?.trim()).toBe('270317');
-    expect(originalIdCell?.classList.contains('original-id')).toBe(true);
+    expect(originalIdCell?.classList.contains('tabular-nums')).toBe(true);
     const birthDateCell = element.querySelector<HTMLElement>('td.cdk-column-birthDate');
     expect(birthDateCell?.textContent?.trim()).toBe('1 Jan 1980');
     expect(getComputedStyle(originalIdHeader!).whiteSpace).toBe('nowrap');
@@ -244,9 +242,9 @@ describe('RefereeFinder', () => {
     expect(element.querySelector('td.cdk-column-age')).toBeNull();
     expect(element.querySelector('td.cdk-column-height')?.textContent?.trim()).toBe('183 cm');
     expect(element.querySelector('td.cdk-column-weight')?.textContent?.trim()).toBe('78 kg');
-    expect(element.querySelector('.column-button')?.getAttribute('aria-label')).toBe(
-      'Choose columns, 3 hidden',
-    );
+    expect(
+      element.querySelector('button[aria-label^="Choose columns"]')?.getAttribute('aria-label'),
+    ).toBe('Choose columns, 3 hidden');
 
     testable.result.set({ rows: [{ ...row, birthDate: null }], total: 1, offset: 0, pageSize: 50 });
     await fixture.whenStable();

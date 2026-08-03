@@ -1,7 +1,10 @@
-<div class="filter-drawer" [attr.aria-labelledby]="titleId()">
-  <div class="drawer-header">
+<div
+  class="grid h-full min-h-0 grid-rows-drawer bg-surface-container-lowest"
+  [attr.aria-labelledby]="titleId()"
+>
+  <div class="flex items-center justify-between gap-3 border-b border-outline-variant px-5 py-4">
     <div>
-      <p>QDB Finder</p>
+      <p class="m-0 text-2xs font-bold tracking-label text-primary uppercase">QDB Finder</p>
       <h2 [id]="titleId()">{{ title() }}</h2>
     </div>
     <button matIconButton type="button" [attr.aria-label]="'Close ' + title()" (click)="cancel()">
@@ -9,11 +12,13 @@
     </button>
   </div>
 
-  <div class="filter-fields">
+  <div class="min-w-0 overflow-auto overscroll-contain p-5">
     <ng-content />
   </div>
 
-  <div class="drawer-footer">
+  <div
+    class="flex items-center gap-3 border-t border-outline-variant px-5 py-4 max-tiny:flex-wrap max-tiny:[&>span]:hidden"
+  >
     <button matButton type="button" [disabled]="!canClear()" (click)="clearAll.emit()">
       Clear all
     </button>

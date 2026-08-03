@@ -1,14 +1,14 @@
 import {
   Component,
+  TemplateRef,
   computed,
   effect,
   inject,
   signal,
-  TemplateRef,
   untracked,
   viewChild,
 } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { FormField, form } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -22,64 +22,42 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
+
 import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
-import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
+import { openFinderColumnDrawer } from '../../core/finder-column-drawer';
 import {
+  type FinderColumnKey,
+  type FinderColumnPreference,
   finderColumns,
   isFinderSortVisible,
   visibleFinderColumns,
-  type FinderColumnPreference,
-  type FinderColumnKey,
 } from '../../core/finder-columns';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import {
-  defaultStadiumSearchRequest,
   type EntityFacetOption,
   type StadiumEditionRow,
   type StadiumResultPage,
   type StadiumSearchRequest,
   type StadiumSortField,
   type TeamEditionRow,
+  defaultStadiumSearchRequest,
 } from '../../core/qdb-contracts';
 import { StadiumDetail } from '../stadium-detail/stadium-detail';
-
-type StadiumFacet = 'country' | 'team';
-type AvailabilityFilter = 'all' | 'licensed' | 'generic';
-
-interface FilterDisplay {
-  key: string;
-  label: string;
-  countryCode?: string;
-}
-
-interface StadiumDisplay extends StadiumEditionRow {
-  pitch: string;
-  licensed: string;
-}
-
-const stadiumDisplay = (row: StadiumEditionRow): StadiumDisplay => ({
-  ...row,
-  pitch:
-    row.pitchLengthMeters === null || row.pitchWidthMeters === null
-      ? '—'
-      : `${row.pitchLengthMeters} × ${row.pitchWidthMeters} m`,
-  licensed: row.isLicensed === null ? '—' : row.isLicensed ? 'Yes' : 'No',
-});
-const validVersion = (value: string | null): number | undefined => {
-  const version = Number(value);
-  return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
-};
-const validId = (value: string | null): number | undefined => {
-  const id = Number(value);
-  return Number.isInteger(id) && id > 0 ? id : undefined;
-};
+import {
+  type AvailabilityFilter,
+  type FilterDisplay,
+  type StadiumFacet,
+  stadiumDisplay,
+  validStadiumId,
+  validStadiumVersion,
+} from './stadium-finder-state';
 
 @Component({
   selector: 'app-stadium-finder',
@@ -395,33 +373,15 @@ export class StadiumFinder {
     void this.search();
   }
   protected openColumns(): void {
-    this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
-        FinderColumnDrawer,
-        {
-          ariaLabelledBy: 'finder-column-title',
-          ariaModal: true,
-          autoFocus: 'first-tabbable',
-          data: {
-            finder: 'stadiums',
-            columns: this.columnDefinitions,
-            preference: this.preferences.loadColumnPreference('stadiums'),
-          },
-          delayFocusTrap: false,
-          disableClose: false,
-          height: '100vh',
-          maxHeight: '100vh',
-          maxWidth: '100vw',
-          panelClass: 'finder-column-drawer-panel',
-          position: { right: '0', top: '0' },
-          restoreFocus: true,
-          width: '28rem',
-        },
-      )
-      .afterClosed()
-      .subscribe((preference) => {
-        if (preference) this.applyColumns(preference);
-      });
+    openFinderColumnDrawer(
+      this.dialog,
+      {
+        finder: 'stadiums',
+        columns: this.columnDefinitions,
+        preference: this.preferences.loadColumnPreference('stadiums'),
+      },
+      (preference) => this.applyColumns(preference),
+    );
   }
   protected async openStadium(row: StadiumEditionRow): Promise<void> {
     const stadium = await this.qdb.getStadium(row);
@@ -462,8 +422,8 @@ export class StadiumFinder {
   private initialContextRequest(): StadiumSearchRequest | undefined {
     const request = defaultStadiumSearchRequest();
     const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
-    const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
-    const teamId = validId(this.route.snapshot.queryParamMap.get('teamId'));
+    const version = validStadiumVersion(this.route.snapshot.queryParamMap.get('version'));
+    const teamId = validStadiumId(this.route.snapshot.queryParamMap.get('teamId'));
     return version && teamId
       ? {
           ...request,

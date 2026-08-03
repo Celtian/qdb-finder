@@ -11,13 +11,15 @@ import {
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
+
 import { firstValueFrom } from 'rxjs';
+
 import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
 import { DatabaseContext } from '../../core/database-context';
 import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import type { DatabaseDescriptor } from '../../core/qdb-contracts';
-import { ThemePreferences, type ThemePreference } from '../../core/theme-preferences';
+import { type ThemePreference, ThemePreferences } from '../../core/theme-preferences';
 import { FinderColumnLayouts } from './finder-column-layouts';
 
 interface ThemeOption {

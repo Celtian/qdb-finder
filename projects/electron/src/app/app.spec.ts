@@ -4,6 +4,7 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { provideRouter } from '@angular/router';
+
 import axe from 'axe-core';
 import { provideAppVersion } from 'ngx-app-version';
 import { BehaviorSubject } from 'rxjs';
@@ -54,7 +55,7 @@ describe('App', () => {
     expect(await sidenav.getMode()).toBe('side');
     expect(await sidenav.isOpen()).toBe(true);
     expect(element.querySelector('app-navigation')).toBeTruthy();
-    expect(element.querySelector('main.app-content router-outlet')).toBeTruthy();
+    expect(element.querySelector('main router-outlet')).toBeTruthy();
     expect(element.querySelector('app-window-titlebar')).toBeNull();
     expect(element.querySelector('[aria-label="Open main navigation"]')).toBeNull();
     expect(fixture.nativeElement.getAttribute('app-version')).toBe(VERSION_INFO.version);
@@ -80,7 +81,7 @@ describe('App', () => {
     navigation.open(trigger);
     await fixture.whenStable();
     expect(await sidenav.isOpen()).toBe(true);
-    expect(document.activeElement?.classList.contains('primary-navigation-link')).toBe(true);
+    expect(document.activeElement?.hasAttribute('data-primary-navigation-link')).toBe(true);
 
     (fixture.nativeElement as HTMLElement)
       .querySelector<HTMLElement>('.mat-drawer-backdrop')

@@ -7,21 +7,6 @@
   color: var(--mat-sys-on-surface);
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem 1.25rem;
-  color: inherit;
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.brand img {
-  border-radius: 7px;
-}
-
 nav {
   display: grid;
   gap: 0.25rem;
@@ -32,32 +17,19 @@ nav mat-divider {
 }
 
 nav a,
-.utility-actions a,
-.utility-actions button {
+:host > div a,
+:host > div button {
   width: 100%;
   justify-content: flex-start;
   color: inherit;
 }
 
 nav a.active,
-.utility-actions a.active {
+:host > div a.active {
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
 }
 
-.utility-actions {
-  margin-top: auto;
-  padding-top: 0.75rem;
-  display: grid;
-  gap: 0.25rem;
-}
-
-.utility-actions mat-divider {
+:host > div mat-divider {
   margin-bottom: 0.5rem;
-}
-
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--qdb-brand);
-  outline-offset: 2px;
 }

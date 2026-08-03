@@ -1,5 +1,6 @@
-import { resolve } from 'node:path';
 import { Database } from 'bun:sqlite';
+import { resolve } from 'node:path';
+
 import {
   DATABASE_SCHEMA_VERSION,
   EXPECTED_EDITIONS,

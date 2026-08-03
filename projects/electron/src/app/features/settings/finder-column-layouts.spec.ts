@@ -6,11 +6,12 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatCheckboxHarness } from '@angular/material/checkbox/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabGroupHarness } from '@angular/material/tabs/testing';
+
 import {
-  defaultFinderColumnPreference,
-  finderColumns,
   type FinderColumnDefinition,
   type FinderColumnPreference,
+  defaultFinderColumnPreference,
+  finderColumns,
 } from '../../core/finder-columns';
 import {
   FinderPreferences,
@@ -66,10 +67,12 @@ describe('FinderColumnLayouts', () => {
     expect(await name.isDisabled()).toBe(true);
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('mat-card.column-layouts')
+        .querySelector('mat-card[data-column-layouts]')
         ?.classList.contains('mat-mdc-card-outlined'),
     ).toBe(false);
-    const resetCard = (fixture.nativeElement as HTMLElement).querySelector('.reset-layouts');
+    const resetCard = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="reset-layouts"]',
+    );
     expect(resetCard?.querySelector('mat-card-title')?.textContent?.trim()).toBe(
       'Reset column layouts',
     );

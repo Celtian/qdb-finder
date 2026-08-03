@@ -1,0 +1,91 @@
+[data-database-grid] mat-card {
+  position: relative;
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 16px;
+  background: var(--mat-sys-surface-container-lowest);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--mat-sys-shadow) 10%, transparent);
+}
+
+[data-database-grid] mat-card.incompatible {
+  border-color: var(--mat-sys-error);
+}
+
+[data-database-grid] mat-card-header {
+  padding-bottom: 0.75rem;
+}
+
+[data-database-grid] mat-card.custom mat-card-header {
+  padding-right: 4.25rem;
+}
+
+[data-database-grid] mat-card-content {
+  padding-bottom: 1rem;
+}
+
+[data-database-grid] mat-card-subtitle > span:not([data-database-kind]) + span::before {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin: 0 0.65rem 0.2rem 0;
+  border-radius: 50%;
+  background: currentcolor;
+  content: '';
+}
+
+[data-database-grid] dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+[data-database-grid] dl div {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+}
+
+[data-database-grid] dl div + div:not([data-database-date]) {
+  border-left: 1px solid var(--mat-sys-outline-variant);
+}
+
+[data-database-grid] dt {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+[data-database-grid] dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+[data-database-date] dt {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+[data-database-date] mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+[data-database-date] dd {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: right;
+}

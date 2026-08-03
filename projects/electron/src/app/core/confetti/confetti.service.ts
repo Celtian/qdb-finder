@@ -9,10 +9,10 @@ const CONFETTI_OVERLAY_Z_INDEX = 1_000_000_000;
 
 @Service()
 export class ConfettiService {
-  private overlayRef?: OverlayRef;
-  private componentRef?: ComponentRef<ConfettiComponent>;
   private readonly injector = inject(Injector);
   private readonly overlay = inject(Overlay);
+  private overlayRef?: OverlayRef;
+  private componentRef?: ComponentRef<ConfettiComponent>;
 
   burst(options: ConfettiBurstOptions = {}): void {
     this.ensureConfetti().instance.burst(options);

@@ -1,6 +1,8 @@
 import { BreakpointObserver, type BreakpointState } from '@angular/cdk/layout';
 import { TestBed } from '@angular/core/testing';
+
 import { BehaviorSubject } from 'rxjs';
+
 import { APP_NAVIGATION_BREAKPOINT, AppNavigationState } from '../app-navigation-state';
 import { AppNavigationTrigger } from './app-navigation-trigger';
 

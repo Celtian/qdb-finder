@@ -1,3 +1,9 @@
+import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
+  'resolution-mode': 'import',
+};
+import { registerFifaDatePrototype } from 'fifadate';
+import { Attribute, CalculateUtils, Position, Fifa as RatingFifa } from 'fifarating';
+import { Datatype, type Field, Fifa, Table, fifaTableConfig, sortByOrder } from 'fifatables';
 import {
   closeSync,
   mkdirSync,
@@ -8,13 +14,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { closeDatabase, DatabaseSync, type SQLInputValue } from './runtime-sqlite';
-import type { FifaDatabase, FifaRow, FifaXmlFieldType } from 'fifa-t3db' with {
-  'resolution-mode': 'import',
-};
-import { Attribute, CalculateUtils, Fifa as RatingFifa, Position } from 'fifarating';
-import { registerFifaDatePrototype } from 'fifadate';
-import { Datatype, Fifa, Table, fifaTableConfig, sortByOrder, type Field } from 'fifatables';
+
 import type {
   DatabaseSourceValidationIssue,
   DatabaseSourceValidationIssueCode,
@@ -22,6 +22,7 @@ import type {
   DatabaseSourceValidationSample,
   DatabaseSourceValidationSeverity,
 } from '../src/app/core/qdb-contracts';
+import { DatabaseSync, type SQLInputValue, closeDatabase } from './runtime-sqlite';
 
 declare global {
   interface DateConstructor {

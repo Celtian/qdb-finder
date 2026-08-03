@@ -5,10 +5,11 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
+
 import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
-import type { TeamDetails } from '../../core/qdb-contracts';
 import { positionBadgeClass } from '../../core/position';
+import type { TeamDetails } from '../../core/qdb-contracts';
 
 const scoreClass = (value: number | null): string => (value === null ? '' : scoreBadgeClass(value));
 

@@ -13,13 +13,14 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+
 import {
-  defaultFinderColumnPreference,
-  finderColumns,
-  toFinderColumnVisibility,
   type FinderColumnDefinition,
   type FinderColumnPreference,
   type FinderKind,
+  defaultFinderColumnPreference,
+  finderColumns,
+  toFinderColumnVisibility,
 } from '../../core/finder-columns';
 import { FinderPreferences } from '../../core/finder-preferences';
 

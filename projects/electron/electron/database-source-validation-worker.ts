@@ -1,4 +1,5 @@
 import { parentPort, workerData } from 'node:worker_threads';
+
 import { fifaForVersion, validateSourceData } from './importer';
 import { createT3dbImportSource, t3dbSourceErrorMessage } from './t3db-source';
 

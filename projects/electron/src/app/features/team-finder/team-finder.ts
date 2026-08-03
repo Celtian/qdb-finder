@@ -1,14 +1,14 @@
 import {
   Component,
+  TemplateRef,
   computed,
   effect,
   inject,
   signal,
-  TemplateRef,
   untracked,
   viewChild,
 } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { FormField, form } from '@angular/forms/signals';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -22,26 +22,25 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router } from '@angular/router';
+
 import { AppNavigationTrigger } from '../../core/app-navigation-trigger/app-navigation-trigger';
-import { scoreBadgeClass } from '../../core/attribute-value';
 import { CountryFlag } from '../../core/country-flag/country-flag';
 import { DatabaseContext } from '../../core/database-context';
 import { DatabaseFilter } from '../../core/database-filter/database-filter';
 import { databaseVersions } from '../../core/database-filter/database-filter-options';
-import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
-import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
+import { openFinderColumnDrawer } from '../../core/finder-column-drawer';
 import {
+  type FinderColumnKey,
+  type FinderColumnPreference,
   finderColumns,
   isFinderSortVisible,
   visibleFinderColumns,
-  type FinderColumnPreference,
-  type FinderColumnKey,
 } from '../../core/finder-columns';
-import { FinderColumnDrawer, type FinderColumnDrawerData } from '../../core/finder-column-drawer';
+import { finderFilterDialogConfig } from '../../core/finder-filter-dialog';
+import { FinderFilterDrawer } from '../../core/finder-filter-drawer';
 import { FinderPreferences } from '../../core/finder-preferences';
 import { Qdb } from '../../core/qdb';
 import {
-  defaultTeamSearchRequest,
   type EntityFacetOption,
   type LeagueEditionRow,
   type PlayerDetails,
@@ -50,45 +49,20 @@ import {
   type TeamResultPage,
   type TeamSearchRequest,
   type TeamSortField,
+  defaultTeamSearchRequest,
 } from '../../core/qdb-contracts';
 import { TeamDetail } from '../team-detail/team-detail';
-
-interface FilterDisplay {
-  key: string;
-  label: string;
-  countryCode?: string;
-}
-
-type TeamFacet = 'league' | 'country';
-type NationalFilter = 'all' | 'yes' | 'no';
-
-interface TeamDisplay extends TeamEditionRow {
-  overallClass: string;
-  attackClass: string;
-  midfieldClass: string;
-  defenceClass: string;
-  budgetLabel: string;
-  national: string;
-}
-
-const scoreClass = (value: number | null): string => (value === null ? '' : scoreBadgeClass(value));
-const teamDisplay = (row: TeamEditionRow): TeamDisplay => ({
-  ...row,
-  overallClass: scoreClass(row.overall),
-  attackClass: scoreClass(row.attack),
-  midfieldClass: scoreClass(row.midfield),
-  defenceClass: scoreClass(row.defence),
-  budgetLabel: row.budget === null ? '—' : row.budget.toLocaleString(),
-  national: row.isNational ? 'Yes' : 'No',
-});
-const validVersion = (value: string | null): number | undefined => {
-  const version = Number(value);
-  return Number.isInteger(version) && version >= 11 && version <= 23 ? version : undefined;
-};
-const validId = (value: string | null): number | undefined => {
-  const id = Number(value);
-  return Number.isInteger(id) && id > 0 ? id : undefined;
-};
+import {
+  type FilterDisplay,
+  type NationalFilter,
+  type TeamFacet,
+  cloneTeamRequest,
+  countTeamFilters,
+  initialTeamContextRequest,
+  restoreTeamRequest,
+  teamDisplay,
+  teamFilterPreferences,
+} from './team-finder-state';
 
 @Component({
   selector: 'app-team-finder',
@@ -120,21 +94,23 @@ export class TeamFinder {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly preferences = inject(FinderPreferences);
-  private readonly routeRequest = this.initialContextRequest();
+  private readonly routeRequest = initialTeamContextRequest(this.route.snapshot.queryParamMap);
   private readonly savedFilters = this.routeRequest
     ? undefined
     : this.preferences.loadFilters('teams');
-  private readonly initialRequestState = this.routeRequest ?? this.restoredRequest();
+  private readonly initialRequestState = this.routeRequest
+    ? this.routeRequest
+    : restoreTeamRequest(this.savedFilters!);
   private requestSequence = 0;
   private filterDialogRef?: MatDialogRef<unknown>;
   private readonly filterDrawer = viewChild.required<TemplateRef<unknown>>('filterDrawer');
   protected readonly model = signal({ text: '' });
   protected readonly searchForm = form(this.model);
   protected readonly request = signal<TeamSearchRequest>(
-    this.cloneRequest(this.initialRequestState),
+    cloneTeamRequest(this.initialRequestState),
   );
   protected readonly draftRequest = signal<TeamSearchRequest>(
-    this.cloneRequest(this.initialRequestState),
+    cloneTeamRequest(this.initialRequestState),
   );
   protected readonly result = signal<TeamResultPage>({
     rows: [],
@@ -194,26 +170,11 @@ export class TeamFinder {
     }),
   );
   protected readonly rows = computed(() => this.result().rows.map(teamDisplay));
-  protected readonly activeFilterCount = computed(() => this.filterCount(this.request()));
-  protected readonly draftHasFilters = computed(() => this.filterCount(this.draftRequest()) > 0);
+  protected readonly activeFilterCount = computed(() => countTeamFilters(this.request()));
+  protected readonly draftHasFilters = computed(() => countTeamFilters(this.draftRequest()) > 0);
   protected readonly resultStatus = computed(() =>
     this.loading() ? 'Searching teams…' : `${this.result().total.toLocaleString()} team editions`,
   );
-
-  private filterCount(request: TeamSearchRequest): number {
-    return [
-      request.databaseIds.length > 0,
-      request.versions.length > 0,
-      request.leagueKeys.length > 0,
-      request.countryIds.length > 0,
-      request.isNational !== undefined,
-      Boolean(request.playerEdition || request.leagueEdition || request.stadiumEdition),
-      Object.keys(request.overall).length > 0,
-      Object.keys(request.attack).length > 0,
-      Object.keys(request.midfield).length > 0,
-      Object.keys(request.defence).length > 0,
-    ].filter(Boolean).length;
-  }
 
   constructor() {
     if (!isFinderSortVisible(this.columnDefinitions, this.columns(), this.request().sort))
@@ -387,7 +348,7 @@ export class TeamFinder {
   }
 
   protected openFilters(): void {
-    this.draftRequest.set(this.cloneRequest(this.request()));
+    this.draftRequest.set(cloneTeamRequest(this.request()));
     this.labels.set({
       league: { ...this.appliedLabels.league },
       country: { ...this.appliedLabels.country },
@@ -411,7 +372,7 @@ export class TeamFinder {
       (current.stadiumEdition && !draft.stadiumEdition),
     );
     this.request.set({
-      ...this.cloneRequest(draft),
+      ...cloneTeamRequest(draft),
       text: current.text,
       sort: current.sort,
       direction: current.direction,
@@ -434,33 +395,15 @@ export class TeamFinder {
   }
 
   protected openColumns(): void {
-    this.dialog
-      .open<FinderColumnDrawer, FinderColumnDrawerData, FinderColumnPreference>(
-        FinderColumnDrawer,
-        {
-          ariaLabelledBy: 'finder-column-title',
-          ariaModal: true,
-          autoFocus: 'first-tabbable',
-          data: {
-            finder: 'teams',
-            columns: this.columnDefinitions,
-            preference: this.preferences.loadColumnPreference('teams'),
-          },
-          delayFocusTrap: false,
-          disableClose: false,
-          height: '100vh',
-          maxHeight: '100vh',
-          maxWidth: '100vw',
-          panelClass: 'finder-column-drawer-panel',
-          position: { right: '0', top: '0' },
-          restoreFocus: true,
-          width: '28rem',
-        },
-      )
-      .afterClosed()
-      .subscribe((preference) => {
-        if (preference) this.applyColumns(preference);
-      });
+    openFinderColumnDrawer(
+      this.dialog,
+      {
+        finder: 'teams',
+        columns: this.columnDefinitions,
+        preference: this.preferences.loadColumnPreference('teams'),
+      },
+      (preference) => this.applyColumns(preference),
+    );
   }
 
   protected async openTeam(row: TeamEditionRow): Promise<void> {
@@ -488,86 +431,11 @@ export class TeamFinder {
     void this.search();
   }
 
-  private cloneRequest(value: TeamSearchRequest): TeamSearchRequest {
-    return {
-      ...value,
-      databaseIds: [...value.databaseIds],
-      versions: [...value.versions],
-      leagueKeys: [...value.leagueKeys],
-      countryIds: [...value.countryIds],
-      overall: { ...value.overall },
-      attack: { ...value.attack },
-      midfield: { ...value.midfield },
-      defence: { ...value.defence },
-    };
-  }
-
-  private initialContextRequest(): TeamSearchRequest | undefined {
-    const request = defaultTeamSearchRequest();
-    const databaseId = this.route.snapshot.queryParamMap.get('databaseId') ?? 'built-in';
-    const version = validVersion(this.route.snapshot.queryParamMap.get('version'));
-    const playerId = validId(this.route.snapshot.queryParamMap.get('playerId'));
-    const leagueId = validId(this.route.snapshot.queryParamMap.get('leagueId'));
-    const stadiumId = validId(this.route.snapshot.queryParamMap.get('stadiumId'));
-    const contextCount = [playerId, leagueId, stadiumId].filter(
-      (value) => value !== undefined,
-    ).length;
-    if (!version || contextCount !== 1) return undefined;
-    if (playerId)
-      return {
-        ...request,
-        databaseIds: [databaseId],
-        versions: [version],
-        playerEdition: { databaseId, version, playerId },
-      };
-    if (leagueId)
-      return {
-        ...request,
-        databaseIds: [databaseId],
-        versions: [version],
-        leagueEdition: { databaseId, version, leagueId },
-      };
-    if (stadiumId)
-      return {
-        ...request,
-        databaseIds: [databaseId],
-        versions: [version],
-        stadiumEdition: { databaseId, version, stadiumId },
-      };
-    return undefined;
-  }
-
-  private restoredRequest(): TeamSearchRequest {
-    const filters = this.savedFilters;
-    if (!filters) return defaultTeamSearchRequest();
-    return {
-      ...defaultTeamSearchRequest(),
-      databaseIds: [...filters.databaseIds],
-      versions: [...filters.versions],
-      leagueKeys: [...filters.leagueKeys],
-      countryIds: [...filters.countryIds],
-      isNational: filters.isNational,
-      overall: { ...filters.overall },
-      attack: { ...filters.attack },
-      midfield: { ...filters.midfield },
-      defence: { ...filters.defence },
-    };
-  }
-
   private persistFilters(): void {
-    const request = this.request();
-    this.preferences.saveFilters('teams', {
-      databaseIds: [...request.databaseIds],
-      versions: [...request.versions],
-      leagueKeys: [...request.leagueKeys],
-      countryIds: [...request.countryIds],
-      isNational: request.isNational,
-      overall: { ...request.overall },
-      attack: { ...request.attack },
-      midfield: { ...request.midfield },
-      defence: { ...request.defence },
-      labels: structuredClone(this.appliedLabels),
-    });
+    this.preferences.saveFilters(
+      'teams',
+      teamFilterPreferences(this.request(), this.appliedLabels),
+    );
   }
 
   private async loadContextPlayer(

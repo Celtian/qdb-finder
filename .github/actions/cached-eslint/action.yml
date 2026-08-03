@@ -1,0 +1,12 @@
+name: Restore ESLint cache
+description: Restore the Angular and tooling ESLint caches
+runs:
+  using: composite
+  steps:
+    - name: Restore ESLint cache
+      uses: actions/cache@v6
+      with:
+        path: .angular/cache/eslint
+        key: eslint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', '.bun-version', 'bun.lock', 'eslint.config.js', 'projects/electron/eslint.config.js', 'projects/docs/eslint.config.js') }}-${{ github.sha }}
+        restore-keys: |
+          eslint-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.nvmrc', '.bun-version', 'bun.lock', 'eslint.config.js', 'projects/electron/eslint.config.js', 'projects/docs/eslint.config.js') }}-

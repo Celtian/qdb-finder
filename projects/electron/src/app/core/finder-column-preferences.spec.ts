@@ -1,17 +1,18 @@
 import { TestBed } from '@angular/core/testing';
+
+import {
+  defaultFinderColumnPreference,
+  defaultFinderColumns,
+  finderColumns,
+  fromFinderColumnVisibility,
+  isFinderSortVisible,
+  toFinderColumnVisibility,
+} from './finder-columns';
 import {
   FinderPreferences,
   finderColumnPreferenceKey,
   finderFilterPreferenceKey,
 } from './finder-preferences';
-import {
-  defaultFinderColumnPreference,
-  defaultFinderColumns,
-  finderColumns,
-  isFinderSortVisible,
-  toFinderColumnVisibility,
-  fromFinderColumnVisibility,
-} from './finder-columns';
 
 describe('finder columns', () => {
   beforeEach(() => window.localStorage.clear());

@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MAT_TABS_CONFIG } from '@angular/material/tabs';
 import { MatTabGroupHarness } from '@angular/material/tabs/testing';
-import { provideRouter, Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import type { PlayerDetails } from '../../core/qdb-contracts';
 import { PlayerDetail } from './player-detail';
@@ -83,20 +83,19 @@ describe('PlayerDetail', () => {
 
   it('renders the original player ID in the header metadata', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const eyebrow = element.querySelector('.detail-header .eyebrow');
+    const eyebrow = element.querySelector('header p:first-child');
     const title = element.querySelector('h2[mat-dialog-title]');
 
     expect(eyebrow?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'FIFA 23 player · Built-in FIFA 11–23 · Original ID 1',
     );
-    expect(eyebrow?.querySelector('.original-id')?.textContent?.trim()).toBe('Original ID 1');
-    expect(getComputedStyle(title!).paddingLeft).toBe('0px');
-    expect(getComputedStyle(title!).paddingRight).toBe('0px');
+    expect(eyebrow?.querySelector('.tabular-nums')?.textContent?.trim()).toBe('Original ID 1');
+    expect(title?.closest('header')).toBeTruthy();
   });
 
   it('renders readable profile dates and preferred foot', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const terms = [...element.querySelectorAll<HTMLElement>('.profile-grid dt')];
+    const terms = [...element.querySelectorAll<HTMLElement>('[data-profile-grid] dt')];
     const valueFor = (label: string): string | undefined =>
       terms
         .find((term) => term.textContent?.trim() === label)
@@ -109,8 +108,8 @@ describe('PlayerDetail', () => {
 
   it('uses badge layout only for position pills, not rating tiles', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const attackerSurfaces = element.querySelectorAll('.position-attacker');
-    const attackerBadges = element.querySelectorAll('.data-badge.position-attacker');
+    const attackerSurfaces = element.querySelectorAll('.bg-position-attacker');
+    const attackerBadges = element.querySelectorAll('.inline-flex.bg-position-attacker');
     const testable = component as unknown as {
       ratingRows: { tiles: { className: string }[] }[];
     };
@@ -120,7 +119,7 @@ describe('PlayerDetail', () => {
     expect([...attackerSurfaces].every((surface) => surface.textContent?.includes('ST'))).toBe(
       true,
     );
-    expect(testable.ratingRows[0]?.tiles[0]?.className).toBe('score-value score-green');
+    expect(testable.ratingRows[0]?.tiles[0]?.className).toBe('bg-score-green text-on-score-green');
   });
 
   it('renders sparse ratings in the fixed pitch layout', async () => {
@@ -132,7 +131,7 @@ describe('PlayerDetail', () => {
 
     const selectedTab = await tabs.getSelectedTab();
 
-    const rows = element.querySelectorAll<HTMLElement>('.position-matrix-row');
+    const rows = element.querySelectorAll<HTMLElement>('[data-row]');
     const striker = element.querySelector<HTMLElement>('[data-position="ST"]');
 
     expect(await selectedTab.getLabel()).toBe('Position matrix');
@@ -149,9 +148,9 @@ describe('PlayerDetail', () => {
       'goalkeeper',
     ]);
     expect(striker?.style.gridColumn).toBe('3');
-    expect(striker?.classList.contains('score-green')).toBe(true);
-    expect(striker?.classList.contains('position-attacker')).toBe(false);
-    expect(striker?.classList.contains('data-badge')).toBe(false);
+    expect(striker?.classList.contains('bg-score-green')).toBe(true);
+    expect(striker?.classList.contains('bg-position-attacker')).toBe(false);
+    expect(striker?.classList.contains('inline-flex')).toBe(false);
     expect(striker?.textContent).toContain('82');
   });
 
@@ -160,7 +159,9 @@ describe('PlayerDetail', () => {
       attributeGroups: { attributes: { className: string }[] }[];
     };
 
-    expect(testable.attributeGroups[0]?.attributes[0]?.className).toBe('score-value score-lime');
+    expect(testable.attributeGroups[0]?.attributes[0]?.className).toBe(
+      'bg-score-lime text-on-score-lime',
+    );
   });
 
   it('renders grouped attributes and special ratings', async () => {
@@ -170,11 +171,11 @@ describe('PlayerDetail', () => {
     await tabs.selectTab({ label: 'Attributes' });
     await fixture.whenStable();
 
-    const headings = element.querySelectorAll<HTMLElement>('.attribute-group h3');
+    const headings = element.querySelectorAll<HTMLElement>('[data-attribute-group] h3');
     const finishing = element.querySelector<HTMLElement>('[data-attribute="finishing"]');
     const potential = element.querySelector<HTMLElement>('[data-attribute="potential"]');
     const reputation = element.querySelector<HTMLElement>('[data-attribute="internationalrep"]');
-    const stars = reputation?.querySelectorAll('.reputation-star');
+    const stars = reputation?.querySelectorAll('[data-reputation-star]');
 
     expect([...headings].map((heading) => heading.textContent?.trim())).toEqual([
       'Attacking',
@@ -187,14 +188,12 @@ describe('PlayerDetail', () => {
       'Special',
     ]);
     expect(finishing?.closest<HTMLElement>('[data-group]')?.dataset['group']).toBe('attacking');
-    expect(finishing?.classList.contains('score-lime')).toBe(true);
-    expect(potential?.classList.contains('score-green')).toBe(true);
+    expect(finishing?.classList.contains('bg-score-lime')).toBe(true);
+    expect(potential?.classList.contains('bg-score-green')).toBe(true);
     expect(stars).toHaveLength(5);
-    expect(reputation?.querySelectorAll('.reputation-star.filled')).toHaveLength(3);
+    expect(reputation?.querySelectorAll('[data-reputation-star].filled')).toHaveLength(3);
     expect(reputation?.textContent).toContain('3 / 5');
-    expect(reputation?.querySelector('.reputation-stars')?.getAttribute('aria-hidden')).toBe(
-      'true',
-    );
+    expect(reputation?.querySelector('span[aria-hidden="true"]')).toBeTruthy();
   });
 
   it('renders raw fields as the final tab', async () => {
@@ -209,7 +208,7 @@ describe('PlayerDetail', () => {
     await fixture.whenStable();
 
     const rawText = await (await tabs.getSelectedTab()).getTextContent();
-    const rawTerms = [...element.querySelectorAll<HTMLElement>('.raw-fields dt')];
+    const rawTerms = [...element.querySelectorAll<HTMLElement>('[data-raw-fields] dt')];
     const rawValueFor = (label: string): string | undefined =>
       rawTerms
         .find((term) => term.textContent?.trim() === label)
@@ -246,12 +245,14 @@ describe('PlayerDetail', () => {
 
   it('colors overall and potential by their value bands', () => {
     const element = fixture.nativeElement as HTMLElement;
-    const scores = element.querySelectorAll('.metric-grid .score-badge');
+    const scores = element.querySelectorAll(
+      '[data-metric-grid] strong.bg-score-lime, [data-metric-grid] strong.bg-score-green',
+    );
 
     expect(scores).toHaveLength(2);
-    expect([...scores].every((score) => score.classList.contains('data-badge'))).toBe(true);
-    expect(scores[0].classList.contains('score-lime')).toBe(true);
-    expect(scores[1].classList.contains('score-green')).toBe(true);
+    expect([...scores].every((score) => score.classList.contains('inline-flex'))).toBe(true);
+    expect(scores[0].classList.contains('bg-score-lime')).toBe(true);
+    expect(scores[1].classList.contains('bg-score-green')).toBe(true);
   });
 
   it('renders a large decorative nationality flag', () => {

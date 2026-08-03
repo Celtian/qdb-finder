@@ -5,7 +5,8 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatNavListHarness, MatNavListItemHarness } from '@angular/material/list/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { MatToolbarHarness } from '@angular/material/toolbar/testing';
-import { provideRouter, Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+
 import { provideAppVersion } from 'ngx-app-version';
 import { BehaviorSubject } from 'rxjs';
 
@@ -50,10 +51,23 @@ describe('App', () => {
     const navigation = await loader.getHarness(MatNavListHarness);
     const items = await navigation.getItems();
     const projectAction = await loader.getHarness(MatButtonHarness.with({ text: /GitHub/ }));
+    const navigationTrigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      'button[aria-label="Open documentation navigation"]',
+    );
+    const sidenavElement = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      'mat-sidenav',
+    );
 
     expect((await toolbar.getRowsAsText())[0]).toContain('QDB Finder');
     expect(await sidenav.getMode()).toBe('side');
     expect(await sidenav.isOpen()).toBe(true);
+    expect(
+      sidenavElement &&
+        getComputedStyle(sidenavElement).getPropertyValue('--mat-sidenav-container-shape'),
+    ).toBe('0');
+    expect(Array.from(navigationTrigger?.classList ?? [])).toEqual(
+      expect.arrayContaining(['hidden!', 'max-nav:inline-flex!']),
+    );
     expect(items).toHaveLength(12);
     expect(await Promise.all(items.map((item) => item.getTitle()))).toContain('Players');
     expect(await Promise.all(items.map((item) => item.getTitle()))).toContain(
@@ -67,7 +81,10 @@ describe('App', () => {
     await fixture.whenStable();
     const loader = TestbedHarnessEnvironment.loader(fixture);
     const trigger = await loader.getHarness(
-      MatButtonHarness.with({ selector: '.navigation-trigger', variant: 'icon' }),
+      MatButtonHarness.with({
+        selector: 'button[aria-label="Open documentation navigation"]',
+        variant: 'icon',
+      }),
     );
     const sidenav = await loader.getHarness(MatSidenavHarness);
     const installation = await loader.getHarness(
@@ -88,7 +105,7 @@ describe('App', () => {
     await vi.waitFor(async () => expect(await sidenav.isOpen()).toBe(true));
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.navigation-trigger')
+        .querySelector('button[aria-label="Open documentation navigation"]')
         ?.getAttribute('aria-expanded'),
     ).toBe('true');
 

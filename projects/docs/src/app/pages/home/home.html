@@ -1,19 +1,29 @@
-<article>
-  <p class="mt-0 text-xs font-bold tracking-section text-primary uppercase">
+<article class="pb-4 text-base">
+  <p class="mt-0 text-xs leading-4 font-bold tracking-section text-primary uppercase">
     {{ page().eyebrow }}
   </p>
-  <h1>{{ page().title }}</h1>
-  <p class="mb-12 max-w-175 text-lead leading-lead text-docs-copy-muted max-mobile:mb-9">
+  <h1
+    class="mt-2.5 mb-4 max-w-190 text-docs-title leading-title font-bold tracking-title text-balance"
+  >
+    {{ page().title }}
+  </h1>
+  <p
+    class="mb-12 max-w-175 text-lead leading-lead text-pretty text-docs-copy-muted max-mobile:mb-9"
+  >
     {{ page().lead }}
   </p>
   @for (section of page().sections; track section.title) {
-    <section>
-      <h2>{{ section.title }}</h2>
+    <section class="my-10 max-mobile:my-8">
+      <h2 class="mb-3 text-docs-heading leading-tight font-bold tracking-tight text-balance">
+        {{ section.title }}
+      </h2>
       @for (paragraph of section.paragraphs; track $index) {
-        <p>{{ paragraph }}</p>
+        <p class="max-w-175 leading-docs-copy text-pretty text-docs-copy">{{ paragraph }}</p>
       }
       @if (section.items) {
-        <ul>
+        <ul
+          class="grid max-w-175 gap-brand-gap pl-5 leading-docs-list text-docs-copy marker:text-primary"
+        >
           @for (item of section.items; track item) {
             <li>{{ item }}</li>
           }
@@ -27,7 +37,7 @@
         >
           <mat-card-content>
             <mat-icon>info</mat-icon>
-            <p><strong>Note:</strong> {{ section.note }}</p>
+            <p class="m-0 leading-lead text-docs-note"><strong>Note:</strong> {{ section.note }}</p>
           </mat-card-content>
         </mat-card>
       }
@@ -38,7 +48,9 @@
           data-code-card
         >
           <mat-card-content>
-            <pre><code>{{ section.code }}</code></pre>
+            <pre
+              class="m-0 overflow-auto p-5 font-mono text-sm leading-lead text-on-surface"
+            ><code>{{ section.code }}</code></pre>
           </mat-card-content>
         </mat-card>
       }
@@ -46,14 +58,14 @@
         <div class="mt-5 flex flex-wrap gap-brand-gap">
           @for (link of section.links; track link.href) {
             @if (link.external) {
-              <a mat-stroked-button [href]="link.href">
+              <a class="text-primary" mat-stroked-button [href]="link.href">
                 {{ link.label }}
-                <mat-icon>open_in_new</mat-icon>
+                <mat-icon class="ml-1">open_in_new</mat-icon>
               </a>
             } @else {
-              <a mat-stroked-button [routerLink]="link.href">
+              <a class="text-primary" mat-stroked-button [routerLink]="link.href">
                 {{ link.label }}
-                <mat-icon>arrow_forward</mat-icon>
+                <mat-icon class="ml-1">arrow_forward</mat-icon>
               </a>
             }
           }

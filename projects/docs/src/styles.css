@@ -19,7 +19,6 @@ body {
   color-scheme: light;
   background: var(--mat-sys-surface, #fafafa);
   color: var(--mat-sys-on-surface, #1a1b20);
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
 *,

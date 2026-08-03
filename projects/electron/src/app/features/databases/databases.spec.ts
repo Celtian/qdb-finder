@@ -200,6 +200,23 @@ describe('Databases', () => {
     expect(validationProgressListener).toBeTypeOf('function');
   });
 
+  it('keeps the wizard card appearance above Angular Material defaults', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const classes = Array.from(
+      element.querySelector<HTMLElement>('[data-wizard-card]')?.classList ?? [],
+    );
+
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        'rounded-2xl!',
+        'border!',
+        'border-outline-variant!',
+        'bg-surface-container-lowest!',
+        'shadow-card!',
+      ]),
+    );
+  });
+
   it('uses an accessible folder suffix action for the text-table source', async () => {
     const stepper = await loader.getHarness(MatStepperHarness);
     await stepper.selectStep({ label: 'Source' });

@@ -25,6 +25,8 @@ mat-sidenav-container {
 }
 
 mat-sidenav {
+  --mat-sidenav-container-shape: 0;
+
   width: 280px;
   border-right: 1px solid #dfe3ed;
   background: var(--mat-sys-surface, #fff);

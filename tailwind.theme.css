@@ -1,4 +1,5 @@
 @theme inline {
+  --font-sans: 'Roboto', 'Helvetica Neue', sans-serif;
   --color-surface: var(--mat-sys-surface);
   --color-on-surface: var(--mat-sys-on-surface);
   --color-on-surface-variant: var(--mat-sys-on-surface-variant);
@@ -88,13 +89,19 @@
   --text-dialog-title: 1.6rem;
   --text-legal: 0.85rem;
   --text-detail-eyebrow: 0.72rem;
+  --text-docs-heading: 1.35rem;
+  --text-docs-title: clamp(2rem, 4vw, 3.5rem);
   --tracking-label: 0.09em;
   --tracking-section: 0.1em;
   --tracking-eyebrow: 0.08em;
+  --tracking-title: -0.035em;
   --leading-copy: 1.55;
+  --leading-docs-copy: 1.75;
+  --leading-docs-list: 1.65;
   --leading-option: 1.45;
   --leading-lead: 1.6;
   --leading-list: 1.35;
+  --leading-title: 1.05;
   --radius-notice: 0.625rem;
   --grid-template-rows-drawer: auto minmax(0, 1fr) auto;
   --grid-template-columns-profile: minmax(8rem, 1fr) 2fr;

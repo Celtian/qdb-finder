@@ -1,47 +1,5 @@
-article {
-  padding-bottom: 1rem;
-}
-
-h1 {
-  max-width: 760px;
-  margin: 0.6rem 0 1rem;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1.05;
-  letter-spacing: -0.035em;
-}
-
-section {
-  margin: 2.5rem 0;
-}
-
-h2 {
-  margin-bottom: 0.8rem;
-  font-size: 1.35rem;
-}
-
-section > p {
-  color: #465064;
-  line-height: 1.75;
-}
-
-ul {
-  display: grid;
-  gap: 0.65rem;
-  padding-left: 1.25rem;
-  color: #465064;
-  line-height: 1.65;
-}
-
 [data-code-card] mat-card-content {
   padding: 0;
-}
-
-section > div a {
-  color: var(--qdb-brand);
-}
-
-section > div mat-icon {
-  margin-left: 0.3rem;
 }
 
 mat-card[role='note'] mat-card-content {
@@ -54,25 +12,4 @@ mat-card[role='note'] mat-card-content {
 mat-card[role='note'] mat-icon {
   flex: 0 0 auto;
   color: var(--qdb-brand);
-}
-
-mat-card[role='note'] p {
-  margin: 0;
-  color: #324565;
-  line-height: 1.6;
-}
-
-pre {
-  overflow: auto;
-  margin: 0;
-  padding: 1.2rem;
-  color: var(--mat-sys-on-surface);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-@media (width <= 620px) {
-  section {
-    margin: 2rem 0;
-  }
 }

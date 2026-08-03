@@ -6,7 +6,7 @@
 <header class="sticky top-0 z-20 shrink-0">
   <mat-toolbar>
     <button
-      class="mr-1 hidden max-nav:inline-flex"
+      class="mr-1 hidden! max-nav:inline-flex!"
       type="button"
       mat-icon-button
       aria-label="Open documentation navigation"
@@ -70,12 +70,12 @@
         <div
           class="m-auto flex w-full max-w-275 items-center justify-between gap-4 px-footer-inline py-4 max-mobile:flex-col max-mobile:items-start"
         >
-          <p>
+          <p class="text-sm leading-6">
             &copy; {{ site.copyrightYear }} Dominik Hladík ·
             <a [href]="site.links.version">QDB Finder {{ site.versionLabel }}</a>
           </p>
           <nav
-            class="flex flex-wrap justify-end gap-1 max-mobile:justify-start"
+            class="flex flex-wrap justify-end gap-1 text-sm max-mobile:justify-start"
             aria-label="Project links"
           >
             <a mat-button [href]="site.links.latestRelease">Latest download</a>

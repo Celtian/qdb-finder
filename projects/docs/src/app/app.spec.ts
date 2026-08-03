@@ -51,10 +51,23 @@ describe('App', () => {
     const navigation = await loader.getHarness(MatNavListHarness);
     const items = await navigation.getItems();
     const projectAction = await loader.getHarness(MatButtonHarness.with({ text: /GitHub/ }));
+    const navigationTrigger = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      'button[aria-label="Open documentation navigation"]',
+    );
+    const sidenavElement = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      'mat-sidenav',
+    );
 
     expect((await toolbar.getRowsAsText())[0]).toContain('QDB Finder');
     expect(await sidenav.getMode()).toBe('side');
     expect(await sidenav.isOpen()).toBe(true);
+    expect(
+      sidenavElement &&
+        getComputedStyle(sidenavElement).getPropertyValue('--mat-sidenav-container-shape'),
+    ).toBe('0');
+    expect(Array.from(navigationTrigger?.classList ?? [])).toEqual(
+      expect.arrayContaining(['hidden!', 'max-nav:inline-flex!']),
+    );
     expect(items).toHaveLength(12);
     expect(await Promise.all(items.map((item) => item.getTitle()))).toContain('Players');
     expect(await Promise.all(items.map((item) => item.getTitle()))).toContain(

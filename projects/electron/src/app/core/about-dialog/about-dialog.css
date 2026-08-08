@@ -2,27 +2,55 @@
   display: block;
 }
 
+header img {
+  border-radius: 1rem;
+}
+
+header h2 {
+  margin: 0;
+  padding: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
 mat-dialog-content {
-  padding-top: 1.25rem;
+  padding: 1.75rem 2rem 0;
 }
 
 mat-dialog-actions {
   flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.75rem 1.5rem 1.25rem;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 2rem 1.75rem;
 }
 
-@media (width <= 480px) {
+@media (width <= 560px) {
+  header img {
+    width: 56px;
+    height: 56px;
+    border-radius: 0.75rem;
+  }
+
+  header h2 {
+    font-size: 1.5rem;
+  }
+
   mat-dialog-content {
-    padding-inline: 1rem;
+    padding: 1.25rem 1.25rem 0;
   }
 
   mat-dialog-actions {
+    flex-direction: column;
+    align-items: stretch;
     justify-content: stretch;
-    padding-inline: 1rem;
+    padding: 1rem 1.25rem 1.25rem;
   }
 
-  mat-dialog-actions > * {
-    flex: 1 1 100%;
+  mat-dialog-actions > div {
+    justify-content: flex-start;
+  }
+
+  mat-dialog-actions > button {
+    align-self: flex-start;
   }
 }

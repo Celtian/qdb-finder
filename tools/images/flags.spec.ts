@@ -1,9 +1,16 @@
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
 import { FLAGS } from '../../projects/electron/src/app/core/country-flag/generated-flags';
+
+const readPngDimensions = async (path: string): Promise<readonly [number, number]> => {
+  const image = await readFile(path);
+
+  expect(image.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  expect(image.toString('ascii', 12, 16)).toBe('IHDR');
+  return [image.readUInt32BE(16), image.readUInt32BE(20)];
+};
 
 describe('generated flag assets', () => {
   it.each([
@@ -13,7 +20,7 @@ describe('generated flag assets', () => {
     [80, 60],
     [120, 90],
   ])('generates %i×%i PNGs with exact dimensions', async (width, height) => {
-    const image = sharp(
+    const dimensions = await readPngDimensions(
       resolve(
         process.cwd(),
         'projects',
@@ -25,17 +32,17 @@ describe('generated flag assets', () => {
       ),
     );
 
-    await expect(image.metadata()).resolves.toMatchObject({ width, height, format: 'png' });
+    expect(dimensions).toEqual([width, height]);
   });
 
   it.each(['ac', 'cp', 'cq', 'dg', 'ea', 'gb-eng', 'gb-nir', 'gb-sct', 'gb-wls', 'ic', 'ta'])(
     'includes generated special identifier %s',
     async (code) => {
-      const metadata = await sharp(
+      const dimensions = await readPngDimensions(
         resolve(process.cwd(), 'projects', 'electron', 'public', 'flags', '40x30', `${code}.png`),
-      ).metadata();
+      );
 
-      expect(metadata).toMatchObject({ width: 40, height: 30, format: 'png' });
+      expect(dimensions).toEqual([40, 30]);
     },
   );
 

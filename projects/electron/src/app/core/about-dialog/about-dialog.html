@@ -1,21 +1,14 @@
-<header class="flex items-start justify-between gap-4 px-6 pt-6 max-compact:px-4 max-compact:pt-5">
-  <div class="flex min-w-0 items-center gap-4">
-    <img
-      class="shrink-0 rounded-xl"
-      ngSrc="qdb-finder.png"
-      width="56"
-      height="56"
-      alt=""
-      priority
-    />
+<header class="flex items-start justify-between gap-4 px-8 pt-8 max-small:px-5 max-small:pt-5">
+  <div class="flex min-w-0 items-center gap-5 max-small:gap-4">
+    <img class="shrink-0" ngSrc="qdb-finder.png" width="72" height="72" alt="" priority />
     <div>
-      <h2 class="m-0 p-0 text-dialog-title" mat-dialog-title>QDB Finder</h2>
-      <p class="mt-micro! mb-0 text-on-surface-variant tabular-nums">Version {{ version }}</p>
+      <h2 mat-dialog-title>QDB Finder</h2>
+      <p class="mt-2 mb-0 text-on-surface-variant tabular-nums">Version {{ version }}</p>
     </div>
   </div>
   <button
     type="button"
-    class="shrink-0"
+    class="shrink-0 bg-surface-container-high"
     mat-icon-button
     mat-dialog-close
     aria-label="Close About dialog"
@@ -31,26 +24,28 @@
   </p>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
+<mat-dialog-actions>
   <button type="button" mat-button mat-dialog-close>Close</button>
-  <a
-    mat-button
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Open QDB Finder documentation in your browser"
-    [href]="documentationUrl"
-  >
-    <mat-icon>menu_book</mat-icon>
-    Documentation
-  </a>
-  <a
-    mat-flat-button
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Open the QDB Finder GitHub repository in your browser"
-    [href]="repositoryUrl"
-  >
-    <mat-icon>code</mat-icon>
-    GitHub
-  </a>
+  <div class="flex flex-wrap justify-end gap-2 max-small:justify-start">
+    <a
+      mat-button
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Open QDB Finder documentation in your browser"
+      [href]="documentationUrl"
+    >
+      <mat-icon aria-hidden="true">menu_book</mat-icon>
+      Documentation
+    </a>
+    <a
+      mat-flat-button
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Open the QDB Finder GitHub repository in your browser"
+      [href]="repositoryUrl"
+    >
+      <mat-icon aria-hidden="true">code</mat-icon>
+      GitHub
+    </a>
+  </div>
 </mat-dialog-actions>

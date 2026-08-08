@@ -62,7 +62,7 @@ export class AppNavigation {
     const mobile = this.navigation.isSmallScreen();
     if (mobile) this.navigation.closeForDialog();
     const dialog = this.dialog.open(AboutDialog, {
-      width: '440px',
+      width: '560px',
       maxWidth: 'calc(100vw - 2rem)',
       autoFocus: 'dialog',
       restoreFocus: !mobile,

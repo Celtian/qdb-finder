@@ -9,7 +9,7 @@ import {
   shell,
 } from 'electron';
 import { randomUUID } from 'node:crypto';
-import { basename, extname, join } from 'node:path';
+import { basename, extname, join, resolve } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { updateElectronApp } from 'update-electron-app';
 
@@ -48,14 +48,14 @@ import { inspectT3dbSource, t3dbSourceErrorMessage } from '../t3db-source';
 
 let databaseLibrary: DatabaseLibrary;
 let databaseRegistry: DatabaseRegistry;
-
 const sourceSelections = new DatabaseSourceSelections();
 const imports = new Map<string, { worker: Worker; cancel: () => void }>();
 const validations = new Map<string, { worker: Worker; cancel: () => void }>();
-
 app.disableHardwareAcceleration();
 app.setName('QDB Finder');
-
+const applicationIcon = app.isPackaged
+  ? join(app.getAppPath(), 'dist', 'electron', 'browser', 'qdb-finder.png')
+  : resolve(__dirname, '../../../projects/electron/public/qdb-finder.png');
 const senderWindow = (event: IpcMainInvokeEvent): BrowserWindow | undefined =>
   BrowserWindow.fromWebContents(event.sender) ?? undefined;
 
@@ -296,7 +296,7 @@ const createWindow = async (): Promise<void> => {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#f7f8fc',
-    icon: join(app.getAppPath(), 'resources', 'icons', 'qdb-finder.png'),
+    icon: applicationIcon,
     webPreferences: {
       preload: join(__dirname, '..', 'preload.js'),
       contextIsolation: true,

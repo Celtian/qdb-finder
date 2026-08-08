@@ -36,6 +36,11 @@ QDB Finder is an offline desktop explorer for FIFA 11–23 databases. It combine
 
 The Angular workspace configuration lives at the repository root and uses `newProjectRoot: "projects"`. Components use CSS, the Electron renderer's Material theme is defined in SCSS, and Tailwind is limited to utilities without preflight.
 
+Brand artwork is maintained and generated in
+[`Celtian/app-logos`](https://github.com/Celtian/app-logos) under the `qdb-finder` project. This
+repository checks in only the generated logo and favicons it consumes, plus the derived Windows
+packaging icon. Update the canonical artwork there before refreshing these assets.
+
 ## 🚀 Getting started
 
 Requirements:

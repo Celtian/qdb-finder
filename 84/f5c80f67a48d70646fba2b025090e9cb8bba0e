@@ -1,0 +1,52 @@
+README.md
+  s_e0a82bf9c6e4c9::t_0d5f3c9bf72853 39-43
+projects/electron/electron/main/index.ts
+  s_9411c7f4f86485::t_02d13891b68b6f 58
+  s_e0a82bf9c6e4c9::t_0d5f3c9bf72853 12,56-57,299
+tools/images/flags.spec.ts
+  s_e0a82bf9c6e4c9::t_0d5f3c9bf72853 1,7-14,23,35,41,43,45
+projects/electron/src/app/core/about-dialog/about-dialog.html
+  s_c1c8986321f249::t_efa86637b89ba9 1-2,29
+  s_c1c8986321f249::t_ccaf662c5e0026 5
+  s_e0a82bf9c6e4c9::t_f82a84897e5f39 3
+  s_e0a82bf9c6e4c9::t_1424ac21380487 6,11,27,30-50
+projects/electron/src/app/core/about-dialog/about-dialog.css
+  s_c1c8986321f249::t_4f271fd0fcd801 10-11
+  s_e0a82bf9c6e4c9::t_1424ac21380487 5-9,12-15,17,22-24,28-37,39,43-44,46-50
+  s_e0a82bf9c6e4c9::t_16b82ef04998c0 53-54
+  s_c1c8986321f249::t_efa86637b89ba9 27
+projects/electron/src/app/core/app-navigation/app-navigation.ts
+  s_e0a82bf9c6e4c9::t_1424ac21380487 65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "84f5c80f67a48d70646fba2b025090e9cb8bba0e",
+  "prompts": {},
+  "sessions": {
+    "s_9411c7f4f86485": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe04c-60aa-7cd0-a0b0-c854647a7d80",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Celtian <dominik.hladik@seznam.cz>"
+    },
+    "s_c1c8986321f249": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe050-8c63-7463-92cb-1f49f4f57421",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Celtian <dominik.hladik@seznam.cz>"
+    },
+    "s_e0a82bf9c6e4c9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe040-b5ee-7051-884c-5b8e8560ca07",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Celtian <dominik.hladik@seznam.cz>"
+    }
+  }
+}

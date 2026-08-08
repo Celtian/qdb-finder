@@ -1,0 +1,27 @@
+README.md
+  s_8a8874071d19a7::t_623dc2b90f5a84 96
+package.json
+  s_8a8874071d19a7::t_fc309c0a47ae47 64-65
+projects/docs/src/app/pages/home/documentation.ts
+  s_8a8874071d19a7::t_623dc2b90f5a84 451
+.github/workflows/main.yml
+  s_8a8874071d19a7::t_fc309c0a47ae47 16-17,74-76,78-91,93-122,124-127,129-147
+.github/workflows/pull-request.yml
+  s_8a8874071d19a7::t_fc309c0a47ae47 15-16,85-119,121-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "59f6ef8101eeb63e8a16f04093833337966b66ef",
+  "prompts": {},
+  "sessions": {
+    "s_8a8874071d19a7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe06e-d053-76f2-b7d6-e5795fa45fd0",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Celtian <dominik.hladik@seznam.cz>"
+    }
+  }
+}

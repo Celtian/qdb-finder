@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: 🛠️ Validate & Package
+  validate:
+    name: 🛠️ Validate & Build
     runs-on: ubuntu-latest
     steps:
       - name: 🗜️ Checkout
@@ -81,11 +81,47 @@ jobs:
       - name: 🏗️ Build applications
         run: bun run build
 
-      - name: 📦 Package Windows x64 application
-        run: bun run forge package --arch=x64 --platform=win32
-
       - name: 🔎 Verify artifact layout
+        shell: bash
         run: |
-          test -f "out/qdb-finder-win32-x64/QDB Finder.exe"
-          test -f out/qdb-finder-win32-x64/resources/app.asar
-          test -f out/qdb-finder-win32-x64/resources/database/qdb.sqlite
+          test -f dist/electron/browser/index.html
+          test -f dist/docs/browser/index.html
+          test -f .electron/electron/main/index.js
+          test -f .electron/electron/preload.js
+          test -f resources/database/qdb.sqlite
+
+  package-windows:
+    name: 🪟 Package Windows x64
+    needs: validate
+    runs-on: windows-latest
+    steps:
+      - name: 🗜️ Checkout
+        uses: actions/checkout@v7
+
+      - name: 🗜️ Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      - name: 🛠️ Install dependencies
+        uses: ./.github/actions/cached-deps
+
+      - name: 📦 Make Windows release
+        run: bun run release:windows
+
+      - name: 🔎 Verify release artifacts
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'out/make/squirrel.windows/x64/QDB-Finder-Setup.exe')) { throw 'Squirrel Setup.exe is missing.' }
+          if (-not (Get-ChildItem 'out/make/zip/win32/x64' -Filter '*.zip')) { throw 'Portable ZIP is missing.' }
+          if (-not (Test-Path 'out/make/squirrel.windows/x64/RELEASES')) { throw 'Squirrel update metadata is missing.' }
+          if (-not (Get-ChildItem 'out/make/squirrel.windows/x64' -Filter '*.nupkg')) { throw 'Squirrel update package is missing.' }
+          if (-not (Test-Path 'out/qdb-finder-win32-x64/QDB Finder.exe')) { throw 'Packaged executable is missing.' }
+          if (-not (Test-Path 'out/qdb-finder-win32-x64/resources/app.asar')) { throw 'ASAR bundle is missing.' }
+          if (-not (Test-Path 'out/qdb-finder-win32-x64/resources/database/qdb.sqlite')) { throw 'Packaged database is missing.' }

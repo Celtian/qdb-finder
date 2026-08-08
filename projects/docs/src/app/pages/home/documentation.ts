@@ -448,7 +448,7 @@ export const documentationPages: Readonly<Record<string, DocPage>> = {
       {
         title: 'Release flow',
         paragraphs: [
-          'A matching v* tag installs from bun.lock, generates and validates SQLite, runs checks, uploads the Squirrel and ZIP artifacts to a draft release, and then publishes it. Non-beta tags also deploy this prerendered documentation to GitHub Pages.',
+          'A matching v* tag validates the project on Ubuntu, rebuilds and verifies the SQLite-backed release natively on Windows, publishes checksummed Squirrel and ZIP artifacts, and deploys this prerendered documentation from Ubuntu for non-beta tags.',
           `This documentation build identifies itself as ${siteMetadata.versionLabel} and links to the immutable source tag used to produce it.`,
         ],
         links: [

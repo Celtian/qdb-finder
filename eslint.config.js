@@ -123,7 +123,7 @@ module.exports = defineConfig([
         {
           selector: 'Call[args.length > 0]:not(BoundEvent Call)',
           message:
-            'Avoid calling functions with arguments in templates. Use signals or properties instead.',
+            'Avoid calling functions with arguments in templates. Use signals, properties, or pure pipes instead.',
         },
       ],
       'max-lines': ['error', { max: 500, skipBlankLines: false, skipComments: false }],

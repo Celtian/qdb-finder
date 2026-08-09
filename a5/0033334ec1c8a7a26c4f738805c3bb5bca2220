@@ -1,0 +1,19 @@
+eslint.config.js
+  s_cefe9042e3acb2::t_8a4b7d9a3b1f28 126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a50033334ec1c8a7a26c4f738805c3bb5bca2220",
+  "prompts": {},
+  "sessions": {
+    "s_cefe9042e3acb2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fe5ba-16e6-7d12-a51e-35013349deed",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Celtian <dominik.hladik@seznam.cz>"
+    }
+  }
+}
